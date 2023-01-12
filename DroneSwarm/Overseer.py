@@ -28,6 +28,7 @@ COMMAND_TOPIC = "Command"
 LOCAL_IP = configDrones.LOCAL_IP
 COMMAND_RESULT_TOPIC = "CommandResult"
 PROXIMITY_OVERSEER_SERVICE = "ProximityOverseerService"
+OVERSEER_COMMUNICATION_TOPIC = "OverseerCommunication"
 
 # Main function for the overseer drone
 def overseerDroneController(droneName, droneCount):
@@ -49,7 +50,12 @@ def overseerDroneController(droneName, droneCount):
         wolfDroneService = "wolf_service_" + str(wolfNum)
         sendWolfCommandClusterInfo(wolfDroneService)
 
+    # Start overseer communication subscriber thread service
+    t = Thread(target = overseerCommunicationSubscriber, args=())
+    t.start()
+
     overseerDataPublish = rospy.Publisher(OVERSEER_DATA_TOPIC, String, latch=True, queue_size=1)
+    overseerCommunicationPublish = rospy.Publisher(OVERSEER_COMMUNICATION_TOPIC, String, latch=True, queue_size=1)
 
     # Add in loop logic
     i = 0
@@ -58,6 +64,9 @@ def overseerDroneController(droneName, droneCount):
 
         # Publishes to (OverseerData) topic
         overseerDataPublisher(overseerDataPublish, client, droneName)
+
+        # Publishes to (OverseerCommunication) topic
+        overseerCommunicationPublisher(overseerCommunicationPublish, client, droneName)
 
         # Tests out overseerGetOverseerData
         # print(getOverseerState())
@@ -78,6 +87,21 @@ def commandSub():
 def handleCommand(data, args):
     print()
     # TODO: ADD IN CODE TO HANDLE COMMAND RESULT TOPIC
+
+# Sets up publisher and calls function for (OverseerDroneData)
+def overseerCommunicationPublisher(pub, client, droneName):
+    message = "Hello, I'm drone " + droneName
+    pub.publish(message) # publish lcoation
+
+# Subscribes to (Command) topic
+def overseerCommunicationSubscriber():
+    rospy.Subscriber(OVERSEER_COMMUNICATION_TOPIC, String, handleOverseerCommunication, ())
+    rospy.spin()
+
+# Takes in strings from the (Command) topic for processing
+def handleOverseerCommunication(data, args):
+    message = str(data.data)
+    print(message)
 
 # Sets up publisher and calls function for (OverseerDroneData)
 def overseerDataPublisher(pub, client, droneName):
