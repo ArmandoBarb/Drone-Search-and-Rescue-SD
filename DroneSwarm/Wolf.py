@@ -13,10 +13,12 @@ import rospy
 import time
 import json
 import ast
+import configDrones
 from threading import Timer
 from threading import Thread
 from std_msgs.msg import String
 from std_srvs.srv import Trigger, TriggerResponse
+from ServiceRequestors.wolfGetWolfData import getWolfState
 
 RUNTIME = 10
 
@@ -24,7 +26,7 @@ SLAM_MERGE_TOPIC = "SlamMerge"
 WOLF_DATA_TOPIC = "WolfData"
 COMMAND_RESULT_TOPIC = "CommandResult"
 COMMAND_TOPIC = "Command"
-LOCAL_IP = "192.168.86.40"
+LOCAL_IP = configDrones.LOCAL_IP
 PROXIMITY_WOLF_SERVICE = "PromixityWolfService"
 WOLFS_CLUSTER = []
 
@@ -55,15 +57,8 @@ def wolfDroneController(droneName, droneCount):
         # Publishes to (WolfData) topic
         wolfDataPublisher(wolfDataPublish, client, droneName)
 
-        # Get wolf data using a service
-        rospy.wait_for_service(PROXIMITY_WOLF_SERVICE)
-
-        # Gets service response and messsage from WolfData
-        response = rospy.ServiceProxy(PROXIMITY_WOLF_SERVICE, Trigger)
-        resp = response()
-        responseText = resp.message
-        convertedResponseArray = ast.literal_eval(responseText)
-
+        # TEST OUT WOLF SERVICE, wolfGetWolfData
+        # print(getWolfState())
 
         # # TODO:
         # AREA CAN BE USED TO CALL BEHAVIOR FUNCTIONS FOR TESTING

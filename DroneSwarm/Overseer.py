@@ -12,17 +12,20 @@ import rospy
 import time
 import json
 import ast
+import configDrones
 from threading import Timer
 from threading import Thread
 from std_msgs.msg import String
 from std_srvs.srv import Trigger, TriggerResponse
 from ServiceRequestors.instructWolf import sendWolfCommandClusterInfo
+from ServiceRequestors.overseerGetOverseerData import getOverseerState
+from ServiceRequestors.overseerGetWolfData import getOverseerGetWolfState
 # from instructWolf import sendWolfCommandClusterInfo
 # from ActionHandler import actionHandlerController
 
 OVERSEER_DATA_TOPIC = "OverseerData"
 COMMAND_TOPIC = "Command"
-LOCAL_IP = "192.168.86.40"
+LOCAL_IP = configDrones.LOCAL_IP
 COMMAND_RESULT_TOPIC = "CommandResult"
 PROXIMITY_OVERSEER_SERVICE = "ProximityOverseerService"
 
@@ -56,28 +59,15 @@ def overseerDroneController(droneName, droneCount):
         # Publishes to (OverseerData) topic
         overseerDataPublisher(overseerDataPublish, client, droneName)
 
-        # Get overseer data using a service
-        rospy.wait_for_service(PROXIMITY_OVERSEER_SERVICE)
+        # Tests out overseerGetOverseerData
+        # print(getOverseerState())
 
-        # Gets service response and messsage from OverseerData
-        response = rospy.ServiceProxy(PROXIMITY_OVERSEER_SERVICE, Trigger)
-        resp = response()
-        responseText = resp.message
-        convertedResponseArray = ast.literal_eval(responseText)
-        # print(convertedResponseArray)
-
-        # # TODO:
-        # AREA CAN BE USED TO CALL BEHAVIOR FUNCTIONS FOR TESTING
+        # Tests out getOverseerGetWolfState
+        # print(getOverseerGetWolfState())
 
         time.sleep(1)
         i+=1
 
-    # # Subscribes to  to (Command) topic
-    # t = Thread(target= commandSub, args=(nodeName)) # every 1.0 seconds
-    # t.start()
-    #
-    # # Publishes to (OverseerDroneData) topic
-    # overseerDataPublisher()
 
 # Subscribes to (Command) topic
 def commandSub():
