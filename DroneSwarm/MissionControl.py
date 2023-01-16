@@ -16,12 +16,19 @@ from ctypes import Structure, c_int
 from multiprocessing.sharedctypes import Array
 import multiprocessing as mp
 from std_msgs.msg import String
+# import constants
+import Constants.configDrones as configDrones
+import Constants.ros as ros
 
-COMMAND_TOPIC = "Command"
-COMMAND_RESULT_TOPIC = "CommandResult"
-SLAM_TOPIC = "SlamMerge"
-RUNTIME = 10
+# Environmental Variables
+RUNTIME = configDrones.RUNTIME
 
+# ros topics
+COMMAND_TOPIC = ros.COMMAND_TOPIC
+COMMAND_RESULT_TOPIC = ros.COMMAND_RESULT_TOPIC
+SLAM_MERGE_TOPIC = ros.SLAM_MERGE_TOPIC
+
+# Main Process Start ----------------------------------------------
 # Main function for mission control
 print('Starting Mission Control')
 if __name__ == '__main__': # Only runs if this is main processes
@@ -31,6 +38,7 @@ if __name__ == '__main__': # Only runs if this is main processes
     overseerCount = 2
     wolfCount = 6
 
+    # TODO: start all procecess for ros Nodes here
     # Start wolf proximity subscriber and wolf nodes
     mp.Process(target=startProximityWolf, args=(wolfCount,)).start()
     for wolf in range(wolfCount): # str(x) = the vechical_name of the drone
@@ -62,6 +70,10 @@ if __name__ == '__main__': # Only runs if this is main processes
     # # Publishes to (Command) topic
     # commandPublisher()
 
+# Main Process End ----------------------------------------------
+
+# TODO: Functions need to Refatctor +++++++++++++++++++++++++++++++++++
+
 # Publishes to command topic
 def commandPublisher():
     pub = rospy.Publisher(COMMAND_TOPIC, String, latch=True, queue_size=1)
@@ -91,7 +103,7 @@ def updateCommandResult(data, args):
 
 # Subscribes to (SlamMerge) topic
 def slamMergeSub():
-    rospy.Subscriber(SLAM_TOPIC, String, updateCommandResult, (droneCount, client))
+    rospy.Subscriber(SLAM_MERGE_TOPIC, String, updateCommandResult, (droneCount, client))
     rospy.spin()
 
 # Takes in strings from the (SlamMerge) topic for processing

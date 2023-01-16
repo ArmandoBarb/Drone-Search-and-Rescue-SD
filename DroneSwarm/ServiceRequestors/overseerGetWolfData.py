@@ -1,8 +1,10 @@
 import rospy
 import ast
 from std_srvs.srv import Trigger, TriggerResponse
+# import constants
+import Constants.ros as ros
 
-PROXIMITY_WOLF_SERVICE = "PromixityWolfService"
+PROXIMITY_WOLF_SERVICE = ros.PROXIMITY_WOLF_SERVICE
 
 def getOverseerGetWolfState():
     # Get wolf data using a service
