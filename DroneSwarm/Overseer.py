@@ -101,7 +101,7 @@ def overseerCommunicationSubscriber():
 # Takes in strings from the (Command) topic for processing
 def handleOverseerCommunication(data, args):
     message = str(data.data)
-    print(message)
+    # print(message)
 
 # Sets up publisher and calls function for (OverseerDroneData)
 def overseerDataPublisher(pub, client, droneName):

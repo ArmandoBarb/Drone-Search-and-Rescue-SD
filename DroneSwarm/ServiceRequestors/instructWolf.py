@@ -24,7 +24,6 @@ def sendWolfCommandClusterInfo(serviceName):
 
     print("Using service", serviceName)
     rospy.wait_for_service(serviceName)
-    // test commit
     response = rospy.ServiceProxy(serviceName, Trigger)
     resp = response()
 

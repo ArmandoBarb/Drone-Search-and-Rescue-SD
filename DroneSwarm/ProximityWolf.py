@@ -7,14 +7,16 @@ import rospy
 import json
 from threading import Thread
 from std_msgs.msg import String
+from airsim_ros_pkgs.msg import droneData
+from airsim_ros_pkgs.srv import getDroneData, getDroneDataResponse
 from std_srvs.srv import Trigger, TriggerResponse
 
 WOLF_DATA_TOPIC = "WolfData"
-WOLF_POSITIONS = []
+# WOLF_POSITIONS = []
 
 def globalVarSetup(droneCount):
     global WOLF_POSITIONS
-    WOLF_POSITIONS = [None]*droneCount
+    WOLF_POSITIONS = [droneData()]*droneCount
 
 # Main promixity wolf function, returns list of wolf locations
 # TODO: ADD IN RADIUS
@@ -38,34 +40,23 @@ def startProximityWolf(droneCount):
 
 def wolfProximityService():
     serviceName = "PromixityWolfService"
-    service = rospy.Service(serviceName, Trigger, wolf_position_response)
+    service = rospy.Service(serviceName, getDroneData, wolf_position_response)
     rospy.spin()
 
 def wolf_position_response(request):
-    wolfPositionsString = str(WOLF_POSITIONS)
-    return TriggerResponse(
-        success=True,
-        message=wolfPositionsString
-    )
+    wolfPositionsArray = [WOLF_POSITIONS]
+    # print(WOLF_POSITIONS[0])
+    return [WOLF_POSITIONS]
 
 # Connects subcriber listen to WolfData
 def wolfDataSub(droneCount):
     print(WOLF_DATA_TOPIC)
-    rospy.Subscriber(WOLF_DATA_TOPIC, String, updateWolfData, ())
+    rospy.Subscriber(WOLF_DATA_TOPIC, droneData, updateWolfData, ())
     rospy.spin()
 
 
 # Stores drone position to array, moves drone towards average location
 def updateWolfData(data, args):
     global WOLF_POSITIONS
-    # Gets drone numbers and saves json data
-    topicData = str(data.data)
-    droneLocationJson = json.loads(topicData)
-
-    # Adds respective drone information to array
-    curDroneIndex = int(droneLocationJson['DroneName'])
-    WOLF_POSITIONS[curDroneIndex] = [droneLocationJson['DroneName'], droneLocationJson['Latitude'], droneLocationJson['Longitude'], droneLocationJson['vx'], droneLocationJson['vy']]
-    # WOLF_POSITIONS[curDroneIndex] = (droneLocationJson['DroneName'], droneLocationJson['Latitude'], droneLocationJson['Longitude'], droneLocationJson['vx'], droneLocationJson['vy'])
-    # print("Wolf topic data", topicData)
-    # print("curDroneIndex", curDroneIndex)
-    # print("Wolf positions", WOLF_POSITIONS)
+    curDroneIndex = int(data.droneName) # Gets droneName to know which index in array to put drone Ex: A drone named "0" would go in the 0 index
+    WOLF_POSITIONS[curDroneIndex] = data # Inserts droneData to respective array index

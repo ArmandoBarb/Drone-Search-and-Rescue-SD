@@ -18,6 +18,7 @@ from threading import Timer
 from threading import Thread
 from std_msgs.msg import String
 from std_srvs.srv import Trigger, TriggerResponse
+from airsim_ros_pkgs.msg import droneData
 from ServiceRequestors.wolfGetWolfData import getWolfState
 
 RUNTIME = 10
@@ -46,7 +47,7 @@ def wolfDroneController(droneName, droneCount):
 
     # Create topic publishers
     # (TODO: ADD IN SLAM MERGE AND COMMAND RESULT PUBLISHERS)
-    wolfDataPublish = rospy.Publisher(WOLF_DATA_TOPIC, String, latch=True, queue_size=1)
+    wolfDataPublish = rospy.Publisher(WOLF_DATA_TOPIC, droneData, latch=True, queue_size=1)
 
 
     # Add in loop logic
@@ -58,7 +59,8 @@ def wolfDroneController(droneName, droneCount):
         wolfDataPublisher(wolfDataPublish, client, droneName)
 
         # TEST OUT WOLF SERVICE, wolfGetWolfData
-        # print(getWolfState())
+        wolfInfoArray = getWolfState()        # Get droneWolfState state array from service
+        print(wolfInfoArray[3])               # Example of printing wolf drone 1's information
 
         # # TODO:
         # AREA CAN BE USED TO CALL BEHAVIOR FUNCTIONS FOR TESTING
@@ -82,8 +84,16 @@ def wolfDataPublisher(pub, client, droneName):
     position = client.getMultirotorState(vehicle_name = droneName)
     velocity = client.getGpsData(vehicle_name = droneName)
 
-    jsonWolfInfo = json.dumps({"DroneName": droneName, "Longitude": position.gps_location.longitude, "Latitude": position.gps_location.latitude, "vx": velocity.gnss.velocity.x_val, "vy": velocity.gnss.velocity.y_val}, indent=4)
-    pub.publish(jsonWolfInfo) # publish lcoation
+    # Creates droneMsg object and inserts values from AirSim apis
+    droneMsg = droneData()
+    droneMsg.droneName = droneName
+    droneMsg.longitude = position.gps_location.longitude
+    droneMsg.latitude = position.gps_location.latitude
+    droneMsg.velocityX = velocity.gnss.velocity.x_val
+    droneMsg.velocityY = velocity.gnss.velocity.y_val
+
+    # Publishes to topic
+    pub.publish(droneMsg)
 
 # Enables api control, takes off drone, returns the client
 def takeOff(droneName):
