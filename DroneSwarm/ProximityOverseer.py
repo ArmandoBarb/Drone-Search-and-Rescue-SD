@@ -1,25 +1,39 @@
 # Nodes: "ProximityOverseer" node
-# Will subscribe to (OverseerData) topic for overseers
-# (OverseerStateAPI) will reply nearby position data / states to requesters
+# This is a mock for communication
+# we could move this to each individual drone to handle but this is cleaner
+# TODO: TOTEST : Test if this becomes bottelneck
+# subscribes to (OverseerData) topic for overseers
+# listens for service request to send data to
 
 import rospy
 import json
-from threading import Thread
+# import Constants
+import Constants.ros as ros
+# TODO: Investigate if we need to use a Lock while writing or reading global variables
+from threading import Timer # Use for interval checks with minimal code
+from threading import Thread # USe for important code running constantly
+# TODO: Add custom message types
 from std_msgs.msg import String
 from std_srvs.srv import Trigger, TriggerResponse
 
-OVERSEER_DATA_TOPIC = "OverseerData"
+# Environmental Variables
+# ros: topics
+OVERSEER_DATA_TOPIC = ros.OVERSEER_DATA_TOPIC
+# ros: services
+PROXIMITY_OVERSEER_SERVICE = ros.PROXIMITY_OVERSEER_SERVICE
+
+# Internal Drone memory shared across threads
 OVERSEER_POSITIONS = []
 
 def globalVarSetup(droneCount):
     global OVERSEER_POSITIONS
     OVERSEER_POSITIONS = [None]*droneCount
 
-# Main proximity overseer function
+# Main Process Start ----------------------------------------------
 def startProximityOverseer(droneCount):
-    print("We're in overseer proximity")
+    debugPrint(' started overseer proximity')
 
-    # One node for "ProximityOverseer"
+    # Create Node for "ProximityOverseer" (Only one should exist)
     nodeName = "ProximityOverseer"
     rospy.init_node(nodeName, anonymous = True)
 
@@ -27,17 +41,30 @@ def startProximityOverseer(droneCount):
     t = Thread(target = overseerProximityService, args=())
     t.start()
 
-    print("Starting proximity overseer")
-
     globalVarSetup(droneCount)
+    # TODO: handle overseer position Data writing to storage
+    debugPrint("Subscribing to " + OVERSEER_DATA_TOPIC)
     overseerDataSub(droneCount)
-    overseerProximityService()
+    # is this needed? # overseerProximityService()
 
+# Main Process End ----------------------------------------------
+
+# Theads Start ===========================================
 def overseerProximityService():
-    serviceName = "ProximityOverseerService"
-    service = rospy.Service(serviceName, Trigger, overseer_position_response)
+    service = rospy.Service(PROXIMITY_OVERSEER_SERVICE, Trigger, overseer_position_response)
     rospy.spin()
 
+# Connects subcriber listen to OverseerData
+def overseerDataSub(droneCount):
+    rospy.Subscriber(OVERSEER_DATA_TOPIC, String, updateOverseerData, ())
+    rospy.spin()
+# Theads End ===========================================
+
+
+# TODO: Functions need to Refatctor +++++++++++++++++++++++++++++++++++
+
+
+# TODO: handle data retrieval for service calls
 def overseer_position_response(request):
     overseerPositionsString = str(OVERSEER_POSITIONS)
     return TriggerResponse(
@@ -45,13 +72,8 @@ def overseer_position_response(request):
         message=overseerPositionsString
     )
 
-# Connects subcriber listen to OverseerData
-def overseerDataSub(droneCount):
-    rospy.Subscriber(OVERSEER_DATA_TOPIC, String, updateOverseerData, ())
-    rospy.spin()
-
-
-# Stores drone position to array, moves drone towards average location
+# Stores drone position to array, moves drone towards average location\
+# TODO: handle data storage
 def updateOverseerData(data, args):
     global OVERSEER_POSITIONS
     # Gets drone numbers and saves json data
@@ -62,3 +84,7 @@ def updateOverseerData(data, args):
     droneNum = ''.join(filter(lambda i: i.isdigit(), droneLocationJson['DroneName'])) # Get overseer number from droneName
     curDroneIndex = int(droneNum)
     OVERSEER_POSITIONS[curDroneIndex] = [droneLocationJson['DroneName'], droneLocationJson['Latitude'], droneLocationJson['Longitude'], droneLocationJson['vx'], droneLocationJson['vy']]
+
+
+def debugPrint (debugMessage):
+    print("ProximityOverseer: ",  debugMessage)

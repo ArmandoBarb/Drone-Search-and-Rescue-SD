@@ -1,8 +1,10 @@
 import rospy
 import ast
 from std_srvs.srv import Trigger, TriggerResponse
+# import constants
+import Constants.ros as ros
 
-PROXIMITY_OVERSEER_SERVICE = "ProximityOverseerService"
+PROXIMITY_OVERSEER_SERVICE = ros.PROXIMITY_OVERSEER_SERVICE
 
 def getOverseerState():
     # Get overseer data using a service

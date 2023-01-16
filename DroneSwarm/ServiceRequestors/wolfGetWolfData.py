@@ -3,8 +3,10 @@ import ast
 from airsim_ros_pkgs.msg import droneData
 from airsim_ros_pkgs.srv import getDroneData
 from std_srvs.srv import Trigger, TriggerResponse
+# import constants
+import Constants.ros as ros
 
-PROXIMITY_WOLF_SERVICE = "PromixityWolfService"
+PROXIMITY_WOLF_SERVICE = ros.PROXIMITY_WOLF_SERVICE
 
 def getWolfState():
     # Get wolf data using a service
