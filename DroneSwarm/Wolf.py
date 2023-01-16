@@ -49,7 +49,7 @@ def wolfDroneController(droneName, droneCount):
     # set global vairable
     global DM_Drone_Name
     DM_Drone_Name = droneName
-    
+
     # use this code to make print calls allowing you to know what process made the print statemnt
     debugPrint("Process started")
 
@@ -78,8 +78,8 @@ def wolfDroneController(droneName, droneCount):
         wolfDataPublisher(wolfDataPublish, client, droneName)
 
         # TEST OUT WOLF SERVICE, wolfGetWolfData
-        wolfInfoArray = getWolfState()        # Get droneWolfState state array from service
-        print(wolfInfoArray[3])               # Example of printing wolf drone 1's information
+        # wolfInfoArray = getWolfState()        # Get droneWolfState state array from service
+        # print(wolfInfoArray[0])               # Example of printing wolf drone 3's information
 
         # Get Airsim Data and procesess it here
         # TODO: add Yolo person Detector (if runtime is to long Seprate into thread that runs on intervals)
