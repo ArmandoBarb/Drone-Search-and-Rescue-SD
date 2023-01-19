@@ -19,8 +19,8 @@ from threading import Thread # USe for important code running constantly
 # TODO: Add custom message types
 from std_msgs.msg import String
 from std_srvs.srv import Trigger, TriggerResponse
-# Get service calls here
-from ServiceRequestors.wolfGetWolfData import getWolfState # serevices to get wolf data: Add any needed services here
+from airsim_ros_pkgs.msg import droneData
+from ServiceRequestors.wolfGetWolfData import getWolfState
 
 # Environmental Variables
 RUNTIME = configDrones.RUNTIME
@@ -49,7 +49,7 @@ def wolfDroneController(droneName, droneCount):
     # set global vairable
     global DM_Drone_Name
     DM_Drone_Name = droneName
-    
+
     # use this code to make print calls allowing you to know what process made the print statemnt
     debugPrint("Process started")
 
@@ -64,7 +64,7 @@ def wolfDroneController(droneName, droneCount):
 
     # Create topic publishers
     # (TODO: ADD IN SLAM MERGE AND COMMAND RESULT PUBLISHERS)
-    wolfDataPublish = rospy.Publisher(WOLF_DATA_TOPIC, String, latch=True, queue_size=1)
+    wolfDataPublish = rospy.Publisher(WOLF_DATA_TOPIC, droneData, latch=True, queue_size=1)
 
 
     # Sets and connects to client and takes off drone
@@ -74,6 +74,13 @@ def wolfDroneController(droneName, droneCount):
     i = 0
     debugPrint("Starting Search and Rescue loop")
     while (i < 10):
+        # Publishes to (WolfData) topic
+        wolfDataPublisher(wolfDataPublish, client, droneName)
+
+        # TEST OUT WOLF SERVICE, wolfGetWolfData
+        # wolfInfoArray = getWolfState()        # Get droneWolfState state array from service
+        # print(wolfInfoArray[0])               # Example of printing wolf drone 3's information
+
         # Get Airsim Data and procesess it here
         # TODO: add Yolo person Detector (if runtime is to long Seprate into thread that runs on intervals)
             # getDataFromAirsim -> yolo detect -> update internal drone state or publish data to other drones
@@ -94,6 +101,7 @@ def wolfDroneController(droneName, droneCount):
         # TODO: Make Airsim call with desired action
 
         # Add in artifical loop delay (How fast the loop runs dictates the drones reaction speed)
+
         time.sleep(1)
         i+=1
     debugPrint("Ending Search and Rescue loop")
@@ -122,8 +130,16 @@ def wolfDataPublisher(pub, client, droneName):
     position = client.getMultirotorState(vehicle_name = droneName)
     velocity = client.getGpsData(vehicle_name = droneName)
 
-    jsonWolfInfo = json.dumps({"DroneName": droneName, "Longitude": position.gps_location.longitude, "Latitude": position.gps_location.latitude, "vx": velocity.gnss.velocity.x_val, "vy": velocity.gnss.velocity.y_val}, indent=4)
-    pub.publish(jsonWolfInfo) # publish lcoation
+    # Creates droneMsg object and inserts values from AirSim apis
+    droneMsg = droneData()
+    droneMsg.droneName = droneName
+    droneMsg.longitude = position.gps_location.longitude
+    droneMsg.latitude = position.gps_location.latitude
+    droneMsg.velocityX = velocity.gnss.velocity.x_val
+    droneMsg.velocityY = velocity.gnss.velocity.y_val
+
+    # Publishes to topic
+    pub.publish(droneMsg)
 
 # Enables api control, takes off drone, returns the client
 def takeOff(droneName):
