@@ -13,6 +13,8 @@ import ast
 # import constants
 import Constants.configDrones as configDrones
 import Constants.ros as ros
+# import drone behavior
+from DroneBehaviors.wolfSearchBehavior import wolfSearchBehavior;
 # TODO: Investigate if we need to use a Lock while writing or reading global variables
 from threading import Timer # Use for interval checks with minimal code
 from threading import Thread # USe for important code running constantly
@@ -69,11 +71,13 @@ def wolfDroneController(droneName, droneCount):
 
     # Sets and connects to client and takes off drone
     client = takeOff(droneName)
+    client.moveToZAsync(z=-10, velocity=8, vehicle_name = droneName).join()
+
 
     # Wolf Drone search loop Start
     i = 0
     debugPrint("Starting Search and Rescue loop")
-    while (i < 10):
+    while (i < 1000):
         # Publishes to (WolfData) topic
         wolfDataPublisher(wolfDataPublish, client, droneName)
 
@@ -94,6 +98,11 @@ def wolfDroneController(droneName, droneCount):
         # # TODO: Add in Drone behavior desion making
         # TODO: Line formation behavior
         # TODO: Wolf Search behavior
+        position = client.getMultirotorState(vehicle_name = droneName)
+        targetP = client.getMultirotorState(vehicle_name = "target")
+
+        vector = wolfSearchBehavior(currentGPS=position.gps_location, targetGPS=targetP.gps_location) # may need to refactor to use other gps format
+        client.moveByVelocityZAsync(vector[1], vector[0], -10, duration = 0.5, vehicle_name=droneName)
         # TODO: Consensus Descion behavior
         # TODO: Apply turning to desired action
         # TODO: Overide other behaviors if collisionAvoidance is needed
@@ -102,7 +111,7 @@ def wolfDroneController(droneName, droneCount):
 
         # Add in artifical loop delay (How fast the loop runs dictates the drones reaction speed)
 
-        time.sleep(1)
+        time.sleep(0.1)
         i+=1
     debugPrint("Ending Search and Rescue loop")
     # Wolf Drone search loop End
