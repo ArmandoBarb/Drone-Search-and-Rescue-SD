@@ -15,6 +15,7 @@ import Constants.configDrones as configDrones
 import Constants.ros as ros
 # import drone behavior
 from DroneBehaviors.wolfSearchBehavior import wolfSearchBehavior;
+from DroneBehaviors.lineBehavior import lineBehavior
 # TODO: Investigate if we need to use a Lock while writing or reading global variables
 from threading import Timer # Use for interval checks with minimal code
 from threading import Thread # USe for important code running constantly
@@ -42,6 +43,8 @@ WOLF_DRONE_SERVICE = ros.WOLF_DRONE_SERVICE
 # Global variables
 DM_Drone_Name = None
 DM_Wolfs_Cluster = [] # Drone will beassigned a group of drones to work with
+WAYPOINT_COORDS = [None]*9
+WAYPOINT_INDEX = 0
 # Internal Wolf Drone Memory End -------------------------------------------
 
 # TODO: add tunning variables for behaviors (would be cool if we can train them)
@@ -51,6 +54,11 @@ def wolfDroneController(droneName, droneCount):
     # set global vairable
     global DM_Drone_Name
     DM_Drone_Name = droneName
+    global WAYPOINT_INDEX
+
+    # Sets global values for wolf cluster and coordinate
+    wolfClusterCreation(droneName)
+    readCoordFile()
 
     # use this code to make print calls allowing you to know what process made the print statemnt
     debugPrint("Process started")
@@ -77,7 +85,7 @@ def wolfDroneController(droneName, droneCount):
     # Wolf Drone search loop Start
     i = 0
     debugPrint("Starting Search and Rescue loop")
-    while (i < 1000):
+    while (i < 30):
         # Publishes to (WolfData) topic
         wolfDataPublisher(wolfDataPublish, client, droneName)
 
@@ -96,13 +104,16 @@ def wolfDroneController(droneName, droneCount):
 
 
         # # TODO: Add in Drone behavior desion making
-        # TODO: Line formation behavior
+        # TODO: Line formation behavior, toss in waypoint drone will move to
         # TODO: Wolf Search behavior
-        position = client.getMultirotorState(vehicle_name = droneName)
-        targetP = client.getMultirotorState(vehicle_name = "target")
 
-        vector = wolfSearchBehavior(currentGPS=position.gps_location, targetGPS=targetP.gps_location) # may need to refactor to use other gps format
-        client.moveByVelocityZAsync(vector[1], vector[0], -10, duration = 0.5, vehicle_name=droneName)
+        vector = lineBehavior(client, int(droneName), DM_Wolfs_Cluster, WAYPOINT_COORDS[WAYPOINT_INDEX])
+        # If all drones make it to the waypoint, more to next waypoint
+        allDronesAtWaypoint()
+        print("Wolf", droneName, "At waypoint", WAYPOINT_INDEX)
+
+        # vector = wolfSearchBehavior(currentGPS=position.gps_location, targetGPS=targetP.gps_location) # may need to refactor to use other gps format
+        client.moveByVelocityZAsync(vector[1], vector[0], -10, duration = 1, vehicle_name=droneName)
         # TODO: Consensus Descion behavior
         # TODO: Apply turning to desired action
         # TODO: Overide other behaviors if collisionAvoidance is needed
@@ -111,7 +122,7 @@ def wolfDroneController(droneName, droneCount):
 
         # Add in artifical loop delay (How fast the loop runs dictates the drones reaction speed)
 
-        time.sleep(0.1)
+        time.sleep(1)
         i+=1
     debugPrint("Ending Search and Rescue loop")
     # Wolf Drone search loop End
@@ -127,6 +138,15 @@ def wolfServiceListeners(droneName):
 # Theads END ===========================================
 
 # TODO: Functions need to Refatctor +++++++++++++++++++++++++++++++++++
+
+# Creates drone groups based on wolf number
+def wolfClusterCreation(droneName):
+    droneNum = int(droneName)
+    global DM_Wolfs_Cluster
+    if (droneNum <= 2):
+        DM_Wolfs_Cluster = [0, 1, 2]
+    else:
+        DM_Wolfs_Cluster = [3, 4, 5]
 
 def trigger_response(request):
     return TriggerResponse(
@@ -149,6 +169,37 @@ def wolfDataPublisher(pub, client, droneName):
 
     # Publishes to topic
     pub.publish(droneMsg)
+
+# Reads values in SpiralSearch.txt and sets it to global variable
+def readCoordFile():
+    file = open('Constants/SpiralSearch.txt', 'r')
+    f = file.readlines()
+    i = 0
+
+    # Creates an array for the coordinates and strips the newlines
+    newList = []
+    for line in f:
+        newLine = line.strip()
+        newLine = newLine.split(' ')
+        newList.append(newLine)
+
+    global WAYPOINT_COORDS
+    WAYPOINT_COORDS = newList
+
+def allDronesAtWaypoint():
+    global WAYPOINT_INDEX
+    wolfInfoArray = getWolfState()
+    for droneNum in DM_Wolfs_Cluster:
+        xDifference = wolfInfoArray[droneNum].longitude - float(WAYPOINT_COORDS[WAYPOINT_INDEX][0])
+        yDifference = wolfInfoArray[droneNum].latitude - float(WAYPOINT_COORDS[WAYPOINT_INDEX][1])
+
+        # If any of the drones are out of bounds, return false
+        if ((abs(xDifference) > 0.0001) or (abs(yDifference) > 0.0001)):
+            return 0
+
+    WAYPOINT_INDEX = WAYPOINT_INDEX + 1
+    return 1
+
 
 # Enables api control, takes off drone, returns the client
 def takeOff(droneName):
