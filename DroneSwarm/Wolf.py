@@ -45,6 +45,8 @@ DM_Drone_Name = None
 DM_Wolfs_Cluster = [] # Drone will beassigned a group of drones to work with
 WAYPOINT_COORDS = [None]*9
 WAYPOINT_INDEX = 0
+GROUP_0_SEARCH = 'Constants/Group0Spiral.txt'
+GROUP_1_SEARCH = 'Constants/Group1Spiral.txt'
 # Internal Wolf Drone Memory End -------------------------------------------
 
 # TODO: add tunning variables for behaviors (would be cool if we can train them)
@@ -58,7 +60,11 @@ def wolfDroneController(droneName, droneCount):
 
     # Sets global values for wolf cluster and coordinate
     wolfClusterCreation(droneName)
-    readCoordFile()
+    droneBoundary = (int(droneCount) / 2)
+    if (int(droneName) <= 2):
+        readCoordFile(GROUP_0_SEARCH)
+    else:
+        readCoordFile(GROUP_1_SEARCH)
 
     # use this code to make print calls allowing you to know what process made the print statemnt
     debugPrint("Process started")
@@ -110,7 +116,7 @@ def wolfDroneController(droneName, droneCount):
         vector = lineBehavior(client, int(droneName), DM_Wolfs_Cluster, WAYPOINT_COORDS[WAYPOINT_INDEX])
         # If all drones make it to the waypoint, more to next waypoint
         allDronesAtWaypoint()
-        print("Wolf", droneName, "At waypoint", WAYPOINT_INDEX)
+        # print("Wolf", droneName, "At waypoint", WAYPOINT_INDEX)
 
         # vector = wolfSearchBehavior(currentGPS=position.gps_location, targetGPS=targetP.gps_location) # may need to refactor to use other gps format
         client.moveByVelocityZAsync(vector[1], vector[0], -10, duration = 1, vehicle_name=droneName)
@@ -171,8 +177,8 @@ def wolfDataPublisher(pub, client, droneName):
     pub.publish(droneMsg)
 
 # Reads values in SpiralSearch.txt and sets it to global variable
-def readCoordFile():
-    file = open('Constants/SpiralSearch.txt', 'r')
+def readCoordFile(filename):
+    file = open(filename, 'r')
     f = file.readlines()
     i = 0
 
@@ -198,6 +204,7 @@ def allDronesAtWaypoint():
             return 0
 
     WAYPOINT_INDEX = WAYPOINT_INDEX + 1
+    print("Drones:", DM_Wolfs_Cluster, "Made it to waypoint:", WAYPOINT_INDEX)
     return 1
 
 

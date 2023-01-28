@@ -49,7 +49,7 @@ def waypointDirection(client, curDroneIndex, waypoint):
 
     # If at waypoint, don't move
     if ((abs(xDifference) < 0.0001) and (abs(yDifference) < 0.0001)):
-        print("Drone:", curDroneIndex, "At waypoint")
+        # print("Drone:", curDroneIndex, "At waypoint")
         finalVelocity = [0, 0]
     # Else move to waypoint
     else:
@@ -61,9 +61,6 @@ def waypointDirection(client, curDroneIndex, waypoint):
 
 
 def lineBehavior(client, curDroneIndex, DM_Wolfs_Cluster, waypoint_coords):
-    # waypoint = [-122.1401, 47.6416]
-    print(waypoint_coords)
-    waypoint = [-122.1401, 47.6410]
     wolfInfoArray = getWolfState()
     # If there currently is not droneData, return 0
     if (wolfInfoArray[0].droneName == ""):
