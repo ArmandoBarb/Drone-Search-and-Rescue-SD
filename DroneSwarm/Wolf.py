@@ -10,6 +10,8 @@ import rospy
 import time
 import json
 import ast
+import math
+from math import sqrt
 # import constants
 import Constants.configDrones as configDrones
 import Constants.ros as ros
@@ -43,7 +45,7 @@ WOLF_DRONE_SERVICE = ros.WOLF_DRONE_SERVICE
 # Global variables
 DM_Drone_Name = None
 DM_Wolfs_Cluster = [] # Drone will beassigned a group of drones to work with
-WAYPOINT_COORDS = [None]*9
+WAYPOINT_COORDS = []
 WAYPOINT_INDEX = 0
 GROUP_0_SEARCH = 'Constants/Group0Spiral.txt'
 GROUP_1_SEARCH = 'Constants/Group1Spiral.txt'
@@ -91,7 +93,7 @@ def wolfDroneController(droneName, droneCount):
     # Wolf Drone search loop Start
     i = 0
     debugPrint("Starting Search and Rescue loop")
-    while (i < 30):
+    while (i < 60):
         # Publishes to (WolfData) topic
         wolfDataPublisher(wolfDataPublish, client, droneName)
 
@@ -113,10 +115,13 @@ def wolfDroneController(droneName, droneCount):
         # TODO: Line formation behavior, toss in waypoint drone will move to
         # TODO: Wolf Search behavior
 
-        vector = lineBehavior(client, int(droneName), DM_Wolfs_Cluster, WAYPOINT_COORDS[WAYPOINT_INDEX])
+        # Gets waypoint for drone to move to based on index
+        newWaypoint = getNewWaypoint(droneName)
+        # Does line behavior to move to waypoints
+        vector = lineBehavior(client, int(droneName), DM_Wolfs_Cluster, newWaypoint)
+
         # If all drones make it to the waypoint, more to next waypoint
         allDronesAtWaypoint()
-        # print("Wolf", droneName, "At waypoint", WAYPOINT_INDEX)
 
         # vector = wolfSearchBehavior(currentGPS=position.gps_location, targetGPS=targetP.gps_location) # may need to refactor to use other gps format
         client.moveByVelocityZAsync(vector[1], vector[0], -10, duration = 1, vehicle_name=droneName)
@@ -176,6 +181,48 @@ def wolfDataPublisher(pub, client, droneName):
     # Publishes to topic
     pub.publish(droneMsg)
 
+# Function get drones subwaypoint based on index
+def getNewWaypoint(droneName):
+    # Created global waypoints
+    global WAYPOINT_INDEX
+    print("DroneName: ", droneName, "Current waypoint index", WAYPOINT_INDEX)
+    currentWaypoint = WAYPOINT_COORDS[WAYPOINT_INDEX]
+    newWaypoint = currentWaypoint
+
+    if (WAYPOINT_INDEX >= 1):
+        # Radius in charge of distance between drones
+        radius = 0.0001
+        previousWaypoint = WAYPOINT_COORDS[WAYPOINT_INDEX-1]
+
+        # Finds vector between waypoints
+        waypointDiffX = float(currentWaypoint[0]) - float(previousWaypoint[0])
+        waypointDiffY = float(currentWaypoint[1]) - float(previousWaypoint[1])
+
+        # Gets normalized difference vector
+        vectorVal = sqrt(waypointDiffX**2 + waypointDiffY**2)
+        xDirection = (waypointDiffX/vectorVal) * radius
+        yDirection = (waypointDiffY/vectorVal) * radius
+
+        # Moves first drone left of the waypoint
+        if ((int(droneName) % 3) == 0):
+            newWaypointX = float(currentWaypoint[0]) - yDirection
+            newWaypointY = float(currentWaypoint[1]) + xDirection
+            newWaypoint = [float(newWaypointX), float(newWaypointY)]
+            print("Drone", droneName, "Int dronename", (int(droneName)), "Moving to ", newWaypoint)
+        # Moves second drone directly to waypoint
+        elif((int(droneName) % 3) == 1):
+            newWaypoint = currentWaypoint
+            print("Drone", droneName, "Moving to ", newWaypoint)
+        # Moves third drone right of the waypoint
+        elif((int(droneName) % 3) == 2):
+            newWaypointX = float(currentWaypoint[0]) + yDirection
+            newWaypointY = float(currentWaypoint[1]) - xDirection
+            newWaypoint = [float(newWaypointX), float(newWaypointY)]
+            print("Drone", droneName, "Int dronename", (int(droneName)), "Moving to ", newWaypoint)
+
+    return newWaypoint
+
+
 # Reads values in SpiralSearch.txt and sets it to global variable
 def readCoordFile(filename):
     file = open(filename, 'r')
@@ -200,7 +247,7 @@ def allDronesAtWaypoint():
         yDifference = wolfInfoArray[droneNum].latitude - float(WAYPOINT_COORDS[WAYPOINT_INDEX][1])
 
         # If any of the drones are out of bounds, return false
-        if ((abs(xDifference) > 0.0001) or (abs(yDifference) > 0.0001)):
+        if ((abs(xDifference) > 0.00015) or (abs(yDifference) > 0.00015)):
             return 0
 
     WAYPOINT_INDEX = WAYPOINT_INDEX + 1

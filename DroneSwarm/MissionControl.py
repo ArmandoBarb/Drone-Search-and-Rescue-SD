@@ -16,6 +16,7 @@ from ctypes import Structure, c_int
 from multiprocessing.sharedctypes import Array
 import multiprocessing as mp
 from std_msgs.msg import String
+from DroneBehaviors.spiralSearchCreator import createWaypoints
 # import constants
 import Constants.configDrones as configDrones
 import Constants.ros as ros
@@ -34,6 +35,8 @@ print('Starting Mission Control')
 if __name__ == '__main__': # Only runs if this is main processes
     mp.set_start_method('fork') # windows specific. Change based on OS.
 
+    createWaypoints()
+
     # overseerCount = mp.cpu_count() - 5
     overseerCount = 2
     wolfCount = 6
@@ -46,7 +49,7 @@ if __name__ == '__main__': # Only runs if this is main processes
         mp.Process(target=wolfDroneController, args=(droneName,wolfCount)).start()
 
     # Start overseer proximity subscriber and overseer nodes
-    
+
     mp.Process(target=startProximityOverseer, args=(overseerCount,)).start()
     for overseer in range(overseerCount):
         droneNum = str(overseer)
