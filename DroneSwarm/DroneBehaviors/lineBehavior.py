@@ -4,9 +4,11 @@ from std_msgs.msg import String
 from std_srvs.srv import Trigger, TriggerResponse
 from airsim_ros_pkgs.msg import droneData
 from ServiceRequestors.wolfGetWolfData import getWolfState
+from ServiceRequestors.overseerGetOverseerData import getOverseerState
 
 AVOID_FACTOR = 0.01
 DIRECTION_FACTOR = 5
+OVERSEER_DIRECTION_FACTOR = 7
 REPULSION_RADIUS = 0.0003
 
 def repulsion(client, curDroneIndex):
@@ -80,3 +82,27 @@ def lineBehavior(client, curDroneIndex, DM_Wolfs_Cluster, waypoint_coords):
     vector = [finalVelocityX, finalVelocityY]
 
     return vector
+
+# Creates directional vector towards waypoint
+def overseerWaypoint(client, curDroneIndex, waypoint):
+    # Gets data from all drones
+    overseerInfoArray = getOverseerState()
+
+    # Gets x and y difference between drone and waypoint
+    xDifference = float(waypoint[0]) - overseerInfoArray[curDroneIndex].longitude
+    yDifference = float(waypoint[1]) - overseerInfoArray[curDroneIndex].latitude
+
+    # If within certain distance of waypoint, don't move
+    if ((abs(xDifference) < 0.0001) and (abs(yDifference) < 0.0001)):
+        finalVelocity = [0, 0]
+
+    # Else move to waypoint
+    else:
+        # Gets normalized difference values and adds in directional factor
+        xNormalized = (xDifference / sqrt(xDifference**2 + yDifference**2))*OVERSEER_DIRECTION_FACTOR
+        yNormalized = (yDifference / sqrt(xDifference**2 + yDifference**2))*OVERSEER_DIRECTION_FACTOR
+
+        # Saves final weighted vector to final velocity
+        finalVelocity = [xNormalized, yNormalized]
+
+    return finalVelocity

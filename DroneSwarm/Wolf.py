@@ -93,7 +93,7 @@ def wolfDroneController(droneName, droneCount):
     # Wolf Drone search loop Start
     i = 0
     debugPrint("Starting Search and Rescue loop")
-    while (i < 60):
+    while (i < RUNTIME):
         # Publishes to (WolfData) topic
         wolfDataPublisher(wolfDataPublish, client, droneName)
 
@@ -185,7 +185,7 @@ def wolfDataPublisher(pub, client, droneName):
 def getNewWaypoint(droneName):
     # Created global waypoints
     global WAYPOINT_INDEX
-    print("DroneName: ", droneName, "Current waypoint index", WAYPOINT_INDEX)
+    # print("DroneName: ", droneName, "Current waypoint index", WAYPOINT_INDEX)
     currentWaypoint = WAYPOINT_COORDS[WAYPOINT_INDEX]
     newWaypoint = currentWaypoint
 
@@ -203,22 +203,50 @@ def getNewWaypoint(droneName):
         xDirection = (waypointDiffX/vectorVal) * radius
         yDirection = (waypointDiffY/vectorVal) * radius
 
-        # Moves first drone left of the waypoint
-        if ((int(droneName) % 3) == 0):
-            newWaypointX = float(currentWaypoint[0]) - yDirection
-            newWaypointY = float(currentWaypoint[1]) + xDirection
-            newWaypoint = [float(newWaypointX), float(newWaypointY)]
-            print("Drone", droneName, "Int dronename", (int(droneName)), "Moving to ", newWaypoint)
-        # Moves second drone directly to waypoint
-        elif((int(droneName) % 3) == 1):
-            newWaypoint = currentWaypoint
-            print("Drone", droneName, "Moving to ", newWaypoint)
-        # Moves third drone right of the waypoint
-        elif((int(droneName) % 3) == 2):
-            newWaypointX = float(currentWaypoint[0]) + yDirection
-            newWaypointY = float(currentWaypoint[1]) - xDirection
-            newWaypoint = [float(newWaypointX), float(newWaypointY)]
-            print("Drone", droneName, "Int dronename", (int(droneName)), "Moving to ", newWaypoint)
+        # Creates lanes for 3 group clusters
+        if (len(DM_Wolfs_Cluster) == 3):
+            # Moves first drone left of the waypoint
+            if ((int(droneName) % 3) == 0):
+                newWaypointX = float(currentWaypoint[0]) - yDirection
+                newWaypointY = float(currentWaypoint[1]) + xDirection
+                newWaypoint = [float(newWaypointX), float(newWaypointY)]
+                # print("Drone", droneName, "Int dronename", (int(droneName)), "Moving to ", newWaypoint)
+            # Moves second drone directly to waypoint
+            elif((int(droneName) % 3) == 1):
+                newWaypoint = currentWaypoint
+                # print("Drone", droneName, "Moving to ", newWaypoint)
+            # Moves third drone right of the waypoint
+            elif((int(droneName) % 3) == 2):
+                newWaypointX = float(currentWaypoint[0]) + yDirection
+                newWaypointY = float(currentWaypoint[1]) - xDirection
+                newWaypoint = [float(newWaypointX), float(newWaypointY)]
+                # print("Drone", droneName, "Int dronename", (int(droneName)), "Moving to ", newWaypoint)
+
+        # Creates lanes for 4 group clusters
+        if (len(DM_Wolfs_Cluster) == 4):
+            # Moves first drone left of the waypoint
+            if ((int(droneName) % 4) == 0):
+                newWaypointX = float(currentWaypoint[0]) - (yDirection * 1.5)
+                newWaypointY = float(currentWaypoint[1]) + (xDirection * 1.5)
+                newWaypoint = [float(newWaypointX), float(newWaypointY)]
+                # print("Drone", droneName, "Int dronename", (int(droneName)), "Moving to ", newWaypoint)
+            # Moves second drone directly to waypoint
+            elif((int(droneName) % 4) == 1):
+                newWaypointX = float(currentWaypoint[0]) - (yDirection * 0.5)
+                newWaypointY = float(currentWaypoint[1]) + (xDirection * 0.5)
+                newWaypoint = [float(newWaypointX), float(newWaypointY)]
+            elif ((int(droneName) % 4) == 2):
+                newWaypointX = float(currentWaypoint[0]) + (yDirection * 0.5)
+                newWaypointY = float(currentWaypoint[1]) - (xDirection * 0.5)
+                newWaypoint = [float(newWaypointX), float(newWaypointY)]
+                # print("Drone", droneName, "Moving to ", newWaypoint)
+            # Moves third drone right of the waypoint
+            elif((int(droneName) % 4) == 3):
+                newWaypointX = float(currentWaypoint[0]) + (yDirection * 1.5)
+                newWaypointY = float(currentWaypoint[1]) - (xDirection * 1.5)
+                newWaypoint = [float(newWaypointX), float(newWaypointY)]
+                # print("Drone", droneName, "Int dronename", (int(droneName)), "Moving to ", newWaypoint)
+
 
     return newWaypoint
 
