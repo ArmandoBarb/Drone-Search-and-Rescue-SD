@@ -1,0 +1,209 @@
+{
+  "SeeDocsAt": "https://github.com/Microsoft/AirSim/blob/main/docs/settings.md",
+  "SettingsVersion": 1.2,
+  "SimMode": "Multirotor",
+  "ClockSpeed": 1,
+  "OriginGeopoint": {
+    "Latitude": 0,
+    "Longitude": 0,
+    "Altitude": 0
+  },
+  "Vehicles":
+  {
+    "0": {
+      "VehicleType": "SimpleFlight",
+      "EnableCollisions": true,
+      "AllowAPIAlways": true,
+      "DefaultVehicleState": "Disarmed",
+      "EnableTrace": true,
+      "ControlIp": "172.17.0.1",
+      "ControlPort": 139,
+      "LocalHostIp": "192.168.86.40",
+      "Cameras": {
+      },
+      "X": 0,
+      "Y": 4,
+      "Z": 0
+    },
+    "1": {
+      "VehicleType": "SimpleFlight",
+      "EnableCollisions": true,
+      "AllowAPIAlways": true,
+      "DefaultVehicleState": "Disarmed",
+      "EnableTrace": true,
+      "ControlIp": "172.17.0.1",
+      "ControlPort": 139,
+      "LocalHostIp": "192.168.86.40",
+      "Cameras": {
+      },
+      "X": 0,
+      "Y": 2,
+      "Z": 0
+    },
+    "2": {
+      "VehicleType": "SimpleFlight",
+      "EnableCollisions": true,
+      "AllowAPIAlways": true,
+      "DefaultVehicleState": "Disarmed",
+      "EnableTrace": true,
+      "ControlIp": "172.17.0.1",
+      "ControlPort": 139,
+      "LocalHostIp": "192.168.86.40",
+      "Cameras": {
+      },
+      "X": 0,
+      "Y": 0,
+      "Z": 0
+    },
+    "3": {
+      "VehicleType": "SimpleFlight",
+      "EnableCollisions": true,
+      "AllowAPIAlways": true,
+      "DefaultVehicleState": "Disarmed",
+      "EnableTrace": true,
+      "ControlIp": "172.17.0.1",
+      "ControlPort": 139,
+      "LocalHostIp": "192.168.86.40",
+      "Cameras": {
+      },
+      "X": 0,
+      "Y": -2,
+      "Z": 0
+    },
+    "4": {
+      "VehicleType": "SimpleFlight",
+      "EnableCollisions": true,
+      "AllowAPIAlways": true,
+      "DefaultVehicleState": "Disarmed",
+      "EnableTrace": true,
+      "ControlIp": "172.17.0.1",
+      "ControlPort": 139,
+      "LocalHostIp": "192.168.86.40",
+      "Cameras": {
+      },
+      "X": 0,
+      "Y": -4,
+      "Z": 0
+    },
+    "5": {
+      "VehicleType": "SimpleFlight",
+      "EnableCollisions": true,
+      "AllowAPIAlways": true,
+      "DefaultVehicleState": "Disarmed",
+      "EnableTrace": true,
+      "ControlIp": "172.17.0.1",
+      "ControlPort": 139,
+      "LocalHostIp": "192.168.86.40",
+      "Cameras": {
+      },
+      "X": 0,
+      "Y": -6,
+      "Z": 0
+    },
+    "6": {
+      "VehicleType": "SimpleFlight",
+      "EnableCollisions": true,
+      "AllowAPIAlways": true,
+      "DefaultVehicleState": "Disarmed",
+      "EnableTrace": true,
+      "ControlIp": "172.17.0.1",
+      "ControlPort": 139,
+      "LocalHostIp": "192.168.86.40",
+      "Cameras": {
+      },
+      "X": 0,
+      "Y": 6,
+      "Z": 0
+    },
+    "7": {
+      "VehicleType": "SimpleFlight",
+      "EnableCollisions": true,
+      "AllowAPIAlways": true,
+      "DefaultVehicleState": "Disarmed",
+      "EnableTrace": true,
+      "ControlIp": "172.17.0.1",
+      "ControlPort": 139,
+      "LocalHostIp": "192.168.86.40",
+      "Cameras": {
+      },
+      "X": 0,
+      "Y": 8,
+      "Z": 0
+    },
+    "8": {
+      "VehicleType": "SimpleFlight",
+      "EnableCollisions": true,
+      "AllowAPIAlways": true,
+      "DefaultVehicleState": "Disarmed",
+      "EnableTrace": true,
+      "ControlIp": "172.17.0.1",
+      "ControlPort": 139,
+      "LocalHostIp": "192.168.86.40",
+      "Cameras": {
+      },
+      "X": 0,
+      "Y": -8,
+      "Z": 0
+    },
+    "9": {
+      "VehicleType": "SimpleFlight",
+      "EnableCollisions": true,
+      "AllowAPIAlways": true,
+      "DefaultVehicleState": "Disarmed",
+      "EnableTrace": true,
+      "ControlIp": "172.17.0.1",
+      "ControlPort": 139,
+      "LocalHostIp": "192.168.86.40",
+      "Cameras": {
+      },
+      "X": 0,
+      "Y": 10,
+      "Z": 0
+    },
+    "10": {
+      "VehicleType": "SimpleFlight",
+      "EnableCollisions": true,
+      "AllowAPIAlways": true,
+      "DefaultVehicleState": "Disarmed",
+      "EnableTrace": true,
+      "ControlIp": "172.17.0.1",
+      "ControlPort": 139,
+      "LocalHostIp": "192.168.86.40",
+      "Cameras": {
+      },
+      "X": 0,
+      "Y": -10,
+      "Z": 0
+    },
+    "Overseer_0": {
+      "VehicleType": "SimpleFlight",
+      "EnableCollisions": true,
+      "AllowAPIAlways": true,
+      "DefaultVehicleState": "Disarmed",
+      "EnableTrace": true,
+      "ControlIp": "172.17.0.1",
+      "ControlPort": 139,
+      "LocalHostIp": "192.168.86.40",
+      "Cameras": {
+      },
+      "X": 0,
+      "Y": 12,
+      "Z": 0
+    },
+    "Overseer_1": {
+      "VehicleType": "SimpleFlight",
+      "EnableCollisions": true,
+      "AllowAPIAlways": true,
+      "DefaultVehicleState": "Disarmed",
+      "EnableTrace": true,
+      "ControlIp": "172.17.0.1",
+      "ControlPort": 139,
+      "LocalHostIp": "192.168.86.40",
+      "Cameras": {
+      },
+      "X": 0,
+      "Y": -12,
+      "Z": 0
+    }
+  }
+}

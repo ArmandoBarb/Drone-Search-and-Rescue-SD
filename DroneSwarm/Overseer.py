@@ -25,6 +25,9 @@ from std_srvs.srv import Trigger, TriggerResponse
 from ServiceRequestors.instructWolf import sendWolfCommandClusterInfo
 from ServiceRequestors.overseerGetOverseerData import getOverseerState
 from ServiceRequestors.overseerGetWolfData import getOverseerGetWolfState
+from DroneBehaviors.lineBehavior import overseerWaypoint
+from airsim_ros_pkgs.msg import droneData
+from ServiceRequestors.wolfGetWolfData import getWolfState
 
 # Environmental Variables
 RUNTIME = configDrones.RUNTIME
@@ -45,6 +48,11 @@ WOLF_DRONE_SERVICE = ros.WOLF_DRONE_SERVICE
 # Current pattern is ussing Global variable to allow access across threads (open to change)
 # Global variables
 DM_Drone_Name = None
+DM_Wolfs_Cluster = []
+WAYPOINT_COORDS = []
+WAYPOINT_INDEX = 0
+GROUP_0_SEARCH = 'Constants/Group0Spiral.txt'
+GROUP_1_SEARCH = 'Constants/Group1Spiral.txt'
 
 # Main Process Start ----------------------------------------------
 # Main function for the overseer drone
@@ -60,6 +68,15 @@ def overseerDroneController(droneName, droneCount):
     nodeName = droneName
     rospy.init_node(nodeName, anonymous = True)
 
+    # Get wolf cluster
+    wolfClusterCreation(droneName)
+
+    # Reads in coords for drone
+    if (droneName == "Overseer_0"):
+        readCoordFile(GROUP_0_SEARCH)
+    else:
+        readCoordFile(GROUP_1_SEARCH)
+
 
     # Call startup service on each wolf
     droneLimit = int(droneNum) * 3
@@ -74,11 +91,12 @@ def overseerDroneController(droneName, droneCount):
 
     # Create topic publishers
     # (TODO: ADD IN COMMAND RESULT PUBLISHERS)
-    overseerDataPublish = rospy.Publisher(OVERSEER_DATA_TOPIC, String, latch=True, queue_size=1)
+    overseerDataPublish = rospy.Publisher(OVERSEER_DATA_TOPIC, droneData, latch=True, queue_size=1)
     overseerCommunicationPublish = rospy.Publisher(OVERSEER_COMMUNICATION_TOPIC, String, latch=True, queue_size=1)
 
     # Sets client and takes off drone
     client = takeOff(droneName)
+    client.moveToZAsync(z=-35, velocity=8, vehicle_name = droneName).join()
 
     # Overseer Drone search loop Start
     i = 0
@@ -97,6 +115,14 @@ def overseerDroneController(droneName, droneCount):
         # TODO: cordinate drone clustering
         overseerCommunicationPublisher(overseerCommunicationPublish, client, droneName)
         # TODO: Update assigned wolf drones on search area
+
+        waypoint = getNewWaypoint(droneName)
+        vector = overseerWaypoint(client, int(droneNum), waypoint)
+
+        # If all drones make it to the waypoint, more to next waypoint
+        allDronesAtWaypoint()
+
+        client.moveByVelocityZAsync(vector[1], vector[0], -35, duration = 1, vehicle_name=droneName)
 
         # TODO: Add in Overseer behavior
         # TODO: Creeping Line lead behavior
@@ -146,8 +172,16 @@ def overseerDataPublisher(pub, client, droneName):
     position = client.getMultirotorState(vehicle_name = droneName)
     velocity = client.getGpsData(vehicle_name = droneName)
 
-    jsonWolfInfo = json.dumps({"DroneName": droneName, "Longitude": position.gps_location.longitude, "Latitude": position.gps_location.latitude, "vx": velocity.gnss.velocity.x_val, "vy": velocity.gnss.velocity.y_val}, indent=4)
-    pub.publish(jsonWolfInfo) # publish lcoation
+    # Creates droneMsg object and inserts values from AirSim apis
+    droneMsg = droneData()
+    droneMsg.droneName = droneName
+    droneMsg.longitude = position.gps_location.longitude
+    droneMsg.latitude = position.gps_location.latitude
+    droneMsg.velocityX = velocity.gnss.velocity.x_val
+    droneMsg.velocityY = velocity.gnss.velocity.y_val
+
+    # Publishes to topic
+    pub.publish(droneMsg)
 
 # Publishes data to OverseerDroneData topic
 def updateDroneData(pub, client):
@@ -170,3 +204,50 @@ def takeOff(droneName):
 def debugPrint (debugMessage):
     global DM_Drone_Name
     print("Overseer: ", DM_Drone_Name, " : " ,  debugMessage)
+
+def getNewWaypoint(droneName):
+    # Created global waypoints
+    global WAYPOINT_INDEX
+    # print("DroneName: ", droneName, "Current waypoint index", WAYPOINT_INDEX)
+    currentWaypoint = WAYPOINT_COORDS[WAYPOINT_INDEX]
+
+    return currentWaypoint
+
+# Reads values in SpiralSearch.txt and sets it to global variable
+def readCoordFile(filename):
+    file = open(filename, 'r')
+    f = file.readlines()
+    i = 0
+
+    # Creates an array for the coordinates and strips the newlines
+    newList = []
+    for line in f:
+        newLine = line.strip()
+        newLine = newLine.split(' ')
+        newList.append(newLine)
+
+    global WAYPOINT_COORDS
+    WAYPOINT_COORDS = newList
+
+# Creates drone groups based on wolf number
+def wolfClusterCreation(droneName):
+    global DM_Wolfs_Cluster
+    if (droneName == "Overseer_0"):
+        DM_Wolfs_Cluster = [0, 1, 2]
+    else:
+        DM_Wolfs_Cluster = [3, 4, 5]
+
+def allDronesAtWaypoint():
+    global WAYPOINT_INDEX
+    wolfInfoArray = getWolfState()
+    for droneNum in DM_Wolfs_Cluster:
+        xDifference = wolfInfoArray[droneNum].longitude - float(WAYPOINT_COORDS[WAYPOINT_INDEX][0])
+        yDifference = wolfInfoArray[droneNum].latitude - float(WAYPOINT_COORDS[WAYPOINT_INDEX][1])
+
+        # If any of the drones are out of bounds, return false
+        if ((abs(xDifference) > 0.00015) or (abs(yDifference) > 0.00015)):
+            return 0
+
+    WAYPOINT_INDEX = WAYPOINT_INDEX + 1
+    # print("Drones:", DM_Wolfs_Cluster, "Made it to waypoint:", WAYPOINT_INDEX)
+    return 1

@@ -10,10 +10,9 @@ def getOverseerGetWolfState():
     # Get wolf data using a service
     rospy.wait_for_service(PROXIMITY_WOLF_SERVICE)
 
-    # Gets service response and messsage from WolfData
-    response = rospy.ServiceProxy(PROXIMITY_WOLF_SERVICE, Trigger)
+    # Gets service response and droneDataArray from WolfData
+    response = rospy.ServiceProxy(PROXIMITY_WOLF_SERVICE, getDroneData)
     resp = response()
-    responseText = resp.message
-    convertedResponseArray = ast.literal_eval(responseText)
+    responseText = resp.droneDataArray
 
-    return convertedResponseArray
+    return responseText
