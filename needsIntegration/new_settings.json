@@ -20,20 +20,6 @@
         "ControlPort": 139,
         "LocalHostIp": "192.168.86.40",
         "Cameras": {
-          "Cam0": {
-              "ImageType": 0,
-              "Width": 256,
-              "Height": 144,
-              "FOV_Degrees": 90,
-              "AutoExposureSpeed": 100,
-              "AutoExposureBias": 0,
-              "AutoExposureMaxBrightness": 0.64,
-              "AutoExposureMinBrightness": 0.03,
-              "MotionBlurAmount": 0,
-              "TargetGamma": 1.0,
-              "ProjectionMode": "",
-              "OrthoWidth": 5.12
-            }
         },
         "Sensors":{
             "LidarSensor1":{
@@ -76,20 +62,6 @@
         "ControlPort": 139,
         "LocalHostIp": "192.168.86.40",
         "Cameras": {
-          "Cam1": {
-              "ImageType": 0,
-              "Width": 256,
-              "Height": 144,
-              "FOV_Degrees": 90,
-              "AutoExposureSpeed": 100,
-              "AutoExposureBias": 0,
-              "AutoExposureMaxBrightness": 0.64,
-              "AutoExposureMinBrightness": 0.03,
-              "MotionBlurAmount": 0,
-              "TargetGamma": 1.0,
-              "ProjectionMode": "",
-              "OrthoWidth": 5.12
-            }
         },
         "X": 0,
         "Y": 2,
@@ -105,20 +77,6 @@
         "ControlPort": 139,
         "LocalHostIp": "192.168.86.40",
         "Cameras": {
-          "Cam2": {
-              "ImageType": 0,
-              "Width": 256,
-              "Height": 144,
-              "FOV_Degrees": 90,
-              "AutoExposureSpeed": 100,
-              "AutoExposureBias": 0,
-              "AutoExposureMaxBrightness": 0.64,
-              "AutoExposureMinBrightness": 0.03,
-              "MotionBlurAmount": 0,
-              "TargetGamma": 1.0,
-              "ProjectionMode": "",
-              "OrthoWidth": 5.12
-            }
         },
         "Sensors":{
             "LidarSensor1":{
@@ -564,21 +522,21 @@
       "SubWindows": [
         {
           "WindowID": 0,
-          "CameraName": "Cam0",
+          "CameraName": "0",
           "ImageType": 0,
           "VehicleName": "0",
           "Visible": true
         },
         {
           "WindowID": 1,
-          "CameraName": "Cam1",
+          "CameraName": "1",
           "ImageType": 0,
           "VehicleName": "1",
           "Visible": true
         },
         {
           "WindowID": 2,
-          "CameraName": "Cam2",
+          "CameraName": "2",
           "ImageType": 0,
           "VehicleName": "2",
           "Visible": true
