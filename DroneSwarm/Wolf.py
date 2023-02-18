@@ -11,7 +11,12 @@ import time
 import json
 import ast
 import math
+import os
+import numpy as np
+import cv2
+import pprint
 from math import sqrt
+from split_image import split_image
 # import constants
 import Constants.configDrones as configDrones
 import Constants.ros as ros
@@ -49,6 +54,7 @@ WAYPOINT_COORDS = []
 WAYPOINT_INDEX = 0
 GROUP_0_SEARCH = 'Constants/Group0Spiral.txt'
 GROUP_1_SEARCH = 'Constants/Group1Spiral.txt'
+imgDir = 'D:\AirSim\AirSim\dataCollection'
 # Internal Wolf Drone Memory End -------------------------------------------
 
 # TODO: add tunning variables for behaviors (would be cool if we can train them)
@@ -97,10 +103,6 @@ def wolfDroneController(droneName, droneCount):
         # Publishes to (WolfData) topic
         wolfDataPublisher(wolfDataPublish, client, droneName)
 
-        # TEST OUT WOLF SERVICE, wolfGetWolfData
-        # wolfInfoArray = getWolfState()        # Get droneWolfState state array from service
-        # print(wolfInfoArray[0])               # Example of printing wolf drone 3's information
-
         # Get Airsim Data and procesess it here
         # TODO: add Yolo person Detector (if runtime is to long Seprate into thread that runs on intervals)
             # getDataFromAirsim -> yolo detect -> update internal drone state or publish data to other drones
@@ -110,21 +112,39 @@ def wolfDroneController(droneName, droneCount):
             # getNeededAirSimData -> checkForCollision -> update collision behavior
         collisionAvoidance = False # set to true if need to do collision avoidance (open to better integration method)
 
+        # GET IMAGE AND SET COLLLISION TO TRUE IF IN bounds
+        # IF IN COLLISION DISTANCE, DO COLLISION
+
+        collisionAvoidance = doCollisionDetection(client, droneName)
+        if (collisionAvoidance):
+            print("DOING COLLISION")
+            # IF OUR COLLISION DETECTION IS TRUE, CALCULATES MOVEMENT VECTOR
 
         # # TODO: Add in Drone behavior desion making
         # TODO: Line formation behavior, toss in waypoint drone will move to
         # TODO: Wolf Search behavior
 
-        # Gets waypoint for drone to move to based on index
-        newWaypoint = getNewWaypoint(droneName)
-        # Does line behavior to move to waypoints
-        vector = lineBehavior(client, int(droneName), DM_Wolfs_Cluster, newWaypoint)
+        # OTHERWISE, DO LINE BEHAVIOR
+        else:
+            # LINE BEHAVIOR
+            # Gets waypoint for drone to move to based on index
+            # Does line behavior to move to waypoints
+            newWaypoint = getNewWaypoint(droneName)
+            vector = lineBehavior(client, int(droneName), DM_Wolfs_Cluster, newWaypoint)
 
         # If all drones make it to the waypoint, more to next waypoint
         allDronesAtWaypoint()
 
+        # Calculates turning of cameras using velocity angles and yaw
+        if (vector[1] != 0):
+            yaw = math.atan2(vector[0], vector[1])
+            degrees = math.degrees(yaw)
+            print(droneName, "Yaw:", degrees, "X:", vector[0], "Y:", vector[1])
+            client.moveByVelocityZAsync(vector[1], vector[0], -10, yaw_mode = {   'is_rate': False, 'yaw_or_rate': degrees}, duration = 1, vehicle_name=droneName)
+        else:
+            client.moveByVelocityZAsync(vector[1], vector[0], -10, duration = 1, vehicle_name=droneName)
+
         # vector = wolfSearchBehavior(currentGPS=position.gps_location, targetGPS=targetP.gps_location) # may need to refactor to use other gps format
-        client.moveByVelocityZAsync(vector[1], vector[0], -10, duration = 1, vehicle_name=droneName)
         # TODO: Consensus Descion behavior
         # TODO: Apply turning to desired action
         # TODO: Overide other behaviors if collisionAvoidance is needed
@@ -135,6 +155,8 @@ def wolfDroneController(droneName, droneCount):
 
         time.sleep(1)
         i+=1
+
+
     debugPrint("Ending Search and Rescue loop")
     # Wolf Drone search loop End
 
@@ -149,6 +171,11 @@ def wolfServiceListeners(droneName):
 # Theads END ===========================================
 
 # TODO: Functions need to Refatctor +++++++++++++++++++++++++++++++++++
+
+# Collision Detection
+def doCollisionDetection(client, droneName):
+    return False
+    # RETURN TRUE OR FALSE
 
 # Creates drone groups based on wolf number
 def wolfClusterCreation(droneName):
