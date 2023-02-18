@@ -18,3 +18,18 @@ def getWolfState():
     responseText = resp.droneDataArray
 
     return responseText
+
+def getWolfDataExC(wolfNameToExclude):
+    # Get wolf data using a service
+    rospy.wait_for_service(PROXIMITY_WOLF_SERVICE)
+
+    # Gets service response and droneDataArray from WolfData
+    response = rospy.ServiceProxy(PROXIMITY_WOLF_SERVICE, getDroneData)
+    resp = response()
+
+    responseText = []
+    for x in resp.droneDataArray:
+        if (x.droneName != wolfNameToExclude):
+            responseText.append(x)
+
+    return responseText

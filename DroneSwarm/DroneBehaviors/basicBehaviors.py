@@ -1,57 +1,114 @@
 import math
+import numpy as np
+import HelperFunctions.calcHelper as helper
 
-def separation(currentGPS, targetGPS):
-    # range
-    radius = 0.0002 # 0.00005
-    AVOID_FACTOR = 7000
+# RADIUS = 0.0001
+def separation(currentGPS, targetGPS, radius, maxSpeed):
+    distanceTarget = helper.calcDistanceBetweenGPS(currentGPS, targetGPS);
 
-    currentLongitude = currentGPS.longitude
-    currentLatitude = currentGPS.latitude
+    vector = helper.calcVectorBetweenGPS(currentGPS, targetGPS);
+    vectorR = [-vector[0], -vector[1]]
 
-    targetLongitude = targetGPS.longitude
-    targetLatitude = targetGPS.latitude
-    # Variables used for separation for drones too close
+    # calc 
     finalVX = 0
     finalVY = 0
-
-    longitudeDifference = currentLongitude - targetLongitude
-    latitudeDifference = currentLatitude - targetLatitude
-
-    distanceTarget = math.sqrt( (longitudeDifference ** 2) + (latitudeDifference ** 2) )
+    distanceTarget = abs(distanceTarget)
+    radius = abs(radius)
 
     if (distanceTarget < radius):
-        print("In radius: " + distanceTarget)
-        finalVX += targetLongitude * AVOID_FACTOR
-        finalVY += targetLatitude * AVOID_FACTOR
+        # print("In RADIUS: " + str(distanceTarget))
+        powerRange = (radius - distanceTarget) / radius # 0-1
+        vectorMagnitude = (powerRange * maxSpeed)  # try full power
+        multiplyXY = vectorMagnitude / distanceTarget
+
+        finalVX = vectorR[0] * multiplyXY
+        finalVY = vectorR[1] * multiplyXY
     
     return [finalVX, finalVY]
 
-def cohesion(currentGPS, targetGPS):
-    CENTERING_FACTOR = 20000
+def cohesion(currentGPS, targetGPS, radius, maxSpeed):
+    distanceTarget = helper.calcDistanceBetweenGPS(currentGPS, targetGPS);
+    vector = helper.calcVectorBetweenGPS(currentGPS, targetGPS);
 
-    currentLongitude = currentGPS.longitude
-    currentLatitude = currentGPS.latitude
+    finalVX = 0
+    finalVY = 0
+    distanceTarget = abs(distanceTarget)
+    radius = abs(radius)
 
-    targetLongitude = targetGPS.longitude
-    targetLatitude = targetGPS.latitude
+    if (distanceTarget > radius):
+        powerRange = (distanceTarget - radius) / distanceTarget # 0-1
+        vectorMagnitude = (powerRange * maxSpeed) 
+        multiplyXY = vectorMagnitude / distanceTarget
 
-    finalVX = (targetLongitude - currentLongitude)*CENTERING_FACTOR
-    finalVY = (targetLatitude - currentLatitude)*CENTERING_FACTOR
-
-    return [finalVX, finalVY]
-
-def alignment(currentGPS, targetGPS):
-    # Gets average swarm velocity in x and y
-    
-        #averageVX = averageVXCalculator()
-        #averageVY = averageVYCalculator()
-
-    # sumVX = sumVXCalculator()
-    # sumVX = sumVXCalculator()
-
-    # Added 1 to difference to push drones towards x direction
-    
-        #finalVX = (averageVX)*MATCHING_FACTOR
-        #finalVY = (averageVY)*MATCHING_FACTOR
+        finalVX = vector[0] * multiplyXY
+        finalVY = vector[1] * multiplyXY
 
     return [finalVX, finalVY]
+
+def alignmentNormal(currentGPS, targetGPS):
+    vector = helper.calcVectorBetweenGPS(currentGPS, targetGPS);
+    vectorR = [-vector[0], -vector[1]]
+
+    alignmentVector = helper.perpendicularVector(helper.normalizeVector(vectorR));
+
+    return alignmentVector;
+
+def alignmentCentripetal(currentGPS, targetGPS, radiusM, desiredVelocity):
+    vector = helper.calcVectorBetweenGPS(currentGPS, targetGPS);
+
+    magnitude = helper.calcCentripetalVelocity(desiredVelocity, radiusM)
+
+    vectorCentripetal = helper.setVectorMagnitude(vector, magnitude)
+    return vectorCentripetal;
+
+def alignmentMagnitude(currentGPS, alignmentVector, speed, maxBonusSpeed, radius, wolfData):
+    alignmentSpeed = 0;
+
+    droneNumber = len(wolfData) + 1;
+    sideLength = 0
+
+    if (droneNumber == 1):
+        return (speed + speedVariation);
+    elif (droneNumber == 2):
+        sideLength = radius * 2;
+    else:
+        sideLength = helper.calcPolygonSideLength(radius, droneNumber);
+    # sideLength = sideLength * 1.2; # increasing side length may cause jerkiness when circling
+
+    finalVX = 0;
+    finalVY = 0;
+    vectorsAdded = 0;
+
+    for wolf in wolfData:
+        distanceToWolf = helper.calcDistanceBetweenGPS(currentGPS, wolf);
+        # check if wolf is to close to currentDrone
+        if (distanceToWolf < sideLength and distanceToWolf != 0):
+            powerRange = (sideLength - distanceToWolf) / sideLength; # 0-1
+
+            multiplyXY = powerRange / distanceToWolf;
+            
+            vector = helper.calcVectorBetweenGPS(currentGPS, wolf);
+            vectorR = [-vector[0], -vector[1]];
+
+            finalVX += vectorR[0] * multiplyXY;
+            finalVY += vectorR[1] * multiplyXY;
+            
+            vectorsAdded += 1;
+
+    vectorSeparation = [finalVX, finalVY]
+
+    vectorLength = helper.calcVectorMagnitude(vectorSeparation);
+    if (vectorsAdded > 0):
+        vectorLength = vectorLength / vectorsAdded # 0-1
+    else:
+        alignmentSpeed = speed
+        return alignmentSpeed; # no drone needing to be seperated from
+
+    # check direction of seperation vector
+    angle = helper.calcVectorAngle(alignmentVector, vectorSeparation);
+    if (angle < 90):
+        alignmentSpeed = speed + (vectorLength * maxBonusSpeed) # Speed up
+    else:
+        alignmentSpeed = speed - (math.sqrt(vectorLength) * speed); # slow down
+
+    return alignmentSpeed;

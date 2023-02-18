@@ -41,6 +41,7 @@ if __name__ == '__main__': # Only runs if this is main processes
     # TODO: start all procecess for ros Nodes here
     # Start wolf proximity subscriber and wolf nodes
     mp.Process(target=startProximityWolf, args=(wolfCount,)).start()
+    time.sleep(1);
     for wolf in range(wolfCount): # str(x) = the vechical_name of the drone
         droneName = str(wolf)
         mp.Process(target=wolfDroneController, args=(droneName,wolfCount)).start()
