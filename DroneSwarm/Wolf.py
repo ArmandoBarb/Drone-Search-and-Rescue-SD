@@ -27,7 +27,6 @@ from std_msgs.msg import String
 from std_srvs.srv import Trigger, TriggerResponse
 from airsim_ros_pkgs.msg import droneData
 import ServiceRequestors.wolfGetWolfData as wolfService
-
 import HelperFunctions.calcHelper as helper
 
 # Environmental Variables
@@ -112,7 +111,7 @@ def wolfDroneController(droneName, droneCount):
     radiusM = helper.calcDistanceInMetersBetweenGPS(targetP.gps_location, targetC.gps_location);
 
     # test Wolf Search
-    startWolfSearch( circleCenterGPS=targetP.gps_location, circleRadiusGPS=radiusC*7, circleRadiusMeters=radiusM*7, spreadTimeS=40, searchTimeS=70 );
+    # ( circleCenterGPS=targetP.gps_location, circleRadiusGPS=radiusC*7, circleRadiusMeters=radiusM*7, spreadTimeS=40, searchTimeS=70 );
     # test Consensus Decision
     # startConsensusDecision( circleCenterGPS=targetP.gps_location, circleRadiusGPS=Min_Circle_Radius_GPS*2, circleRadiusMeters=Min_Circle_Radius_Meters*2, searchTimeS=100 );
 
@@ -121,7 +120,13 @@ def wolfDroneController(droneName, droneCount):
     debugPrint("Starting Search and Rescue loop")
     looptime =  7000
     timeSpent = 0;
+    maxTime = 10
+    Runtime = time.time()
     while (i < looptime):
+        timeDiff = time.time() - Runtime
+        if (timeDiff > maxTime):
+            break
+
         vector = [0, 0] # dont move if nothing to do
         # test consensus behavior
         if(Consensus_Decision_Behavior):
@@ -186,8 +191,26 @@ def wolfDroneController(droneName, droneCount):
         # If all drones make it to the waypoint, more to next waypoint
         # allDronesAtWaypoint()
 
-        # TODO: Wolf Search behavior
+        # Line_Behavior = True
+        if (Line_Behavior):
+            # Gets drones waypoint and vector movement
+            newWaypoint = getNewWaypoint(droneName)
+            vector = lineBehavior(client, int(droneName), DM_Wolfs_Cluster, newWaypoint)
+            vectorTemp = 0
 
+            vectorTemp = vector[0]
+            vector[0] = vector[1]
+            vector[1] = vectorTemp
+
+            # Calculates camera direction based on velocity
+            if (vector[1] != 0):
+                yaw = math.atan2(vector[1], vector[0])
+                degrees = math.degrees(yaw)
+                yaw_mode = airsim.YawMode(is_rate=False, yaw_or_rate=(degrees));
+            else:
+                yaw_mode = airsim.YawMode(is_rate=False, yaw_or_rate=(degrees));
+
+        # TODO: Wolf Search behavior
         if (Wolf_Search_Behavior):
             radius = Circle_Radius_GPS
             radiusM = Circle_Radius_Meters
@@ -246,6 +269,7 @@ def wolfDroneController(droneName, droneCount):
         # TODO: Apply turning to desired action
         # TODO: Overide other behaviors if collisionAvoidance is needed
 
+
         # TODO: Make Airsim call with desired action
         client.moveByVelocityZAsync(vector[0], vector[1], -8, duration = 0.5, yaw_mode=yaw_mode, vehicle_name=droneName)
         
@@ -254,6 +278,9 @@ def wolfDroneController(droneName, droneCount):
         # time.sleep(0.18)
         end = time.time();
         timeSpent += end-start;
+
+        # Checks if drones have made iot to the next waypoint
+        allDronesAtWaypoint()
 
         i+=1
     # debugPrint("Ending Search and Rescue loop: ")
@@ -391,7 +418,7 @@ def readCoordFile(filename):
 
 def allDronesAtWaypoint():
     global WAYPOINT_INDEX
-    wolfInfoArray = getWolfState()
+    wolfInfoArray = wolfService.getWolfState()
     for droneNum in DM_Wolfs_Cluster:
         xDifference = wolfInfoArray[droneNum].longitude - float(WAYPOINT_COORDS[WAYPOINT_INDEX][0])
         yDifference = wolfInfoArray[droneNum].latitude - float(WAYPOINT_COORDS[WAYPOINT_INDEX][1])
