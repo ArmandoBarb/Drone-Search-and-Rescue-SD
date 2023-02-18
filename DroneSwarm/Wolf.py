@@ -202,12 +202,13 @@ def wolfDroneController(droneName, droneCount):
             vector[0] = vector[1]
             vector[1] = vectorTemp
 
-            # Calculates camera direction based on velocity
+            # Calculates camera direction based on velocity      
             if (vector[1] != 0):
                 yaw = math.atan2(vector[1], vector[0])
                 degrees = math.degrees(yaw)
                 yaw_mode = airsim.YawMode(is_rate=False, yaw_or_rate=(degrees));
             else:
+                degrees = 0
                 yaw_mode = airsim.YawMode(is_rate=False, yaw_or_rate=(degrees));
 
         # TODO: Wolf Search behavior
