@@ -24,6 +24,7 @@ import Constants.ros as ros
 # import drone behavior
 import DroneBehaviors.wolfSearchBehavior as wolfSearchBehavior;
 from DroneBehaviors.lineBehavior import lineBehavior
+import DroneBehaviors.collisionBehavior as collisionBehavior
 # TODO: Investigate if we need to use a Lock while writing or reading global variables
 from threading import Timer # Use for interval checks with minimal code
 from threading import Thread # USe for important code running constantly
@@ -195,9 +196,14 @@ def wolfDroneController(droneName, droneCount):
 
         # If all drones make it to the waypoint, more to next waypoint
         # allDronesAtWaypoint()
+        Line_Behavior = True
+        collisionDetectionResponse = collisionBehavior.isCollisionNeeded(droneName, client)
+        if (collisionDetectionResponse):
+            print("Drone:", droneName, "Doing collision avoidance")
+            vector = collisionBehavior.collisionAvoidanceVector(droneName, client);
 
         # Line_Behavior = True
-        if (Line_Behavior):
+        elif (Line_Behavior):
             # Gets drones waypoint and vector movement
             newWaypoint = getNewWaypoint(droneName)
             vector = lineBehavior(client, int(droneName), DM_Wolfs_Cluster, newWaypoint)
@@ -213,6 +219,7 @@ def wolfDroneController(droneName, droneCount):
                 degrees = math.degrees(yaw)
                 yaw_mode = airsim.YawMode(is_rate=False, yaw_or_rate=(degrees));
             else:
+                degrees = 0
                 yaw_mode = airsim.YawMode(is_rate=False, yaw_or_rate=(degrees));
 
         # TODO: Wolf Search behavior
