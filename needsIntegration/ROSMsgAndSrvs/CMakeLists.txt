@@ -56,6 +56,9 @@ add_message_files(
   Altimeter.msg
   Environment.msg
   droneData.msg
+  lineBehavior.msg
+  wolfSearchBehavior.msg
+  consensusDecisionBehavior.msg
 )
 
 add_service_files(
@@ -68,6 +71,7 @@ add_service_files(
   Reset.srv
   SetLocalPosition.srv
   getDroneData.srv
+  sendCommand.srv
 )
 
 generate_messages(
