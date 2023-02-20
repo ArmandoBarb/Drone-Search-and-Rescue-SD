@@ -112,6 +112,7 @@ def wolfDroneController(droneName, droneCount):
 
     # test Wolf Search
     # startWolfSearch( circleCenterGPS=targetP.gps_location, circleRadiusGPS=radiusC*7, circleRadiusMeters=radiusM*7, spreadTimeS=40, searchTimeS=70 );
+    startLineBehavior(group0Waypoints = 'Constants/Group0Spiral.txt', group1Waypoints = 'Constants/Group1Spiral.txt')
     # test Consensus Decision
     startConsensusDecision( circleCenterGPS=targetP.gps_location, circleRadiusGPS=Min_Circle_Radius_GPS*2, circleRadiusMeters=Min_Circle_Radius_Meters*2, searchTimeS=100 );
 
@@ -125,6 +126,7 @@ def wolfDroneController(droneName, droneCount):
     while (i < looptime):
         timeDiff = time.time() - Runtime
         if (timeDiff > maxTime):
+            endLineBehavior()
             break
 
         vector = [0, 0] # dont move if nothing to do
@@ -422,6 +424,22 @@ def takeOff(droneName):
     # client.moveByAngleRatesZAsync(roll_rate=0, pitch_rate=0, yaw_rate=2, z=-3, duration=1, vehicle_name=droneName).join()
 
     return client
+
+def startLineBehavior(group0Waypoints, group1Waypoints):
+    global GROUP_0_SEARCH
+    global GROUP_1_SEARCH
+    global Line_Behavior
+    GROUP_0_SEARCH = group0Waypoints
+    GROUP_1_SEARCH = group1Waypoints
+    Line_Behavior = True
+
+def endLineBehavior():
+    global GROUP_0_SEARCH
+    global GROUP_1_SEARCH
+    global Line_Behavior
+    GROUP_0_SEARCH = None
+    GROUP_1_SEARCH = None
+    Line_Behavior = False
 
 def startWolfSearch( circleCenterGPS, circleRadiusGPS, circleRadiusMeters, spreadTimeS, searchTimeS ):
     global Wolf_Search_Behavior;
