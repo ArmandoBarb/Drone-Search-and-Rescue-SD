@@ -111,9 +111,9 @@ def wolfDroneController(droneName, droneCount):
     radiusM = helper.calcDistanceInMetersBetweenGPS(targetP.gps_location, targetC.gps_location);
 
     # test Wolf Search
-    # ( circleCenterGPS=targetP.gps_location, circleRadiusGPS=radiusC*7, circleRadiusMeters=radiusM*7, spreadTimeS=40, searchTimeS=70 );
+    # startWolfSearch( circleCenterGPS=targetP.gps_location, circleRadiusGPS=radiusC*7, circleRadiusMeters=radiusM*7, spreadTimeS=40, searchTimeS=70 );
     # test Consensus Decision
-    # startConsensusDecision( circleCenterGPS=targetP.gps_location, circleRadiusGPS=Min_Circle_Radius_GPS*2, circleRadiusMeters=Min_Circle_Radius_Meters*2, searchTimeS=100 );
+    startConsensusDecision( circleCenterGPS=targetP.gps_location, circleRadiusGPS=Min_Circle_Radius_GPS*2, circleRadiusMeters=Min_Circle_Radius_Meters*2, searchTimeS=100 );
 
     # Wolf Drone search loop Start
     i = 1
@@ -183,36 +183,19 @@ def wolfDroneController(droneName, droneCount):
 
 
         # # TODO: Add in Drone behavior desion making
-        # TODO: Line formation behavior, toss in waypoint drone will move to
-        # newWaypoint = getNewWaypoint(droneName)
-        # Does line behavior to move to waypoints
-        # vector = lineBehavior(client, int(droneName), DM_Wolfs_Cluster, newWaypoint)
+        if (Consensus_Decision_Behavior): # Consensus Descion behavior
+            currentDroneData = client.getMultirotorState(vehicle_name = droneName);
+            
+            vector = consensusDecisionBehaviorGetVector(currentDroneData);
 
-        # If all drones make it to the waypoint, more to next waypoint
-        # allDronesAtWaypoint()
+            yawDegrees = wolfSearchBehavior.calcYaw(currentGPS=currentDroneData.gps_location, targetGPS=targetGPS);
+            yaw_mode  = airsim.YawMode(is_rate=False, yaw_or_rate=(yawDegrees));
 
-        # Line_Behavior = True
-        if (Line_Behavior):
-            # Gets drones waypoint and vector movement
-            newWaypoint = getNewWaypoint(droneName)
-            vector = lineBehavior(client, int(droneName), DM_Wolfs_Cluster, newWaypoint)
-            vectorTemp = 0
-
-            vectorTemp = vector[0]
-            vector[0] = vector[1]
-            vector[1] = vectorTemp
-
-            # Calculates camera direction based on velocity      
-            if (vector[1] != 0):
-                yaw = math.atan2(vector[1], vector[0])
-                degrees = math.degrees(yaw)
-                yaw_mode = airsim.YawMode(is_rate=False, yaw_or_rate=(degrees));
-            else:
-                degrees = 0
-                yaw_mode = airsim.YawMode(is_rate=False, yaw_or_rate=(degrees));
-
-        # TODO: Wolf Search behavior
-        if (Wolf_Search_Behavior):
+            # check if time to end consensus Desension
+            timeDiff = time.time() - Start_Time
+            if (timeDiff > (Search_Time)):
+                endConsensusDecision();
+        elif (Wolf_Search_Behavior): # Wolf Search behavior
             radius = Circle_Radius_GPS
             radiusM = Circle_Radius_Meters
 
@@ -240,33 +223,26 @@ def wolfDroneController(droneName, droneCount):
 
             if (timeDiff > (Spread_Time + Search_Time)):
                 endWolfSearch();
+        elif (Line_Behavior): # Line_Behavior
+            # Gets drones waypoint and vector movement
+            newWaypoint = getNewWaypoint(droneName)
+            vector = lineBehavior(client, int(droneName), DM_Wolfs_Cluster, newWaypoint)
+            vectorTemp = 0
+
+            vectorTemp = vector[0]
+            vector[0] = vector[1]
+            vector[1] = vectorTemp
+
+            # Calculates camera direction based on velocity      
+            if (vector[1] != 0):
+                yaw = math.atan2(vector[1], vector[0])
+                degrees = math.degrees(yaw)
+                yaw_mode = airsim.YawMode(is_rate=False, yaw_or_rate=(degrees));
+            else:
+                degrees = 0
+                yaw_mode = airsim.YawMode(is_rate=False, yaw_or_rate=(degrees));
 
 
-        # TODO: Consensus Descion behavior
-        if (Consensus_Decision_Behavior):
-            radius = Circle_Radius_GPS
-            radiusM = Circle_Radius_Meters
-
-            targetGPS = Circle_Center_GPS
-            
-            wolfDataArray = wolfService.getWolfDataExC(droneName);
-            position = client.getMultirotorState(vehicle_name = droneName);
-            # calcSpeedVector function variables
-            averageAlignmentSpeed = 12;
-            bonusAlignmentSpeed = 0;
-            maxCohSepSpeed = 4;
-            maxSpeed = 13
-
-            vector = wolfSearchBehavior.calcSpeedVector(currentDroneData=position, targetGPS=targetGPS, \
-                        radius=radius, radiusM=radiusM, wolfData=wolfDataArray, \
-                        averageAlignmentSpeed=averageAlignmentSpeed, bonusAlignmentSpeed=bonusAlignmentSpeed, \
-                        maxCohSepSpeed=maxCohSepSpeed, maxSpeed=maxSpeed);
-
-            yawDegrees = wolfSearchBehavior.calcYaw(currentGPS=position.gps_location, targetGPS=targetGPS);
-            yaw_mode  = airsim.YawMode(is_rate=False, yaw_or_rate=(yawDegrees));
-
-            if (timeDiff > (Search_Time)):
-                endConsensusDecision();
         # TODO: Apply turning to desired action
         # TODO: Overide other behaviors if collisionAvoidance is needed
 
@@ -327,6 +303,7 @@ def wolfDataPublisher(pub, client, droneName):
     droneMsg.latitude = position.gps_location.latitude
     droneMsg.velocityX = velocity.gnss.velocity.x_val
     droneMsg.velocityY = velocity.gnss.velocity.y_val
+    
 
     # Publishes to topic
     pub.publish(droneMsg)
@@ -484,6 +461,22 @@ def startConsensusDecision( circleCenterGPS, circleRadiusGPS, circleRadiusMeters
     Search_Time = searchTimeS;
     Start_Time = time.time();
     Consensus_Decision_Behavior = True;
+
+def consensusDecisionBehaviorGetVector(currentDroneData):
+    radius = Circle_Radius_GPS
+    radiusM = Circle_Radius_Meters
+    targetGPS = Circle_Center_GPS
+    wolfDataArray = wolfService.getWolfDataExC(droneName);
+    # calcSpeedVector function variables
+    averageAlignmentSpeed = 12;
+    bonusAlignmentSpeed = 0;
+    maxCohSepSpeed = 4;
+    maxSpeed = 13
+    
+    vector = wolfSearchBehavior.calcSpeedVector(currentDroneData=currentDroneData, targetGPS=targetGPS, \
+                radius=radius, radiusM=radiusM, wolfData=wolfDataArray, \
+                averageAlignmentSpeed=averageAlignmentSpeed, bonusAlignmentSpeed=bonusAlignmentSpeed, \
+                maxCohSepSpeed=maxCohSepSpeed, maxSpeed=maxSpeed);
 
 def updateConsensusDecisionCenter(circleCenterGPS):
     global Circle_Center_GPS;
