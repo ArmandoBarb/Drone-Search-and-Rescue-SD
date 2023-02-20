@@ -121,7 +121,7 @@ def wolfDroneController(droneName, droneCount):
     debugPrint("Starting Search and Rescue loop")
     looptime =  7000
     timeSpent = 0;
-    maxTime = 10
+    maxTime = 110
     Runtime = time.time()
     while (i < looptime):
         timeDiff = time.time() - Runtime
@@ -137,31 +137,31 @@ def wolfDroneController(droneName, droneCount):
             newP = None
             if (timeDiff < stageLength):
                 newP = client.getMultirotorState(vehicle_name = "target")
-                if (droneName == "0"):
-                    print('target');
+                # if (droneName == "0"):
+                    # print('target');
             elif (timeDiff < stageLength*2):
                 newP = client.getMultirotorState(vehicle_name = "targetR")
-                if (droneName == "0"):
-                    print('targetR');
+                # if (droneName == "0"):
+                    # print('targetR');
             elif (timeDiff < stageLength*3):
                 newP = client.getMultirotorState(vehicle_name = "circle")
-                if (droneName == "0"):
-                    print('circle');
+                # if (droneName == "0"):
+                    # print('circle');
             elif (timeDiff < stageLength*4):
                 newP = client.getMultirotorState(vehicle_name = "circle2")
-                if (droneName == "0"):
-                    print('circle2');
+                # if (droneName == "0"):
+                    # print('circle2');
             elif (timeDiff < stageLength*5):
                 newP = client.getMultirotorState(vehicle_name = "circle3")
-                if (droneName == "0"):
-                    print('circle3');
+                # if (droneName == "0"):
+                    # print('circle3');
             else:
                 newP = client.getMultirotorState(vehicle_name = "target")
-                if (droneName == "0"):
-                    print('circle3');
+                # if (droneName == "0"):
+                    # print('circle3');
             if (newP != None):
-                if (droneName == "0"):
-                    print("Gps: " + str(newP.gps_location));
+                # if (droneName == "0"):
+                    # print("Gps: " + str(newP.gps_location));
                 updateConsensusDecisionCenter(circleCenterGPS=newP.gps_location);
 
         
@@ -190,7 +190,7 @@ def wolfDroneController(droneName, droneCount):
             
             vector = consensusDecisionBehaviorGetVector(currentDroneData);
 
-            yawDegrees = wolfSearchBehavior.calcYaw(currentGPS=currentDroneData.gps_location, targetGPS=targetGPS);
+            yawDegrees = wolfSearchBehavior.calcYaw(currentGPS=currentDroneData.gps_location, targetGPS=Circle_Center_GPS);
             yaw_mode  = airsim.YawMode(is_rate=False, yaw_or_rate=(yawDegrees));
 
             # check if time to end consensus Desension
@@ -484,7 +484,7 @@ def consensusDecisionBehaviorGetVector(currentDroneData):
     radius = Circle_Radius_GPS
     radiusM = Circle_Radius_Meters
     targetGPS = Circle_Center_GPS
-    wolfDataArray = wolfService.getWolfDataExC(droneName);
+    wolfDataArray = wolfService.getWolfDataExC(DM_Drone_Name);
     # calcSpeedVector function variables
     averageAlignmentSpeed = 12;
     bonusAlignmentSpeed = 0;
@@ -495,6 +495,8 @@ def consensusDecisionBehaviorGetVector(currentDroneData):
                 radius=radius, radiusM=radiusM, wolfData=wolfDataArray, \
                 averageAlignmentSpeed=averageAlignmentSpeed, bonusAlignmentSpeed=bonusAlignmentSpeed, \
                 maxCohSepSpeed=maxCohSepSpeed, maxSpeed=maxSpeed);
+
+    return vector;
 
 def updateConsensusDecisionCenter(circleCenterGPS):
     global Circle_Center_GPS;
