@@ -1,0 +1,3 @@
+Header header
+string group0Waypoints
+string group1Waypoints

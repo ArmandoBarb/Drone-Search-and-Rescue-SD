@@ -1,0 +1,5 @@
+Header header
+GPSYaw circleCenterGPS
+float64 circleRadiusGPS
+float64 circleRadiusMeters
+float64 searchTimeS

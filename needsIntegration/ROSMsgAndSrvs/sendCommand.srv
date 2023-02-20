@@ -1,0 +1,5 @@
+lineBehavior lineBehaviorStart
+wolfSearchBehavior wolfSearchBehaviorStart
+consensusDecisionBehavior consensusDecisionBehaviorStart
+---
+bool success
