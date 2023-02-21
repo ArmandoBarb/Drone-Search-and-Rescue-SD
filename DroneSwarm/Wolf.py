@@ -26,6 +26,12 @@ from threading import Thread # USe for important code running constantly
 from std_msgs.msg import String
 from std_srvs.srv import Trigger, TriggerResponse
 from airsim_ros_pkgs.msg import droneData
+from airsim_ros_pkgs.msg import droneData
+from airsim_ros_pkgs.msg import requestLineBehavior
+from airsim_ros_pkgs.msg import requestWolfSearchBehavior
+from airsim_ros_pkgs.msg import requestConsensusDecisionBehavior
+from airsim_ros_pkgs.srv import getDroneData
+from airsim_ros_pkgs.srv import sendCommand
 import ServiceRequestors.wolfGetWolfData as wolfService
 import HelperFunctions.calcHelper as helper
 
@@ -112,16 +118,16 @@ def wolfDroneController(droneName, droneCount):
 
     # test Wolf Search
     # startWolfSearch( circleCenterGPS=targetP.gps_location, circleRadiusGPS=radiusC*7, circleRadiusMeters=radiusM*7, spreadTimeS=40, searchTimeS=70 );
-    startLineBehavior(group0Waypoints = 'Constants/Group0Spiral.txt', group1Waypoints = 'Constants/Group1Spiral.txt')
+    # startLineBehavior(group0Waypoints = 'Constants/Group0Spiral.txt', group1Waypoints = 'Constants/Group1Spiral.txt')
     # test Consensus Decision
-    startConsensusDecision( circleCenterGPS=targetP.gps_location, circleRadiusGPS=Min_Circle_Radius_GPS*2, circleRadiusMeters=Min_Circle_Radius_Meters*2, searchTimeS=100 );
+    # startConsensusDecision( circleCenterGPS=targetP.gps_location, circleRadiusGPS=Min_Circle_Radius_GPS*2, circleRadiusMeters=Min_Circle_Radius_Meters*2, searchTimeS=100 );
 
     # Wolf Drone search loop Start
     i = 1
     debugPrint("Starting Search and Rescue loop")
-    looptime =  7000
+    looptime =  1000
     timeSpent = 0;
-    maxTime = 110
+    maxTime = 60
     Runtime = time.time()
     while (i < looptime):
         timeDiff = time.time() - Runtime
@@ -130,6 +136,8 @@ def wolfDroneController(droneName, droneCount):
             break
 
         vector = [0, 0] # dont move if nothing to do
+        yaw_mode = airsim.YawMode(is_rate=False, yaw_or_rate=(0)) # Set yaw to zero
+
         # test consensus behavior
         if(Consensus_Decision_Behavior):
             timeDiff = time.time() - Start_Time;
@@ -271,7 +279,7 @@ def wolfDroneController(droneName, droneCount):
 # Theads Start ===========================================
 def wolfServiceListeners(droneName):
     serviceName = WOLF_DRONE_SERVICE + droneName
-    service = rospy.Service(serviceName, Trigger, trigger_response)
+    service = rospy.Service(serviceName, sendCommand, command_response)
     rospy.spin()
 
 # Theads END ===========================================
@@ -287,11 +295,30 @@ def wolfClusterCreation(droneName):
     else:
         DM_Wolfs_Cluster = [3, 4, 5]
 
-def trigger_response(request):
-    return TriggerResponse(
-        success=True,
-        message="Got service response from wolf"
-    )
+def command_response(request):
+    messageType = request.messageType
+    lineInfo = request.lineBehaviorStart
+    wolfSearchInfo = request.wolfSearchBehaviorStart
+    consensusDecisionInfo = request.consensusDecisionBehaviorStart
+
+    print("Got a command")
+    
+    lineString = str(lineInfo)
+    # Find datatype with info, execute command based on who has data
+    if (messageType == "RequestLineBehavior"):
+        startLineBehavior(group0Waypoints = lineInfo.group0Waypoints, group1Waypoints = lineInfo.group0Waypoints)
+        # debugPrint("Do line behavior")
+        return True
+
+    elif (messageType == "RequestWolfSearch"):
+        # debugPrint("Do wolf search")
+        return True
+
+    elif (messageType == "RequestConsensusDecision"):
+        d# ebugPrint("Do consensus decision")
+        return True
+    
+    return False
 
 # Publishes wolf data to (WolfData) topic
 def wolfDataPublisher(pub, client, droneName):
@@ -305,7 +332,10 @@ def wolfDataPublisher(pub, client, droneName):
     droneMsg.latitude = position.gps_location.latitude
     droneMsg.velocityX = velocity.gnss.velocity.x_val
     droneMsg.velocityY = velocity.gnss.velocity.y_val
-    
+
+    # TODO: NEEDS TO BE ADDED
+    droneMsg.cluster = "0"
+    droneMsg.taskGroup = "0"
 
     # Publishes to topic
     pub.publish(droneMsg)

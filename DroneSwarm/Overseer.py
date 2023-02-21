@@ -22,7 +22,7 @@ from threading import Thread # USe for important code running constantly
 from std_msgs.msg import String
 from std_srvs.srv import Trigger, TriggerResponse
 # Get service calls here
-from ServiceRequestors.instructWolf import sendWolfCommandClusterInfo
+from ServiceRequestors.instructWolf import sendStartLineBehavior
 from ServiceRequestors.overseerGetOverseerData import getOverseerState
 from ServiceRequestors.overseerGetWolfData import getOverseerGetWolfState
 from DroneBehaviors.lineBehavior import overseerWaypoint
@@ -78,13 +78,6 @@ def overseerDroneController(droneName, droneCount):
         readCoordFile(GROUP_1_SEARCH)
 
 
-    # Call startup service on each wolf
-    droneLimit = int(droneNum) * 3
-    for num in range(3):
-        wolfNum = num + droneLimit
-        wolfDroneService = WOLF_DRONE_SERVICE + str(wolfNum)
-        sendWolfCommandClusterInfo(wolfDroneService)
-
     # Start all threads here (if you have to make one somwhere else bring it up with the team)
     t = Thread(target = overseerCommunicationSubscriber, args=())
     t.start()
@@ -97,6 +90,14 @@ def overseerDroneController(droneName, droneCount):
     # Sets client and takes off drone
     client = takeOff(droneName)
     client.moveToZAsync(z=-35, velocity=8, vehicle_name = droneName).join()
+
+    # Call startup service on each wolf
+    droneLimit = int(droneNum) * 3
+    for num in range(3):
+        wolfNum = num + droneLimit
+        wolfDroneService = WOLF_DRONE_SERVICE + str(wolfNum)
+        # sendWolfCommandClusterInfo(wolfDroneService)
+        sendStartLineBehavior(wolfDroneService, GROUP_0_SEARCH, GROUP_1_SEARCH)
 
     # Overseer Drone search loop Start
     i = 0
