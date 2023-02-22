@@ -111,10 +111,10 @@ def wolfDroneController(droneName, droneCount):
     radiusM = helper.calcDistanceInMetersBetweenGPS(targetP.gps_location, targetC.gps_location);
 
     # test Wolf Search
-    # startWolfSearch( circleCenterGPS=targetP.gps_location, circleRadiusGPS=radiusC*7, circleRadiusMeters=radiusM*7, spreadTimeS=40, searchTimeS=70 );
+    startWolfSearch( circleCenterGPS=targetP.gps_location, circleRadiusGPS=radiusC*7, circleRadiusMeters=radiusM*7, spreadTimeS=40, searchTimeS=70 );
     startLineBehavior(group0Waypoints = 'Constants/Group0Spiral.txt', group1Waypoints = 'Constants/Group1Spiral.txt')
     # test Consensus Decision
-    startConsensusDecision( circleCenterGPS=targetP.gps_location, circleRadiusGPS=Min_Circle_Radius_GPS*2, circleRadiusMeters=Min_Circle_Radius_Meters*2, searchTimeS=100 );
+    # startConsensusDecision( circleCenterGPS=targetP.gps_location, circleRadiusGPS=Min_Circle_Radius_GPS*2, circleRadiusMeters=Min_Circle_Radius_Meters*2, searchTimeS=100 );
 
     # Wolf Drone search loop Start
     i = 1
@@ -197,34 +197,19 @@ def wolfDroneController(droneName, droneCount):
             timeDiff = time.time() - Start_Time
             if (timeDiff > (Search_Time)):
                 endConsensusDecision();
+
         elif (Wolf_Search_Behavior): # Wolf Search behavior
-            radius = Circle_Radius_GPS
-            radiusM = Circle_Radius_Meters
+            currentDroneData = client.getMultirotorState(vehicle_name = droneName);
 
-            timeDiff = time.time() - Start_Time;
-            if (timeDiff > Spread_Time):
-                timeDiv = (Search_Time - (timeDiff - Spread_Time)) / Search_Time
-                radius = (radius - Min_Circle_Radius_GPS)*timeDiv + Min_Circle_Radius_GPS;
-                radiusM = (radiusM - Min_Circle_Radius_Meters)*timeDiv + Min_Circle_Radius_Meters;
-            
-            wolfDataArray = wolfService.getWolfDataExC(droneName);
-            position = client.getMultirotorState(vehicle_name = droneName);
-            # calcSpeedVector function variables
-            averageAlignmentSpeed = 12;
-            bonusAlignmentSpeed = 0;
-            maxCohSepSpeed = 4;
-            maxSpeed = 13
+            vector = wolfSearchBehaviorGetVector(currentDroneData);
 
-            vector = wolfSearchBehavior.calcSpeedVector(currentDroneData=position, targetGPS=Circle_Center_GPS, \
-                        radius=radius, radiusM=radiusM, wolfData=wolfDataArray, \
-                        averageAlignmentSpeed=averageAlignmentSpeed, bonusAlignmentSpeed=bonusAlignmentSpeed, \
-                        maxCohSepSpeed=maxCohSepSpeed, maxSpeed=maxSpeed);
-
-            yawDegrees = wolfSearchBehavior.calcYaw(currentGPS=position.gps_location, targetGPS=Circle_Center_GPS);
+            yawDegrees = wolfSearchBehavior.calcYaw(currentGPS=currentDroneData.gps_location, targetGPS=Circle_Center_GPS);
             yaw_mode  = airsim.YawMode(is_rate=False, yaw_or_rate=(yawDegrees));
 
+            timeDiff = time.time() - Start_Time;
             if (timeDiff > (Spread_Time + Search_Time)):
                 endWolfSearch();
+
         elif (Line_Behavior): # Line_Behavior
             # Gets drones waypoint and vector movement
             newWaypoint = getNewWaypoint(droneName)
@@ -454,6 +439,31 @@ def startWolfSearch( circleCenterGPS, circleRadiusGPS, circleRadiusMeters, sprea
     Spread_Time = spreadTimeS;
     Start_Time = time.time();
     Wolf_Search_Behavior = True;
+
+def wolfSearchBehaviorGetVector(currentDroneData):
+    radius = Circle_Radius_GPS
+    radiusM = Circle_Radius_Meters
+
+    timeDiff = time.time() - Start_Time;
+    if (timeDiff > Spread_Time):
+        timeDiv = (Search_Time - (timeDiff - Spread_Time)) / Search_Time
+        radius = (radius - Min_Circle_Radius_GPS)*timeDiv + Min_Circle_Radius_GPS;
+        radiusM = (radiusM - Min_Circle_Radius_Meters)*timeDiv + Min_Circle_Radius_Meters;
+    
+    wolfDataArray = wolfService.getWolfDataExC(DM_Drone_Name);
+    # calcSpeedVector function variables
+    averageAlignmentSpeed = 12;
+    bonusAlignmentSpeed = 0;
+    maxCohSepSpeed = 4;
+    maxSpeed = 13;
+
+    vector = wolfSearchBehavior.calcSpeedVector(currentDroneData=currentDroneData, targetGPS=Circle_Center_GPS, \
+                radius=radius, radiusM=radiusM, wolfData=wolfDataArray, \
+                averageAlignmentSpeed=averageAlignmentSpeed, bonusAlignmentSpeed=bonusAlignmentSpeed, \
+                maxCohSepSpeed=maxCohSepSpeed, maxSpeed=maxSpeed);
+    
+    return vector;
+
 
 def endWolfSearch():
     global Wolf_Search_Behavior;
