@@ -56,9 +56,9 @@ add_message_files(
   Altimeter.msg
   Environment.msg
   droneData.msg
-  lineBehavior.msg
-  wolfSearchBehavior.msg
-  consensusDecisionBehavior.msg
+  requestLineBehavior.msg
+  requestWolfSearchBehavior.msg
+  requestConsensusDecisionBehavior.msg
 )
 
 add_service_files(
