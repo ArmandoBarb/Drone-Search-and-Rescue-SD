@@ -1,3 +1,4 @@
+string messageType
 lineBehavior lineBehaviorStart
 wolfSearchBehavior wolfSearchBehaviorStart
 consensusDecisionBehavior consensusDecisionBehaviorStart

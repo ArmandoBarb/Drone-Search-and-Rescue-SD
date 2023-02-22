@@ -22,7 +22,7 @@ from threading import Thread # USe for important code running constantly
 from std_msgs.msg import String
 from std_srvs.srv import Trigger, TriggerResponse
 # Get service calls here
-from ServiceRequestors.instructWolf import sendStartLineBehavior
+from ServiceRequestors.instructWolf import requestLineBehavior
 from ServiceRequestors.overseerGetOverseerData import getOverseerState
 from ServiceRequestors.overseerGetWolfData import getOverseerGetWolfState
 from DroneBehaviors.lineBehavior import overseerWaypoint
@@ -97,7 +97,7 @@ def overseerDroneController(droneName, droneCount):
         wolfNum = num + droneLimit
         wolfDroneService = WOLF_DRONE_SERVICE + str(wolfNum)
         # sendWolfCommandClusterInfo(wolfDroneService)
-        sendStartLineBehavior(wolfDroneService, GROUP_0_SEARCH, GROUP_1_SEARCH)
+        requestLineBehavior(wolfDroneService, GROUP_0_SEARCH, GROUP_1_SEARCH)
 
     # Overseer Drone search loop Start
     i = 0
