@@ -1,6 +1,6 @@
 string messageType
-lineBehavior lineBehaviorStart
-wolfSearchBehavior wolfSearchBehaviorStart
-consensusDecisionBehavior consensusDecisionBehaviorStart
+requestLineBehavior lineBehaviorStart
+requestWolfSearchBehavior wolfSearchBehaviorStart
+requestConsensusDecisionBehavior consensusDecisionBehaviorStart
 ---
 bool success
