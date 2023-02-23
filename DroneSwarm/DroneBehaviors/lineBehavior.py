@@ -7,8 +7,8 @@ from ServiceRequestors.wolfGetWolfData import getWolfState
 from ServiceRequestors.overseerGetOverseerData import getOverseerState
 
 AVOID_FACTOR = 0.01
-DIRECTION_FACTOR = 5
-OVERSEER_DIRECTION_FACTOR = 7
+DIRECTION_FACTOR = 13
+OVERSEER_DIRECTION_FACTOR = 16
 REPULSION_RADIUS = 0.0003
 
 def repulsion(client, curDroneIndex):
