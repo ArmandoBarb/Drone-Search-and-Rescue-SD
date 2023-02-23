@@ -294,7 +294,7 @@ def command_response(request):
     lineString = str(lineInfo)
     # Find datatype with info, execute command based on who has data
     if (messageType == "RequestLineBehavior"):
-        startLineBehavior(group0Waypoints = lineInfo.group0Waypoints, group1Waypoints = lineInfo.group0Waypoints)
+        startLineBehavior(group0Waypoints = lineInfo.group0Waypoints, group1Waypoints = lineInfo.group1Waypoints)
         # debugPrint("Do line behavior")
         return True
 
