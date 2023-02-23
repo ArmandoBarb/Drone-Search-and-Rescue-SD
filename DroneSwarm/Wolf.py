@@ -119,8 +119,8 @@ def wolfDroneController(droneName, droneCount):
     # test Wolf Search
     # startWolfSearch( circleCenterGPS=targetP.gps_location, circleRadiusGPS=radiusC*7, circleRadiusMeters=radiusM*7, spreadTimeS=40, searchTimeS=70 );
     # startLineBehavior(group0Waypoints = 'Constants/Group0Spiral.txt', group1Waypoints = 'Constants/Group1Spiral.txt')
-    startWolfSearch( circleCenterGPS=targetP.gps_location, circleRadiusGPS=radiusC*7, circleRadiusMeters=radiusM*7, spreadTimeS=40, searchTimeS=70 );
-    startLineBehavior(group0Waypoints = 'Constants/Group0Spiral.txt', group1Waypoints = 'Constants/Group1Spiral.txt')
+    # startWolfSearch( circleCenterGPS=targetP.gps_location, circleRadiusGPS=radiusC*7, circleRadiusMeters=radiusM*7, spreadTimeS=40, searchTimeS=70 );
+    # startLineBehavior(group0Waypoints = 'Constants/Group0Spiral.txt', group1Waypoints = 'Constants/Group1Spiral.txt')
     # test Consensus Decision
     # startConsensusDecision( circleCenterGPS=targetP.gps_location, circleRadiusGPS=Min_Circle_Radius_GPS*2, circleRadiusMeters=Min_Circle_Radius_Meters*2, searchTimeS=100 );
     # startConsensusDecision( circleCenterGPS=targetP.gps_location, circleRadiusGPS=Min_Circle_Radius_GPS*2, circleRadiusMeters=Min_Circle_Radius_Meters*2, searchTimeS=100 );
@@ -294,7 +294,7 @@ def command_response(request):
     lineString = str(lineInfo)
     # Find datatype with info, execute command based on who has data
     if (messageType == "RequestLineBehavior"):
-        startLineBehavior(group0Waypoints = lineInfo.group0Waypoints, group1Waypoints = lineInfo.group0Waypoints)
+        startLineBehavior(group0Waypoints = lineInfo.group0Waypoints, group1Waypoints = lineInfo.group1Waypoints)
         # debugPrint("Do line behavior")
         return True
 

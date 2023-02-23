@@ -1,22 +1,22 @@
 
 import rospy
 from airsim_ros_pkgs.msg import droneData
-from airsim_ros_pkgs.msg import lineBehavior
-from airsim_ros_pkgs.msg import wolfSearchBehavior
-from airsim_ros_pkgs.msg import consensusDecisionBehavior
+from airsim_ros_pkgs.msg import requestLineBehavior
+from airsim_ros_pkgs.msg import requestWolfSearchBehavior
+from airsim_ros_pkgs.msg import requestConsensusDecisionBehavior
 from airsim_ros_pkgs.srv import getDroneData
 from airsim_ros_pkgs.srv import sendCommand
 
 # Send service to start live behavior with given waypoints
-def requestLineBehavior(serviceName, GROUP_0_SEARCH, GROUP_1_SEARCH):
+def sendLinebehaviorRequest(serviceName, GROUP_0_SEARCH, GROUP_1_SEARCH):
     # Create messages needed with parameters
     messageType = "RequestLineBehavior"
-    linebehaviorMsg = lineBehavior()
+    linebehaviorMsg = requestLineBehavior()
     linebehaviorMsg.group0Waypoints = GROUP_0_SEARCH
     linebehaviorMsg.group1Waypoints = GROUP_1_SEARCH
     # Add empty data for unused message
-    wolfSearchBehaviorMsg = wolfSearchBehavior()
-    consensusDecisionBehaviorMsg = consensusDecisionBehavior()
+    wolfSearchBehaviorMsg = requestWolfSearchBehavior()
+    consensusDecisionBehaviorMsg = requestConsensusDecisionBehavior()
 
     # Sends service
     print("requestLineBehavior from wolf: ", serviceName)
@@ -28,10 +28,10 @@ def requestLineBehavior(serviceName, GROUP_0_SEARCH, GROUP_1_SEARCH):
     print("Message status: ", resp, " wolf: ", serviceName)
     return response
 
-def requestWolfSearchBehavior(serviceName, circleCenterGPS, circleRadiusGPS, circleRadiusMeters, spreadTimeS, searchTimeS):
+def sendWolfSearchBehaviorRequest(serviceName, circleCenterGPS, circleRadiusGPS, circleRadiusMeters, spreadTimeS, searchTimeS):
     # Create messages needed with parameters
     messageType = "RequestWolfSearch"
-    wolfSearchBehaviorMsg = wolfSearchBehavior()
+    wolfSearchBehaviorMsg = requestWolfSearchBehavior()
     wolfSearchBehaviorMsg.circleCenterGPS = circleCenterGPS
     # circleCenterGPS
     # wolfSearchBehaviorMsg.circleCenterGPS.latitude = circleCenterGPS.latitude
@@ -45,8 +45,8 @@ def requestWolfSearchBehavior(serviceName, circleCenterGPS, circleRadiusGPS, cir
     wolfSearchBehaviorMsg.searchTimeS = searchTimeS
 
     # Add empty data for unused message
-    linebehaviorMsg = lineBehavior()
-    consensusDecisionBehaviorMsg = consensusDecisionBehavior()
+    linebehaviorMsg = requestLineBehavior()
+    consensusDecisionBehaviorMsg = requestConsensusDecisionBehavior()
 
     # Sends service
     print("requestWolfSearchBehavior from wolf: ", serviceName)
@@ -58,10 +58,10 @@ def requestWolfSearchBehavior(serviceName, circleCenterGPS, circleRadiusGPS, cir
     print("Message status: ", resp, " wolf: ", serviceName)
     return response
 
-def requestConsensusDecisionBehavior(serviceName, circleCenterGPS, circleRadiusGPS, circleRadiusMeters, searchTimeS):
+def sendConsensusDecisionBehaviorRequest(serviceName, circleCenterGPS, circleRadiusGPS, circleRadiusMeters, searchTimeS):
     # Create messages needed with parameters
     messageType = "RequestConsensusDecision"
-    consensusDecisionBehaviorMsg = consensusDecisionBehavior()
+    consensusDecisionBehaviorMsg = requestConsensusDecisionBehavior()
 
     consensusDecisionBehaviorMsg.circleCenterGPS = circleCenterGPS
     # circleCenterGPS
@@ -75,8 +75,8 @@ def requestConsensusDecisionBehavior(serviceName, circleCenterGPS, circleRadiusG
     consensusDecisionBehaviorMsg.searchTimeS = searchTimeS
 
     # Add empty data for unused message
-    linebehaviorMsg = lineBehavior()
-    wolfSearchBehaviorMsg = wolfSearchBehavior()
+    linebehaviorMsg = requestLineBehavior()
+    wolfSearchBehaviorMsg = requestWolfSearchBehavior()
 
     # Sends service
     print("requestConsensusDecisionBehavior from wolf: ", serviceName)
