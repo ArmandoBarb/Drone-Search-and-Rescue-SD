@@ -8,7 +8,7 @@ from airsim_ros_pkgs.srv import getDroneData
 from airsim_ros_pkgs.srv import sendCommand
 
 # Send service to start live behavior with given waypoints
-def requestLineBehavior(serviceName, GROUP_0_SEARCH, GROUP_1_SEARCH):
+def sendLinebehaviorRequest(serviceName, GROUP_0_SEARCH, GROUP_1_SEARCH):
     # Create messages needed with parameters
     messageType = "RequestLineBehavior"
     linebehaviorMsg = requestLineBehavior()
@@ -28,7 +28,7 @@ def requestLineBehavior(serviceName, GROUP_0_SEARCH, GROUP_1_SEARCH):
     print("Message status: ", resp, " wolf: ", serviceName)
     return response
 
-def requestWolfSearchBehavior(serviceName, circleCenterGPS, circleRadiusGPS, circleRadiusMeters, spreadTimeS, searchTimeS):
+def sendWolfSearchBehaviorRequest(serviceName, circleCenterGPS, circleRadiusGPS, circleRadiusMeters, spreadTimeS, searchTimeS):
     # Create messages needed with parameters
     messageType = "RequestWolfSearch"
     wolfSearchBehaviorMsg = requestWolfSearchBehavior()
@@ -58,7 +58,7 @@ def requestWolfSearchBehavior(serviceName, circleCenterGPS, circleRadiusGPS, cir
     print("Message status: ", resp, " wolf: ", serviceName)
     return response
 
-def requestConsensusDecisionBehavior(serviceName, circleCenterGPS, circleRadiusGPS, circleRadiusMeters, searchTimeS):
+def sendConsensusDecisionBehaviorRequest(serviceName, circleCenterGPS, circleRadiusGPS, circleRadiusMeters, searchTimeS):
     # Create messages needed with parameters
     messageType = "RequestConsensusDecision"
     consensusDecisionBehaviorMsg = requestConsensusDecisionBehavior()
