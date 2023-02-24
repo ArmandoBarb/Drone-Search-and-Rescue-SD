@@ -132,7 +132,7 @@ def overseerDroneController(droneName, droneCount):
         # TODO: Make Airsim call with desired action
 
         # Add in artifical loop delay (How fast the loop runs dictates the drones reaction speed)
-        time.sleep(1)
+        time.sleep(0.5)
         i+=1
     debugPrint("Ending Search and Rescue loop")
     # Overseer Drone search loop End
@@ -246,7 +246,8 @@ def allDronesAtWaypoint():
         yDifference = wolfInfoArray[droneNum].latitude - float(WAYPOINT_COORDS[WAYPOINT_INDEX][1])
 
         # If any of the drones are out of bounds, return false
-        if ((abs(xDifference) > 0.00015) or (abs(yDifference) > 0.00015)):
+        if ((abs(xDifference) > 0.0003) or (abs(yDifference) > 0.0003)):
+            print(droneNum, "X difference:", xDifference, "Y Difference:", yDifference)
             return 0
 
     WAYPOINT_INDEX = WAYPOINT_INDEX + 1

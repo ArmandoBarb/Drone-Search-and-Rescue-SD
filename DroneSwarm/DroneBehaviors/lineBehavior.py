@@ -7,7 +7,7 @@ from ServiceRequestors.wolfGetWolfData import getWolfState
 from ServiceRequestors.overseerGetOverseerData import getOverseerState
 
 AVOID_FACTOR = 0.01
-DIRECTION_FACTOR = 13
+DIRECTION_FACTOR = 9
 OVERSEER_DIRECTION_FACTOR = 16
 REPULSION_RADIUS = 0.0003
 
@@ -93,7 +93,7 @@ def overseerWaypoint(client, curDroneIndex, waypoint):
     yDifference = float(waypoint[1]) - overseerInfoArray[curDroneIndex].latitude
 
     # If within certain distance of waypoint, don't move
-    if ((abs(xDifference) < 0.0001) and (abs(yDifference) < 0.0001)):
+    if ((abs(xDifference) < 0.00005) and (abs(yDifference) < 0.00005)):
         finalVelocity = [0, 0]
 
     # Else move to waypoint
