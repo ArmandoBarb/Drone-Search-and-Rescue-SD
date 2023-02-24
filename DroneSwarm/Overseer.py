@@ -30,7 +30,7 @@ from airsim_ros_pkgs.msg import droneData
 from ServiceRequestors.wolfGetWolfData import getWolfState
 
 # Environmental Variables
-RUNTIME = configDrones.RUNTIME
+LOOP_NUMBER = configDrones.LOOP_NUMBER
 LOCAL_IP = configDrones.LOCAL_IP
 
 # ros: topics
@@ -92,6 +92,7 @@ def overseerDroneController(droneName, droneCount):
     client.moveToZAsync(z=-35, velocity=8, vehicle_name = droneName).join()
 
     # Call startup service on each wolf
+    # THis is Hardcoded need to replace
     droneLimit = int(droneNum) * 3
     for num in range(3):
         wolfNum = num + droneLimit
@@ -102,7 +103,7 @@ def overseerDroneController(droneName, droneCount):
     # Overseer Drone search loop Start
     i = 0
     debugPrint("Starting Search and Rescue loop")
-    while (i < RUNTIME):
+    while (i < LOOP_NUMBER):
         # Get Airsim Data and procesess it here
         # TODO: add infared image detector code here (if runtime is to long Seprate into thread that runs on intervals)
             # getDataFromAirsim -> imageProcessing ->

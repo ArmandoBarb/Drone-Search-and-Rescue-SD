@@ -33,10 +33,12 @@ from airsim_ros_pkgs.msg import requestConsensusDecisionBehavior
 from airsim_ros_pkgs.srv import getDroneData
 from airsim_ros_pkgs.srv import sendCommand
 import ServiceRequestors.wolfGetWolfData as wolfService
+import ServiceRequestors.instructWolf as instructWolf
 import HelperFunctions.calcHelper as helper
 
 # Environmental Variables
-RUNTIME = configDrones.RUNTIME
+LOOP_NUMBER = configDrones.LOOP_NUMBER
+MAX_TIME = configDrones.MAX_TIME
 LOCAL_IP = configDrones.LOCAL_IP
 # ros: topics
 SLAM_MERGE_TOPIC = ros.SLAM_MERGE_TOPIC # TODO
@@ -99,6 +101,7 @@ def wolfDroneController(droneName, droneCount):
     t = Thread(target = wolfServiceListeners, args=(droneName))
     t.start()
 
+
     # Create topic publishers
     # (TODO: ADD IN SLAM MERGE AND COMMAND RESULT PUBLISHERS)
     wolfDataPublish = rospy.Publisher(WOLF_DATA_TOPIC, droneData, latch=True, queue_size=1)
@@ -107,7 +110,10 @@ def wolfDroneController(droneName, droneCount):
     # Sets and connects to client and takes off drone
     client = takeOff(droneName)
     client.moveToZAsync(z=-3, velocity=8, vehicle_name = droneName).join()
-
+    
+    # start camera thread here
+    t = Thread(target = wolfCameraDetection, args=(droneName, client))
+    t.start()
 
     # Test Code startWolfSearch
     targetP = client.getMultirotorState(vehicle_name = "target")
@@ -128,15 +134,13 @@ def wolfDroneController(droneName, droneCount):
     # Wolf Drone search loop Start
     i = 1
     debugPrint("Starting Search and Rescue loop")
-    looptime =  1000
     timeSpent = 0;
-    maxTime = 60
-    Runtime = time.time()
-    while (i < looptime):
-        timeDiff = time.time() - Runtime
-        if (timeDiff > maxTime):
+    runtime = time.time()
+    while (i < LOOP_NUMBER):
+        timeDiff = time.time() - runtime
+        if (timeDiff > MAX_TIME):
             endLineBehavior()
-            break
+            break;
 
         vector = [0, 0] # dont move if nothing to do
         yaw_mode = airsim.YawMode(is_rate=False, yaw_or_rate=(0)) # Set yaw to zero
@@ -267,8 +271,46 @@ def wolfDroneController(droneName, droneCount):
 # Theads Start ===========================================
 def wolfServiceListeners(droneName):
     serviceName = WOLF_DRONE_SERVICE + droneName
-    service = rospy.Service(serviceName, sendCommand, command_response)
+    service = rospy.Service(serviceName, sendCommand, commandResponse)
     rospy.spin()
+
+# checks drone camera with yolo detection
+def wolfCameraDetection(droneName, client):
+    debugPrint("Starting wolfCameraDetection loop")
+    i = 0;
+    timeSpent = 0;
+    runtime = time.time()
+    while (i < LOOP_NUMBER):
+        timeDiff = time.time() - runtime
+        if (timeDiff > MAX_TIME):
+            break;
+        start=time.time() # gather time data
+        # todo: marry add camera checkl nad yolo detector
+
+        # mock detection
+        timeDiff = time.time() - runtime
+        if(not(Consensus_Decision_Behavior)):
+            if(timeDiff > 18 and droneName == '1'):
+                # targetP is estimated gps position
+                targetP = client.getMultirotorState(vehicle_name = "target")
+                circleCenterGPS = targetP.gps_location
+                circleRadiusGPS = Min_Circle_Radius_GPS*2
+                circleRadiusMeters = Min_Circle_Radius_Meters*2
+                searchTimeS = 100
+                startConsensusDecision( circleCenterGPS=circleCenterGPS, circleRadiusGPS=circleRadiusGPS, circleRadiusMeters=circleRadiusMeters, searchTimeS=searchTimeS )
+                # ToDO addd function call to return list of availalbe drones
+                # THis is Hardcoded need to replace
+                instructWolf.sendConsensusDecisionBehaviorRequest(WOLF_DRONE_SERVICE + '2', circleCenterGPS, circleRadiusGPS, circleRadiusMeters, searchTimeS)
+                instructWolf.sendConsensusDecisionBehaviorRequest(WOLF_DRONE_SERVICE + '0', circleCenterGPS, circleRadiusGPS, circleRadiusMeters, searchTimeS)
+
+        time.sleep(1);
+        end = time.time();
+        timeSpent += end-start;
+        i+=1
+    return;
+# startConsensusDecision( circleCenterGPS=targetP.gps_location, circleRadiusGPS=Min_Circle_Radius_GPS*2, circleRadiusMeters=Min_Circle_Radius_Meters*2, searchTimeS=100 );
+    debugPrint(" CameraDetection: Average Loop Time: " + str(timeSpent / i))
+
 
 # Theads END ===========================================
 
@@ -283,7 +325,7 @@ def wolfClusterCreation(droneName):
     else:
         DM_Wolfs_Cluster = [3, 4, 5]
 
-def command_response(request):
+def commandResponse(request):
     messageType = request.messageType
     lineInfo = request.lineBehaviorStart
     wolfSearchInfo = request.wolfSearchBehaviorStart
@@ -303,7 +345,12 @@ def command_response(request):
         return True
 
     elif (messageType == "RequestConsensusDecision"):
-        d# ebugPrint("Do consensus decision")
+        # debugPrint("Do consensus decision")
+        circleCenterGPS = consensusDecisionInfo.circleCenterGPS
+        circleRadiusGPS = consensusDecisionInfo.circleRadiusGPS
+        circleRadiusMeters = consensusDecisionInfo.circleRadiusMeters
+        searchTimeS = consensusDecisionInfo.searchTimeS
+        startConsensusDecision( circleCenterGPS=circleCenterGPS, circleRadiusGPS=circleRadiusGPS, circleRadiusMeters=circleRadiusMeters, searchTimeS=searchTimeS );
         return True
     
     return False
@@ -426,7 +473,7 @@ def allDronesAtWaypoint():
             return 0
 
     WAYPOINT_INDEX = WAYPOINT_INDEX + 1
-    print("Drones:", DM_Wolfs_Cluster, "Made it to waypoint:", WAYPOINT_INDEX)
+    # print("Drones:", DM_Wolfs_Cluster, "Made it to waypoint:", WAYPOINT_INDEX)
     return 1
 
 

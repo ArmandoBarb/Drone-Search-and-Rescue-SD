@@ -22,7 +22,7 @@ import Constants.configDrones as configDrones
 import Constants.ros as ros
 
 # Environmental Variables
-RUNTIME = configDrones.RUNTIME
+LOOP_NUMBER = configDrones.LOOP_NUMBER
 
 # ros topics
 COMMAND_TOPIC = ros.COMMAND_TOPIC
@@ -84,7 +84,7 @@ def commandPublisher():
     updateState(pub, client)
 
     i = 0
-    while (not rospy.is_shutdown() and i < RUNTIME):
+    while (not rospy.is_shutdown() and i < LOOP_NUMBER):
         updateState(pub, client, droneName)
         time.sleep(1)
         i+=1

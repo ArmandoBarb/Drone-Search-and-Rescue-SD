@@ -49,6 +49,7 @@ add_message_files(
   GimbalAngleEulerCmd.msg
   GimbalAngleQuatCmd.msg
   GPSYaw.msg
+  GPS.msg
   VelCmd.msg
   VelCmdGroup.msg
   CarControls.msg
