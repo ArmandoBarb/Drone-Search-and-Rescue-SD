@@ -401,20 +401,17 @@ def getNewWaypoint(droneName):
         if (len(DM_Wolfs_Cluster) == 3):
             # Moves first drone left of the waypoint
             if ((int(droneName) % 3) == 0):
-                newWaypointX = float(currentWaypoint[0]) - yDirection
-                newWaypointY = float(currentWaypoint[1]) + xDirection
+                newWaypointX = float(currentWaypoint[0]) - yDirection + xDirection
+                newWaypointY = float(currentWaypoint[1]) + xDirection + yDirection
                 newWaypoint = [float(newWaypointX), float(newWaypointY)]
-                # print("Drone", droneName, "Int dronename", (int(droneName)), "Moving to ", newWaypoint)
             # Moves second drone directly to waypoint
             elif((int(droneName) % 3) == 1):
                 newWaypoint = currentWaypoint
-                # print("Drone", droneName, "Moving to ", newWaypoint)
             # Moves third drone right of the waypoint
             elif((int(droneName) % 3) == 2):
-                newWaypointX = float(currentWaypoint[0]) + yDirection
-                newWaypointY = float(currentWaypoint[1]) - xDirection
+                newWaypointX = float(currentWaypoint[0]) + yDirection - xDirection
+                newWaypointY = float(currentWaypoint[1]) - xDirection - yDirection
                 newWaypoint = [float(newWaypointX), float(newWaypointY)]
-                # print("Drone", droneName, "Int dronename", (int(droneName)), "Moving to ", newWaypoint)
 
         # Creates lanes for 4 group clusters
         if (len(DM_Wolfs_Cluster) == 4):
@@ -464,15 +461,61 @@ def readCoordFile(filename):
 def allDronesAtWaypoint():
     global WAYPOINT_INDEX
     wolfInfoArray = wolfService.getWolfState()
-    for droneNum in DM_Wolfs_Cluster:
-        xDifference = wolfInfoArray[droneNum].longitude - float(WAYPOINT_COORDS[WAYPOINT_INDEX][0])
-        yDifference = wolfInfoArray[droneNum].latitude - float(WAYPOINT_COORDS[WAYPOINT_INDEX][1])
 
-        # If any of the drones are out of bounds, return false
-        if ((abs(xDifference) > 0.00015) or (abs(yDifference) > 0.00015)):
-            return 0
+    currentWaypoint = WAYPOINT_COORDS[WAYPOINT_INDEX]
+    newWaypoint = currentWaypoint
+
+    if (WAYPOINT_INDEX >= 1):
+        radius = 0.0001
+        previousWaypoint = WAYPOINT_COORDS[WAYPOINT_INDEX-1]
+
+        # Finds vector between waypoints
+        waypointDiffX = float(currentWaypoint[0]) - float(previousWaypoint[0])
+        waypointDiffY = float(currentWaypoint[1]) - float(previousWaypoint[1])
+
+        # Gets normalized difference vector
+        vectorVal = sqrt(waypointDiffX**2 + waypointDiffY**2)
+        xDirection = (waypointDiffX/vectorVal) * radius
+        yDirection = (waypointDiffY/vectorVal) * radius
+
+        if (len(DM_Wolfs_Cluster) == 3):
+            for droneNum in DM_Wolfs_Cluster:
+                # Calculates first drone based of lane
+                if ((int(droneNum) % 3) == 0):
+                    newWaypointX = float(currentWaypoint[0]) - yDirection + xDirection
+                    newWaypointY = float(currentWaypoint[1]) + xDirection + yDirection
+                    newWaypoint = [float(newWaypointX), float(newWaypointY)]
+                # Calculates second drone based of lane
+                elif((int(droneNum) % 3) == 1):
+                    newWaypoint = currentWaypoint
+
+                # Calculates third drone based of lane
+                elif((int(droneNum) % 3) == 2):
+                    newWaypointX = float(currentWaypoint[0]) + yDirection - xDirection
+                    newWaypointY = float(currentWaypoint[1]) - xDirection - yDirection
+                    newWaypoint = [float(newWaypointX), float(newWaypointY)]                  
+
+                # Get difference between waypoint and drones actual location
+                xDifference = wolfInfoArray[droneNum].longitude - newWaypointX
+                yDifference = wolfInfoArray[droneNum].latitude - newWaypointY
+
+                # If any of the drones are out of bounds, return false
+                if ((abs(xDifference) > 0.00015) or (abs(yDifference) > 0.00015)):
+                    return 0
+
+        # TODO: IMPLEMENT GROUP OF FOUR MATH IF NECESSARY
+
+    else:
+        for droneNum in DM_Wolfs_Cluster:
+            xDifference = wolfInfoArray[droneNum].longitude - float(WAYPOINT_COORDS[WAYPOINT_INDEX][0])
+            yDifference = wolfInfoArray[droneNum].latitude - float(WAYPOINT_COORDS[WAYPOINT_INDEX][1])
+
+            # If any of the drones are out of bounds, return false
+            if ((abs(xDifference) > 0.0002) or (abs(yDifference) > 0.0002)):
+                return 0
 
     WAYPOINT_INDEX = WAYPOINT_INDEX + 1
+    # print("Drones:", DM_Wolfs_Cluster, "Made it to waypoint:", WAYPOINT_INDEX)
     # print("Drones:", DM_Wolfs_Cluster, "Made it to waypoint:", WAYPOINT_INDEX)
     return 1
 
