@@ -247,7 +247,7 @@ def allDronesAtWaypoint():
 
         # If any of the drones are out of bounds, return false
         if ((abs(xDifference) > 0.0003) or (abs(yDifference) > 0.0003)):
-            print(droneNum, "X difference:", xDifference, "Y Difference:", yDifference)
+            # print(droneNum, "X difference:", xDifference, "Y Difference:", yDifference)
             return 0
 
     WAYPOINT_INDEX = WAYPOINT_INDEX + 1

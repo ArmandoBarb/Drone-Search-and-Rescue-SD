@@ -468,7 +468,7 @@ def allDronesAtWaypoint():
                 return 0
 
     WAYPOINT_INDEX = WAYPOINT_INDEX + 1
-    print("Drones:", DM_Wolfs_Cluster, "Made it to waypoint:", WAYPOINT_INDEX)
+    # print("Drones:", DM_Wolfs_Cluster, "Made it to waypoint:", WAYPOINT_INDEX)
     return 1
 
 
