@@ -543,11 +543,9 @@ def startLineBehavior(clusterName):
     Line_Behavior = True
 
 def endLineBehavior():
-    global GROUP_0_SEARCH
-    global GROUP_1_SEARCH
+    global CLUSTER
     global Line_Behavior
-    GROUP_0_SEARCH = None
-    GROUP_1_SEARCH = None
+    CLUSTER = ""
     Line_Behavior = False
 
 def startWolfSearch( circleCenterGPS, circleRadiusGPS, circleRadiusMeters, spreadTimeS, searchTimeS ):
