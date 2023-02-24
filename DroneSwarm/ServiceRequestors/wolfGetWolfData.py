@@ -35,6 +35,22 @@ def getWolfDataOfCluster(wolfNameToExclude, clusterName):
 
     return responseText
 
+# Gets wolf data of taskGroup, excluded current drone
+def getWolfDataOfTaskGroup(wolfNameToExclude, taskGroup):
+    # Get wolf data using a service
+    rospy.wait_for_service(PROXIMITY_WOLF_SERVICE)
+
+    # Gets service response and droneDataArray from WolfData
+    response = rospy.ServiceProxy(PROXIMITY_WOLF_SERVICE, getDroneData)
+    resp = response()
+
+    responseText = []
+    for x in resp.droneDataArray:
+        if ((x.droneName != wolfNameToExclude) and (x.taskGroup == taskGroup)):
+            responseText.append(x)
+
+    return responseText
+
 def getWolfDataExC(wolfNameToExclude):
     # Get wolf data using a service
     rospy.wait_for_service(PROXIMITY_WOLF_SERVICE)
