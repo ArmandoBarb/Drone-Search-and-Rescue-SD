@@ -53,8 +53,8 @@ WAYPOINT_COORDS = []
 WAYPOINT_INDEX = 0
 GROUP_0_SEARCH = 'Constants/Group0Spiral.txt'
 GROUP_1_SEARCH = 'Constants/Group1Spiral.txt'
-CLUSTER = None
-TASK_GROUP = None
+Cluster = ""
+Task_Group = ""
 
 # Main Process Start ----------------------------------------------
 # Main function for the overseer drone
@@ -175,8 +175,8 @@ def handleOverseerCommunication(data, args):
 def overseerDataPublisher(pub, client, droneName):
     position = client.getMultirotorState(vehicle_name = droneName)
     velocity = client.getGpsData(vehicle_name = droneName)
-    global CLUSTER
-    global TASK_GROUP
+    global Cluster
+    global Task_Group
 
     # Creates droneMsg object and inserts values from AirSim apis
     droneMsg = droneData()
@@ -186,7 +186,7 @@ def overseerDataPublisher(pub, client, droneName):
     droneMsg.velocityX = velocity.gnss.velocity.x_val
     droneMsg.velocityY = velocity.gnss.velocity.y_val
     droneMsg.cluster = droneName
-    droneMsg.taskGroup = TASK_GROUP
+    droneMsg.taskGroup = Task_Group
 
     # Publishes to topic
     pub.publish(droneMsg)
@@ -240,6 +240,8 @@ def readCoordFile(filename):
 # Creates drone groups based on wolf number
 def wolfClusterCreation(droneName):
     global DM_Wolfs_Cluster
+    global Cluster
+    Cluster = droneName
     if (droneName == "Overseer_0"):
         DM_Wolfs_Cluster = [0, 1, 2]
     else:

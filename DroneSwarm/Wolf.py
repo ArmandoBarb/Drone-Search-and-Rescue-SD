@@ -76,7 +76,6 @@ Spread_Time = 0 #  time in seconds # time to get in position
 Search_Time = 0 #  time in seconds # time to search
 # TODO: add tunning variables for behaviors (would be cool if we can train them)
 
-
 # Main Process Start ----------------------------------------------
 def wolfDroneController(droneName, droneCount):
     # set global vairable
@@ -329,7 +328,6 @@ def wolfClusterCreation(droneName):
         DM_Wolfs_Cluster = [3, 4, 5]
 
 def commandResponse(request):
-    global Task_Group
     messageType = request.messageType
     lineInfo = request.lineBehaviorStart
     wolfSearchInfo = request.wolfSearchBehaviorStart
@@ -340,7 +338,7 @@ def commandResponse(request):
     lineString = str(lineInfo)
     # Find datatype with info, execute command based on who has data
     if (messageType == "RequestLineBehavior"):
-        startLineBehavior(group0Waypoints = lineInfo.group0Waypoints, group1Waypoints = lineInfo.group1Waypoints)
+        startLineBehavior(lineInfo.cluster)
         # debugPrint("Do line behavior")
         return True
 
@@ -362,8 +360,6 @@ def commandResponse(request):
 
 # Publishes wolf data to (WolfData) topic
 def wolfDataPublisher(pub, client, droneName):
-    global CLUSTER
-    global Task_Group
     position = client.getMultirotorState(vehicle_name = droneName)
     velocity = client.getGpsData(vehicle_name = droneName)
 
@@ -374,7 +370,7 @@ def wolfDataPublisher(pub, client, droneName):
     droneMsg.latitude = position.gps_location.latitude
     droneMsg.velocityX = velocity.gnss.velocity.x_val
     droneMsg.velocityY = velocity.gnss.velocity.y_val
-    droneMsg.cluster = CLUSTER
+    droneMsg.cluster = Cluster
     droneMsg.taskGroup = Task_Group
 
     # Publishes to topic
@@ -538,20 +534,16 @@ def takeOff(droneName):
 
     return client
 
-def startLineBehavior(group0Waypoints, group1Waypoints):
-    global GROUP_0_SEARCH
-    global GROUP_1_SEARCH
+def startLineBehavior(clusterName):
+    global Cluster
     global Line_Behavior
-    GROUP_0_SEARCH = group0Waypoints
-    GROUP_1_SEARCH = group1Waypoints
+    Cluster = clusterName
     Line_Behavior = True
 
 def endLineBehavior():
-    global GROUP_0_SEARCH
-    global GROUP_1_SEARCH
+    global Cluster
     global Line_Behavior
-    GROUP_0_SEARCH = None
-    GROUP_1_SEARCH = None
+    Cluster = ""
     Line_Behavior = False
 
 def startWolfSearch( circleCenterGPS, circleRadiusGPS, circleRadiusMeters, spreadTimeS, searchTimeS, taskGroup):
