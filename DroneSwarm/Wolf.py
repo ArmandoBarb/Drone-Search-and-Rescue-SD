@@ -572,7 +572,7 @@ def wolfSearchBehaviorGetVector(currentDroneData):
         radius = (radius - MIN_CIRCLE_RADIUS_GPS)*timeDiv + MIN_CIRCLE_RADIUS_GPS;
         radiusM = (radiusM - MIN_CIRCLE_RADIUS_METERS)*timeDiv + MIN_CIRCLE_RADIUS_METERS;
     
-    wolfDataArray = wolfService.getWolfDataExC(DM_Drone_Name); #ToDo Task_Group
+    wolfDataArray = wolfService.getWolfDataOfTaskGroup(DM_Drone_Name, Task_Group);
     # calcSpeedVector function variables
     averageAlignmentSpeed = 12;
     bonusAlignmentSpeed = 0;
@@ -619,8 +619,7 @@ def consensusDecisionBehaviorGetVector(currentDroneData):
     radius = Circle_Radius_GPS
     radiusM = Circle_Radius_Meters
     targetGPS = Circle_Center_GPS
-    wolfDataArray = wolfService.getWolfDataExC(DM_Drone_Name);
-    # calcSpeedVector function variables
+    wolfDataArray = wolfService.getWolfDataOfTaskGroup(DM_Drone_Name, Task_Group);
     averageAlignmentSpeed = 12;
     bonusAlignmentSpeed = 0;
     maxCohSepSpeed = 4;
