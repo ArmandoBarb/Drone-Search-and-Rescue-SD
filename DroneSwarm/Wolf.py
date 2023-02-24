@@ -73,7 +73,7 @@ Start_Time = 0 # time
 Spread_Time = 0 #  time in seconds # time to get in position 
 Search_Time = 0 #  time in seconds # time to search
 # TODO: add tunning variables for behaviors (would be cool if we can train them)
-CLUSTER = ""
+Cluster = ""
 TASK_GROUP = ""
 
 # Main Process Start ----------------------------------------------
@@ -360,7 +360,7 @@ def commandResponse(request):
 
 # Publishes wolf data to (WolfData) topic
 def wolfDataPublisher(pub, client, droneName):
-    global CLUSTER
+    global Cluster
     global TASK_GROUP
     position = client.getMultirotorState(vehicle_name = droneName)
     velocity = client.getGpsData(vehicle_name = droneName)
@@ -372,7 +372,7 @@ def wolfDataPublisher(pub, client, droneName):
     droneMsg.latitude = position.gps_location.latitude
     droneMsg.velocityX = velocity.gnss.velocity.x_val
     droneMsg.velocityY = velocity.gnss.velocity.y_val
-    droneMsg.cluster = CLUSTER
+    droneMsg.cluster = Cluster
     droneMsg.taskGroup = TASK_GROUP
 
     # Publishes to topic
@@ -537,15 +537,15 @@ def takeOff(droneName):
     return client
 
 def startLineBehavior(clusterName):
-    global CLUSTER
+    global Cluster
     global Line_Behavior
-    CLUSTER = clusterName
+    Cluster = clusterName
     Line_Behavior = True
 
 def endLineBehavior():
-    global CLUSTER
+    global Cluster
     global Line_Behavior
-    CLUSTER = ""
+    Cluster = ""
     Line_Behavior = False
 
 def startWolfSearch( circleCenterGPS, circleRadiusGPS, circleRadiusMeters, spreadTimeS, searchTimeS ):
