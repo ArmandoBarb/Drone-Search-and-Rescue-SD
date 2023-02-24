@@ -339,7 +339,7 @@ def commandResponse(request):
     lineString = str(lineInfo)
     # Find datatype with info, execute command based on who has data
     if (messageType == "RequestLineBehavior"):
-        startLineBehavior(group0Waypoints = lineInfo.group0Waypoints, group1Waypoints = lineInfo.group1Waypoints)
+        startLineBehavior(lineInfo.cluster)
         # debugPrint("Do line behavior")
         return True
 
@@ -536,12 +536,10 @@ def takeOff(droneName):
 
     return client
 
-def startLineBehavior(group0Waypoints, group1Waypoints):
-    global GROUP_0_SEARCH
-    global GROUP_1_SEARCH
+def startLineBehavior(clusterName):
+    global CLUSTER
     global Line_Behavior
-    GROUP_0_SEARCH = group0Waypoints
-    GROUP_1_SEARCH = group1Waypoints
+    CLUSTER = clusterName
     Line_Behavior = True
 
 def endLineBehavior():
