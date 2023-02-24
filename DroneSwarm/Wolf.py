@@ -114,7 +114,7 @@ def wolfDroneController(droneName, droneCount):
     client.moveToZAsync(z=-3, velocity=8, vehicle_name = droneName).join()
     
     # start camera thread here
-    t = Thread(target = wolfCameraDetection, args=(droneName, client))
+    t = Thread(target = wolfCameraDetection, args=(droneName))
     t.start()
 
     # Test Code startWolfSearch
@@ -277,7 +277,8 @@ def wolfServiceListeners(droneName):
     rospy.spin()
 
 # checks drone camera with yolo detection
-def wolfCameraDetection(droneName, client):
+def wolfCameraDetection(droneName):
+    threadClient = airsim.MultirotorClient(LOCAL_IP)
     debugPrint("Starting wolfCameraDetection loop")
     i = 0;
     timeSpent = 0;
@@ -294,7 +295,7 @@ def wolfCameraDetection(droneName, client):
         if(not(Consensus_Decision_Behavior)):
             if(timeDiff > 18 and droneName == '1'):
                 # targetP is estimated gps position
-                targetP = client.getMultirotorState(vehicle_name = "target")
+                targetP = threadClient.getMultirotorState(vehicle_name = "target")
                 circleCenterGPS = targetP.gps_location
                 circleRadiusGPS = MIN_CIRCLE_RADIUS_GPS*2
                 circleRadiusMeters = MIN_CIRCLE_RADIUS_METERS*2

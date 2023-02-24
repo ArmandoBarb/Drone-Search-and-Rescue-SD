@@ -43,10 +43,10 @@ def spiralSearchCoordinateMaker(groupName, waypointDistance, spawnLocation, star
                         latitude = float(currentWaypoint[1])
                         currentWaypoint = [longitude, latitude]
 
-                    # Writes output to file
-                    outputString = str(currentWaypoint[0]) + " " + str(currentWaypoint[1])
-                    f.write(outputString)
-                    f.write('\n')
+                # Writes output to file
+                outputString = str(currentWaypoint[0]) + " " + str(currentWaypoint[1])
+                f.write(outputString)
+                f.write('\n')
 
     f.close()
 
