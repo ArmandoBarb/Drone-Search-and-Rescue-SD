@@ -61,20 +61,20 @@ GROUP_0_SEARCH = 'Constants/Group0Spiral.txt'
 GROUP_1_SEARCH = 'Constants/Group1Spiral.txt'
 # Internal Wolf Drone Memory End -------------------------------------------
 Line_Behavior = False
+Cluster = ""
+Task_Group = ""
 # Memory for circle behavior
 Wolf_Search_Behavior = False
 Consensus_Decision_Behavior = False
 Circle_Center_GPS = [] # gps cordinate
 Circle_Radius_GPS = 0 # radius distance in gps
-Min_Circle_Radius_GPS = 0.00008983152373552244 # 10 in x direction converted to gps
-Min_Circle_Radius_Meters = 6.988048291572515 # 10 in x direction converted to Meters
+MIN_CIRCLE_RADIUS_GPS = 0.00008983152373552244 # 10 in x direction converted to gps
+MIN_CIRCLE_RADIUS_METERS = 6.988048291572515 # 10 in x direction converted to Meters
 Circle_Radius_Meters = 0 # radius distance in meters
 Start_Time = 0 # time
 Spread_Time = 0 #  time in seconds # time to get in position 
 Search_Time = 0 #  time in seconds # time to search
 # TODO: add tunning variables for behaviors (would be cool if we can train them)
-Cluster = ""
-Task_Group = ""
 
 # Main Process Start ----------------------------------------------
 def wolfDroneController(droneName, droneCount):
@@ -130,8 +130,8 @@ def wolfDroneController(droneName, droneCount):
     # startWolfSearch( circleCenterGPS=targetP.gps_location, circleRadiusGPS=radiusC*7, circleRadiusMeters=radiusM*7, spreadTimeS=40, searchTimeS=70 );
     # startLineBehavior(group0Waypoints = 'Constants/Group0Spiral.txt', group1Waypoints = 'Constants/Group1Spiral.txt')
     # test Consensus Decision
-    # startConsensusDecision( circleCenterGPS=targetP.gps_location, circleRadiusGPS=Min_Circle_Radius_GPS*2, circleRadiusMeters=Min_Circle_Radius_Meters*2, searchTimeS=100 );
-    # startConsensusDecision( circleCenterGPS=targetP.gps_location, circleRadiusGPS=Min_Circle_Radius_GPS*2, circleRadiusMeters=Min_Circle_Radius_Meters*2, searchTimeS=100 );
+    # startConsensusDecision( circleCenterGPS=targetP.gps_location, circleRadiusGPS=MIN_CIRCLE_RADIUS_GPS*2, circleRadiusMeters=MIN_CIRCLE_RADIUS_METERS*2, searchTimeS=100 );
+    # startConsensusDecision( circleCenterGPS=targetP.gps_location, circleRadiusGPS=MIN_CIRCLE_RADIUS_GPS*2, circleRadiusMeters=MIN_CIRCLE_RADIUS_METERS*2, searchTimeS=100 );
 
     # Wolf Drone search loop Start
     i = 1
@@ -297,21 +297,22 @@ def wolfCameraDetection(droneName):
                 # targetP is estimated gps position
                 targetP = threadClient.getMultirotorState(vehicle_name = "target")
                 circleCenterGPS = targetP.gps_location
-                circleRadiusGPS = Min_Circle_Radius_GPS*2
-                circleRadiusMeters = Min_Circle_Radius_Meters*2
+                circleRadiusGPS = MIN_CIRCLE_RADIUS_GPS*2
+                circleRadiusMeters = MIN_CIRCLE_RADIUS_METERS*2
                 searchTimeS = 100
-                startConsensusDecision( circleCenterGPS=circleCenterGPS, circleRadiusGPS=circleRadiusGPS, circleRadiusMeters=circleRadiusMeters, searchTimeS=searchTimeS )
+                taskGroup = droneName + "Con"
+                startConsensusDecision( circleCenterGPS=circleCenterGPS, circleRadiusGPS=circleRadiusGPS, circleRadiusMeters=circleRadiusMeters, searchTimeS=searchTimeS, taskGroup=taskGroup )
                 # ToDO addd function call to return list of availalbe drones
                 # THis is Hardcoded need to replace
-                instructWolf.sendConsensusDecisionBehaviorRequest(WOLF_DRONE_SERVICE + '2', circleCenterGPS, circleRadiusGPS, circleRadiusMeters, searchTimeS)
-                instructWolf.sendConsensusDecisionBehaviorRequest(WOLF_DRONE_SERVICE + '0', circleCenterGPS, circleRadiusGPS, circleRadiusMeters, searchTimeS)
+                instructWolf.sendConsensusDecisionBehaviorRequest(WOLF_DRONE_SERVICE + '2', circleCenterGPS, circleRadiusGPS, circleRadiusMeters, searchTimeS, taskGroup)
+                instructWolf.sendConsensusDecisionBehaviorRequest(WOLF_DRONE_SERVICE + '0', circleCenterGPS, circleRadiusGPS, circleRadiusMeters, searchTimeS, taskGroup)
 
         time.sleep(1);
         end = time.time();
         timeSpent += end-start;
         i+=1
     return;
-# startConsensusDecision( circleCenterGPS=targetP.gps_location, circleRadiusGPS=Min_Circle_Radius_GPS*2, circleRadiusMeters=Min_Circle_Radius_Meters*2, searchTimeS=100 );
+# startConsensusDecision( circleCenterGPS=targetP.gps_location, circleRadiusGPS=MIN_CIRCLE_RADIUS_GPS*2, circleRadiusMeters=MIN_CIRCLE_RADIUS_METERS*2, searchTimeS=100 );
     debugPrint(" CameraDetection: Average Loop Time: " + str(timeSpent / i))
 
 
@@ -329,7 +330,6 @@ def wolfClusterCreation(droneName):
         DM_Wolfs_Cluster = [3, 4, 5]
 
 def commandResponse(request):
-    global Task_Group
     messageType = request.messageType
     lineInfo = request.lineBehaviorStart
     wolfSearchInfo = request.wolfSearchBehaviorStart
@@ -354,15 +354,14 @@ def commandResponse(request):
         circleRadiusGPS = consensusDecisionInfo.circleRadiusGPS
         circleRadiusMeters = consensusDecisionInfo.circleRadiusMeters
         searchTimeS = consensusDecisionInfo.searchTimeS
-        startConsensusDecision( circleCenterGPS=circleCenterGPS, circleRadiusGPS=circleRadiusGPS, circleRadiusMeters=circleRadiusMeters, searchTimeS=searchTimeS );
+        taskGroup = consensusDecisionInfo.taskGroup
+        startConsensusDecision( circleCenterGPS=circleCenterGPS, circleRadiusGPS=circleRadiusGPS, circleRadiusMeters=circleRadiusMeters, searchTimeS=searchTimeS, taskGroup=taskGroup );
         return True
     
     return False
 
 # Publishes wolf data to (WolfData) topic
 def wolfDataPublisher(pub, client, droneName):
-    global Cluster
-    global Task_Group
     position = client.getMultirotorState(vehicle_name = droneName)
     velocity = client.getGpsData(vehicle_name = droneName)
 
@@ -549,18 +548,19 @@ def endLineBehavior():
     Cluster = ""
     Line_Behavior = False
 
-def startWolfSearch( circleCenterGPS, circleRadiusGPS, circleRadiusMeters, spreadTimeS, searchTimeS ):
+def startWolfSearch( circleCenterGPS, circleRadiusGPS, circleRadiusMeters, spreadTimeS, searchTimeS, taskGroup):
     global Wolf_Search_Behavior;
     global Circle_Center_GPS;
     global Circle_Radius_GPS, Circle_Radius_Meters;
     global Start_Time, Spread_Time, Search_Time;
-
+    global Task_Group;
 
     Circle_Center_GPS = circleCenterGPS;
     Circle_Radius_GPS, Circle_Radius_Meters = circleRadiusGPS, circleRadiusMeters;
     Search_Time = searchTimeS;
     Spread_Time = spreadTimeS;
     Start_Time = time.time();
+    Task_Group = taskGroup;
     Wolf_Search_Behavior = True;
 
 def wolfSearchBehaviorGetVector(currentDroneData):
@@ -570,10 +570,10 @@ def wolfSearchBehaviorGetVector(currentDroneData):
     timeDiff = time.time() - Start_Time;
     if (timeDiff > Spread_Time):
         timeDiv = (Search_Time - (timeDiff - Spread_Time)) / Search_Time
-        radius = (radius - Min_Circle_Radius_GPS)*timeDiv + Min_Circle_Radius_GPS;
-        radiusM = (radiusM - Min_Circle_Radius_Meters)*timeDiv + Min_Circle_Radius_Meters;
+        radius = (radius - MIN_CIRCLE_RADIUS_GPS)*timeDiv + MIN_CIRCLE_RADIUS_GPS;
+        radiusM = (radiusM - MIN_CIRCLE_RADIUS_METERS)*timeDiv + MIN_CIRCLE_RADIUS_METERS;
     
-    wolfDataArray = wolfService.getWolfDataExC(DM_Drone_Name);
+    wolfDataArray = wolfService.getWolfDataExC(DM_Drone_Name); #ToDo Task_Group
     # calcSpeedVector function variables
     averageAlignmentSpeed = 12;
     bonusAlignmentSpeed = 0;
@@ -593,25 +593,28 @@ def endWolfSearch():
     global Circle_Center_GPS;
     global Circle_Radius_GPS, Circle_Radius_Meters;
     global Start_Time, Spread_Time, Search_Time;
-
+    global Task_Group;
 
     Circle_Center_GPS = None;
     Circle_Radius_GPS, Circle_Radius_Meters = None, None;
     Start_Time, Spread_Time, Search_Time = None, None, None;
+    Task_Group = "";
     Wolf_Search_Behavior = False;
 
-def startConsensusDecision( circleCenterGPS, circleRadiusGPS, circleRadiusMeters, searchTimeS ):
+def startConsensusDecision( circleCenterGPS, circleRadiusGPS, circleRadiusMeters, searchTimeS, taskGroup):
     global Consensus_Decision_Behavior;
     global Circle_Center_GPS;
     global Circle_Radius_GPS, Circle_Radius_Meters;
     global Start_Time, Spread_Time, Search_Time;
-
+    global Task_Group;
 
     Circle_Center_GPS = circleCenterGPS;
     Circle_Radius_GPS, Circle_Radius_Meters = circleRadiusGPS, circleRadiusMeters;
     Search_Time = searchTimeS;
     Start_Time = time.time();
+    Task_Group = taskGroup;
     Consensus_Decision_Behavior = True;
+    Wolf_Search_Behavior = False; 
 
 def consensusDecisionBehaviorGetVector(currentDroneData):
     radius = Circle_Radius_GPS
@@ -641,11 +644,14 @@ def endConsensusDecision():
     global Circle_Center_GPS;
     global Circle_Radius_GPS, Circle_Radius_Meters;
     global Start_Time, Spread_Time, Search_Time;
+    global Task_Group;
 
     Circle_Center_GPS = None;
     Circle_Radius_GPS, Circle_Radius_Meters = None, None;
     Start_Time, Search_Time = None, None;
+    Task_Group = "";
     Consensus_Decision_Behavior = False;
+    
 
 
 def debugPrint( debugMessage):
