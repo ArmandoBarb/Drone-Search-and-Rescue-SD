@@ -53,6 +53,8 @@ WAYPOINT_COORDS = []
 WAYPOINT_INDEX = 0
 GROUP_0_SEARCH = 'Constants/Group0Spiral.txt'
 GROUP_1_SEARCH = 'Constants/Group1Spiral.txt'
+CLUSTER = None
+TASK_GROUP = None
 
 # Main Process Start ----------------------------------------------
 # Main function for the overseer drone
@@ -98,7 +100,7 @@ def overseerDroneController(droneName, droneCount):
         wolfNum = num + droneLimit
         wolfDroneService = WOLF_DRONE_SERVICE + str(wolfNum)
         # sendWolfCommandClusterInfo(wolfDroneService)
-        sendLinebehaviorRequest(wolfDroneService, GROUP_0_SEARCH, GROUP_1_SEARCH)
+        sendLinebehaviorRequest(wolfDroneService, droneName)
 
     # Overseer Drone search loop Start
     i = 0
@@ -173,6 +175,8 @@ def handleOverseerCommunication(data, args):
 def overseerDataPublisher(pub, client, droneName):
     position = client.getMultirotorState(vehicle_name = droneName)
     velocity = client.getGpsData(vehicle_name = droneName)
+    global CLUSTER
+    global TASK_GROUP
 
     # Creates droneMsg object and inserts values from AirSim apis
     droneMsg = droneData()
@@ -181,6 +185,8 @@ def overseerDataPublisher(pub, client, droneName):
     droneMsg.latitude = position.gps_location.latitude
     droneMsg.velocityX = velocity.gnss.velocity.x_val
     droneMsg.velocityY = velocity.gnss.velocity.y_val
+    droneMsg.cluster = droneName
+    droneMsg.taskGroup = TASK_GROUP
 
     # Publishes to topic
     pub.publish(droneMsg)
