@@ -26,11 +26,19 @@ from threading import Thread # USe for important code running constantly
 from std_msgs.msg import String
 from std_srvs.srv import Trigger, TriggerResponse
 from airsim_ros_pkgs.msg import droneData
+from airsim_ros_pkgs.msg import droneData
+from airsim_ros_pkgs.msg import requestLineBehavior
+from airsim_ros_pkgs.msg import requestWolfSearchBehavior
+from airsim_ros_pkgs.msg import requestConsensusDecisionBehavior
+from airsim_ros_pkgs.srv import getDroneData
+from airsim_ros_pkgs.srv import sendCommand
 import ServiceRequestors.wolfGetWolfData as wolfService
+import ServiceRequestors.instructWolf as instructWolf
 import HelperFunctions.calcHelper as helper
 
 # Environmental Variables
-RUNTIME = configDrones.RUNTIME
+LOOP_NUMBER = configDrones.LOOP_NUMBER
+MAX_TIME = configDrones.MAX_TIME
 LOCAL_IP = configDrones.LOCAL_IP
 # ros: topics
 SLAM_MERGE_TOPIC = ros.SLAM_MERGE_TOPIC # TODO
@@ -53,17 +61,20 @@ GROUP_0_SEARCH = 'Constants/Group0Spiral.txt'
 GROUP_1_SEARCH = 'Constants/Group1Spiral.txt'
 # Internal Wolf Drone Memory End -------------------------------------------
 Line_Behavior = False
+Cluster = ""
+Task_Group = ""
 # Memory for circle behavior
 Wolf_Search_Behavior = False
 Consensus_Decision_Behavior = False
 Circle_Center_GPS = [] # gps cordinate
 Circle_Radius_GPS = 0 # radius distance in gps
-Min_Circle_Radius_GPS = 0.00008983152373552244 # 10 in x direction converted to gps
-Min_Circle_Radius_Meters = 6.988048291572515 # 10 in x direction converted to Meters
+MIN_CIRCLE_RADIUS_GPS = 0.00008983152373552244 # 10 in x direction converted to gps
+MIN_CIRCLE_RADIUS_METERS = 6.988048291572515 # 10 in x direction converted to Meters
 Circle_Radius_Meters = 0 # radius distance in meters
 Start_Time = 0 # time
 Spread_Time = 0 #  time in seconds # time to get in position 
 Search_Time = 0 #  time in seconds # time to search
+End_Loop = False
 # TODO: add tunning variables for behaviors (would be cool if we can train them)
 
 # Main Process Start ----------------------------------------------
@@ -72,6 +83,7 @@ def wolfDroneController(droneName, droneCount):
     global DM_Drone_Name
     DM_Drone_Name = droneName
     global WAYPOINT_INDEX
+    global End_Loop
 
     # Sets global values for wolf cluster and coordinate
     wolfClusterCreation(droneName)
@@ -92,6 +104,9 @@ def wolfDroneController(droneName, droneCount):
     # Start all threads here (if you have to make one somwhere else bring it up with the team)
     t = Thread(target = wolfServiceListeners, args=(droneName))
     t.start()
+    t2 = Thread(target = endListener)
+    t2.start()
+
 
     # Create topic publishers
     # (TODO: ADD IN SLAM MERGE AND COMMAND RESULT PUBLISHERS)
@@ -101,7 +116,10 @@ def wolfDroneController(droneName, droneCount):
     # Sets and connects to client and takes off drone
     client = takeOff(droneName)
     client.moveToZAsync(z=-3, velocity=8, vehicle_name = droneName).join()
-
+    
+    # start camera thread here
+    t = Thread(target = wolfCameraDetection, args=(droneName))
+    t.start()
 
     # Test Code startWolfSearch
     targetP = client.getMultirotorState(vehicle_name = "target")
@@ -111,23 +129,33 @@ def wolfDroneController(droneName, droneCount):
     radiusM = helper.calcDistanceInMetersBetweenGPS(targetP.gps_location, targetC.gps_location);
 
     # test Wolf Search
-    # ( circleCenterGPS=targetP.gps_location, circleRadiusGPS=radiusC*7, circleRadiusMeters=radiusM*7, spreadTimeS=40, searchTimeS=70 );
+    # startWolfSearch( circleCenterGPS=targetP.gps_location, circleRadiusGPS=radiusC*7, circleRadiusMeters=radiusM*7, spreadTimeS=40, searchTimeS=70 );
+    # startLineBehavior(group0Waypoints = 'Constants/Group0Spiral.txt', group1Waypoints = 'Constants/Group1Spiral.txt')
+    # startWolfSearch( circleCenterGPS=targetP.gps_location, circleRadiusGPS=radiusC*7, circleRadiusMeters=radiusM*7, spreadTimeS=40, searchTimeS=70 );
+    # startLineBehavior(group0Waypoints = 'Constants/Group0Spiral.txt', group1Waypoints = 'Constants/Group1Spiral.txt')
     # test Consensus Decision
-    # startConsensusDecision( circleCenterGPS=targetP.gps_location, circleRadiusGPS=Min_Circle_Radius_GPS*2, circleRadiusMeters=Min_Circle_Radius_Meters*2, searchTimeS=100 );
+    # startConsensusDecision( circleCenterGPS=targetP.gps_location, circleRadiusGPS=MIN_CIRCLE_RADIUS_GPS*2, circleRadiusMeters=MIN_CIRCLE_RADIUS_METERS*2, searchTimeS=100 );
+    # startConsensusDecision( circleCenterGPS=targetP.gps_location, circleRadiusGPS=MIN_CIRCLE_RADIUS_GPS*2, circleRadiusMeters=MIN_CIRCLE_RADIUS_METERS*2, searchTimeS=100 );
 
     # Wolf Drone search loop Start
     i = 1
     debugPrint("Starting Search and Rescue loop")
-    looptime =  7000
     timeSpent = 0;
-    maxTime = 10
-    Runtime = time.time()
-    while (i < looptime):
-        timeDiff = time.time() - Runtime
-        if (timeDiff > maxTime):
-            break
+    runtime = time.time()
+    while (i < LOOP_NUMBER):
+        # If we receive end command, end the loop
+        if (End_Loop):
+            debugPrint("Ending loop")
+            return
+
+        timeDiff = time.time() - runtime
+        if (timeDiff > MAX_TIME):
+            endLineBehavior()
+            break;
 
         vector = [0, 0] # dont move if nothing to do
+        yaw_mode = airsim.YawMode(is_rate=False, yaw_or_rate=(0)) # Set yaw to zero
+
         # test consensus behavior
         if(Consensus_Decision_Behavior):
             timeDiff = time.time() - Start_Time;
@@ -135,31 +163,31 @@ def wolfDroneController(droneName, droneCount):
             newP = None
             if (timeDiff < stageLength):
                 newP = client.getMultirotorState(vehicle_name = "target")
-                if (droneName == "0"):
-                    print('target');
+                # if (droneName == "0"):
+                    # print('target');
             elif (timeDiff < stageLength*2):
                 newP = client.getMultirotorState(vehicle_name = "targetR")
-                if (droneName == "0"):
-                    print('targetR');
+                # if (droneName == "0"):
+                    # print('targetR');
             elif (timeDiff < stageLength*3):
                 newP = client.getMultirotorState(vehicle_name = "circle")
-                if (droneName == "0"):
-                    print('circle');
+                # if (droneName == "0"):
+                    # print('circle');
             elif (timeDiff < stageLength*4):
                 newP = client.getMultirotorState(vehicle_name = "circle2")
-                if (droneName == "0"):
-                    print('circle2');
+                # if (droneName == "0"):
+                    # print('circle2');
             elif (timeDiff < stageLength*5):
                 newP = client.getMultirotorState(vehicle_name = "circle3")
-                if (droneName == "0"):
-                    print('circle3');
+                # if (droneName == "0"):
+                    # print('circle3');
             else:
                 newP = client.getMultirotorState(vehicle_name = "target")
-                if (droneName == "0"):
-                    print('circle3');
+                # if (droneName == "0"):
+                    # print('circle3');
             if (newP != None):
-                if (droneName == "0"):
-                    print("Gps: " + str(newP.gps_location));
+                # if (droneName == "0"):
+                    # print("Gps: " + str(newP.gps_location));
                 updateConsensusDecisionCenter(circleCenterGPS=newP.gps_location);
 
         
@@ -183,16 +211,32 @@ def wolfDroneController(droneName, droneCount):
 
 
         # # TODO: Add in Drone behavior desion making
-        # TODO: Line formation behavior, toss in waypoint drone will move to
-        # newWaypoint = getNewWaypoint(droneName)
-        # Does line behavior to move to waypoints
-        # vector = lineBehavior(client, int(droneName), DM_Wolfs_Cluster, newWaypoint)
+        if (Consensus_Decision_Behavior): # Consensus Descion behavior
+            currentDroneData = client.getMultirotorState(vehicle_name = droneName);
+            
+            vector = consensusDecisionBehaviorGetVector(currentDroneData);
 
-        # If all drones make it to the waypoint, more to next waypoint
-        # allDronesAtWaypoint()
+            yawDegrees = wolfSearchBehavior.calcYaw(currentGPS=currentDroneData.gps_location, targetGPS=Circle_Center_GPS);
+            yaw_mode  = airsim.YawMode(is_rate=False, yaw_or_rate=(yawDegrees));
 
-        # Line_Behavior = True
-        if (Line_Behavior):
+            # check if time to end consensus Desension
+            timeDiff = time.time() - Start_Time
+            if (timeDiff > (Search_Time)):
+                endConsensusDecision();
+
+        elif (Wolf_Search_Behavior): # Wolf Search behavior
+            currentDroneData = client.getMultirotorState(vehicle_name = droneName);
+
+            vector = wolfSearchBehaviorGetVector(currentDroneData);
+
+            yawDegrees = wolfSearchBehavior.calcYaw(currentGPS=currentDroneData.gps_location, targetGPS=Circle_Center_GPS);
+            yaw_mode  = airsim.YawMode(is_rate=False, yaw_or_rate=(yawDegrees));
+
+            timeDiff = time.time() - Start_Time;
+            if (timeDiff > (Spread_Time + Search_Time)):
+                endWolfSearch();
+
+        elif (Line_Behavior): # Line_Behavior
             # Gets drones waypoint and vector movement
             newWaypoint = getNewWaypoint(droneName)
             vector = lineBehavior(client, int(droneName), DM_Wolfs_Cluster, newWaypoint)
@@ -211,62 +255,7 @@ def wolfDroneController(droneName, droneCount):
                 degrees = 0
                 yaw_mode = airsim.YawMode(is_rate=False, yaw_or_rate=(degrees));
 
-        # TODO: Wolf Search behavior
-        if (Wolf_Search_Behavior):
-            radius = Circle_Radius_GPS
-            radiusM = Circle_Radius_Meters
 
-            timeDiff = time.time() - Start_Time;
-            if (timeDiff > Spread_Time):
-                timeDiv = (Search_Time - (timeDiff - Spread_Time)) / Search_Time
-                radius = (radius - Min_Circle_Radius_GPS)*timeDiv + Min_Circle_Radius_GPS;
-                radiusM = (radiusM - Min_Circle_Radius_Meters)*timeDiv + Min_Circle_Radius_Meters;
-            
-            wolfDataArray = wolfService.getWolfDataExC(droneName);
-            position = client.getMultirotorState(vehicle_name = droneName);
-            # calcSpeedVector function variables
-            averageAlignmentSpeed = 12;
-            bonusAlignmentSpeed = 0;
-            maxCohSepSpeed = 4;
-            maxSpeed = 13
-
-            vector = wolfSearchBehavior.calcSpeedVector(currentDroneData=position, targetGPS=Circle_Center_GPS, \
-                        radius=radius, radiusM=radiusM, wolfData=wolfDataArray, \
-                        averageAlignmentSpeed=averageAlignmentSpeed, bonusAlignmentSpeed=bonusAlignmentSpeed, \
-                        maxCohSepSpeed=maxCohSepSpeed, maxSpeed=maxSpeed);
-
-            yawDegrees = wolfSearchBehavior.calcYaw(currentGPS=position.gps_location, targetGPS=Circle_Center_GPS);
-            yaw_mode  = airsim.YawMode(is_rate=False, yaw_or_rate=(yawDegrees));
-
-            if (timeDiff > (Spread_Time + Search_Time)):
-                endWolfSearch();
-
-
-        # TODO: Consensus Descion behavior
-        if (Consensus_Decision_Behavior):
-            radius = Circle_Radius_GPS
-            radiusM = Circle_Radius_Meters
-
-            targetGPS = Circle_Center_GPS
-            
-            wolfDataArray = wolfService.getWolfDataExC(droneName);
-            position = client.getMultirotorState(vehicle_name = droneName);
-            # calcSpeedVector function variables
-            averageAlignmentSpeed = 12;
-            bonusAlignmentSpeed = 0;
-            maxCohSepSpeed = 4;
-            maxSpeed = 13
-
-            vector = wolfSearchBehavior.calcSpeedVector(currentDroneData=position, targetGPS=targetGPS, \
-                        radius=radius, radiusM=radiusM, wolfData=wolfDataArray, \
-                        averageAlignmentSpeed=averageAlignmentSpeed, bonusAlignmentSpeed=bonusAlignmentSpeed, \
-                        maxCohSepSpeed=maxCohSepSpeed, maxSpeed=maxSpeed);
-
-            yawDegrees = wolfSearchBehavior.calcYaw(currentGPS=position.gps_location, targetGPS=targetGPS);
-            yaw_mode  = airsim.YawMode(is_rate=False, yaw_or_rate=(yawDegrees));
-
-            if (timeDiff > (Search_Time)):
-                endConsensusDecision();
         # TODO: Apply turning to desired action
         # TODO: Overide other behaviors if collisionAvoidance is needed
 
@@ -293,8 +282,57 @@ def wolfDroneController(droneName, droneCount):
 # Theads Start ===========================================
 def wolfServiceListeners(droneName):
     serviceName = WOLF_DRONE_SERVICE + droneName
-    service = rospy.Service(serviceName, Trigger, trigger_response)
+    service = rospy.Service(serviceName, sendCommand, commandResponse)
     rospy.spin()
+
+def endListener():
+    rospy.Subscriber(ros.END_LOOP_TOPIC, String, handleEnd)
+    rospy.spin()
+
+def handleEnd(data):
+    global End_Loop
+    if (data.data == "End"):
+        End_Loop = True
+
+# checks drone camera with yolo detection
+def wolfCameraDetection(droneName):
+    threadClient = airsim.MultirotorClient(LOCAL_IP)
+    debugPrint("Starting wolfCameraDetection loop")
+    i = 0;
+    timeSpent = 0;
+    runtime = time.time()
+    while (i < LOOP_NUMBER):
+        timeDiff = time.time() - runtime
+        if (timeDiff > MAX_TIME):
+            break;
+        start=time.time() # gather time data
+        # todo: marry add camera checkl nad yolo detector
+
+        # mock detection
+        timeDiff = time.time() - runtime
+        if(not(Consensus_Decision_Behavior)):
+            if(timeDiff > 18 and droneName == '1'):
+                # targetP is estimated gps position
+                targetP = threadClient.getMultirotorState(vehicle_name = "target")
+                circleCenterGPS = targetP.gps_location
+                circleRadiusGPS = MIN_CIRCLE_RADIUS_GPS*2
+                circleRadiusMeters = MIN_CIRCLE_RADIUS_METERS*2
+                searchTimeS = 100
+                taskGroup = droneName + "Con"
+                startConsensusDecision( circleCenterGPS=circleCenterGPS, circleRadiusGPS=circleRadiusGPS, circleRadiusMeters=circleRadiusMeters, searchTimeS=searchTimeS, taskGroup=taskGroup )
+                # ToDO addd function call to return list of availalbe drones
+                # THis is Hardcoded need to replace
+                instructWolf.sendConsensusDecisionBehaviorRequest(WOLF_DRONE_SERVICE + '2', circleCenterGPS, circleRadiusGPS, circleRadiusMeters, searchTimeS, taskGroup)
+                instructWolf.sendConsensusDecisionBehaviorRequest(WOLF_DRONE_SERVICE + '0', circleCenterGPS, circleRadiusGPS, circleRadiusMeters, searchTimeS, taskGroup)
+
+        time.sleep(1);
+        end = time.time();
+        timeSpent += end-start;
+        i+=1
+    return;
+# startConsensusDecision( circleCenterGPS=targetP.gps_location, circleRadiusGPS=MIN_CIRCLE_RADIUS_GPS*2, circleRadiusMeters=MIN_CIRCLE_RADIUS_METERS*2, searchTimeS=100 );
+    debugPrint(" CameraDetection: Average Loop Time: " + str(timeSpent / i))
+
 
 # Theads END ===========================================
 
@@ -309,11 +347,36 @@ def wolfClusterCreation(droneName):
     else:
         DM_Wolfs_Cluster = [3, 4, 5]
 
-def trigger_response(request):
-    return TriggerResponse(
-        success=True,
-        message="Got service response from wolf"
-    )
+def commandResponse(request):
+    messageType = request.messageType
+    lineInfo = request.lineBehaviorStart
+    wolfSearchInfo = request.wolfSearchBehaviorStart
+    consensusDecisionInfo = request.consensusDecisionBehaviorStart
+
+    print("Got a command")
+    
+    lineString = str(lineInfo)
+    # Find datatype with info, execute command based on who has data
+    if (messageType == "RequestLineBehavior"):
+        startLineBehavior(lineInfo.cluster)
+        # debugPrint("Do line behavior")
+        return True
+
+    elif (messageType == "RequestWolfSearch"):
+        # debugPrint("Do wolf search")
+        return True
+
+    elif (messageType == "RequestConsensusDecision"):
+        # debugPrint("Do consensus decision")
+        circleCenterGPS = consensusDecisionInfo.circleCenterGPS
+        circleRadiusGPS = consensusDecisionInfo.circleRadiusGPS
+        circleRadiusMeters = consensusDecisionInfo.circleRadiusMeters
+        searchTimeS = consensusDecisionInfo.searchTimeS
+        taskGroup = consensusDecisionInfo.taskGroup
+        startConsensusDecision( circleCenterGPS=circleCenterGPS, circleRadiusGPS=circleRadiusGPS, circleRadiusMeters=circleRadiusMeters, searchTimeS=searchTimeS, taskGroup=taskGroup );
+        return True
+    
+    return False
 
 # Publishes wolf data to (WolfData) topic
 def wolfDataPublisher(pub, client, droneName):
@@ -327,6 +390,8 @@ def wolfDataPublisher(pub, client, droneName):
     droneMsg.latitude = position.gps_location.latitude
     droneMsg.velocityX = velocity.gnss.velocity.x_val
     droneMsg.velocityY = velocity.gnss.velocity.y_val
+    droneMsg.cluster = Cluster
+    droneMsg.taskGroup = Task_Group
 
     # Publishes to topic
     pub.publish(droneMsg)
@@ -357,20 +422,17 @@ def getNewWaypoint(droneName):
         if (len(DM_Wolfs_Cluster) == 3):
             # Moves first drone left of the waypoint
             if ((int(droneName) % 3) == 0):
-                newWaypointX = float(currentWaypoint[0]) - yDirection
-                newWaypointY = float(currentWaypoint[1]) + xDirection
+                newWaypointX = float(currentWaypoint[0]) - yDirection + xDirection
+                newWaypointY = float(currentWaypoint[1]) + xDirection + yDirection
                 newWaypoint = [float(newWaypointX), float(newWaypointY)]
-                # print("Drone", droneName, "Int dronename", (int(droneName)), "Moving to ", newWaypoint)
             # Moves second drone directly to waypoint
             elif((int(droneName) % 3) == 1):
                 newWaypoint = currentWaypoint
-                # print("Drone", droneName, "Moving to ", newWaypoint)
             # Moves third drone right of the waypoint
             elif((int(droneName) % 3) == 2):
-                newWaypointX = float(currentWaypoint[0]) + yDirection
-                newWaypointY = float(currentWaypoint[1]) - xDirection
+                newWaypointX = float(currentWaypoint[0]) + yDirection - xDirection
+                newWaypointY = float(currentWaypoint[1]) - xDirection - yDirection
                 newWaypoint = [float(newWaypointX), float(newWaypointY)]
-                # print("Drone", droneName, "Int dronename", (int(droneName)), "Moving to ", newWaypoint)
 
         # Creates lanes for 4 group clusters
         if (len(DM_Wolfs_Cluster) == 4):
@@ -420,16 +482,62 @@ def readCoordFile(filename):
 def allDronesAtWaypoint():
     global WAYPOINT_INDEX
     wolfInfoArray = wolfService.getWolfState()
-    for droneNum in DM_Wolfs_Cluster:
-        xDifference = wolfInfoArray[droneNum].longitude - float(WAYPOINT_COORDS[WAYPOINT_INDEX][0])
-        yDifference = wolfInfoArray[droneNum].latitude - float(WAYPOINT_COORDS[WAYPOINT_INDEX][1])
 
-        # If any of the drones are out of bounds, return false
-        if ((abs(xDifference) > 0.00015) or (abs(yDifference) > 0.00015)):
-            return 0
+    currentWaypoint = WAYPOINT_COORDS[WAYPOINT_INDEX]
+    newWaypoint = currentWaypoint
+
+    if (WAYPOINT_INDEX >= 1):
+        radius = 0.0001
+        previousWaypoint = WAYPOINT_COORDS[WAYPOINT_INDEX-1]
+
+        # Finds vector between waypoints
+        waypointDiffX = float(currentWaypoint[0]) - float(previousWaypoint[0])
+        waypointDiffY = float(currentWaypoint[1]) - float(previousWaypoint[1])
+
+        # Gets normalized difference vector
+        vectorVal = sqrt(waypointDiffX**2 + waypointDiffY**2)
+        xDirection = (waypointDiffX/vectorVal) * radius
+        yDirection = (waypointDiffY/vectorVal) * radius
+
+        if (len(DM_Wolfs_Cluster) == 3):
+            for droneNum in DM_Wolfs_Cluster:
+                # Calculates first drone based of lane
+                if ((int(droneNum) % 3) == 0):
+                    newWaypointX = float(currentWaypoint[0]) - yDirection + xDirection
+                    newWaypointY = float(currentWaypoint[1]) + xDirection + yDirection
+                    newWaypoint = [float(newWaypointX), float(newWaypointY)]
+                # Calculates second drone based of lane
+                elif((int(droneNum) % 3) == 1):
+                    newWaypoint = currentWaypoint
+
+                # Calculates third drone based of lane
+                elif((int(droneNum) % 3) == 2):
+                    newWaypointX = float(currentWaypoint[0]) + yDirection - xDirection
+                    newWaypointY = float(currentWaypoint[1]) - xDirection - yDirection
+                    newWaypoint = [float(newWaypointX), float(newWaypointY)]                  
+
+                # Get difference between waypoint and drones actual location
+                xDifference = wolfInfoArray[droneNum].longitude - newWaypointX
+                yDifference = wolfInfoArray[droneNum].latitude - newWaypointY
+
+                # If any of the drones are out of bounds, return false
+                if ((abs(xDifference) > 0.00015) or (abs(yDifference) > 0.00015)):
+                    return 0
+
+        # TODO: IMPLEMENT GROUP OF FOUR MATH IF NECESSARY
+
+    else:
+        for droneNum in DM_Wolfs_Cluster:
+            xDifference = wolfInfoArray[droneNum].longitude - float(WAYPOINT_COORDS[WAYPOINT_INDEX][0])
+            yDifference = wolfInfoArray[droneNum].latitude - float(WAYPOINT_COORDS[WAYPOINT_INDEX][1])
+
+            # If any of the drones are out of bounds, return false
+            if ((abs(xDifference) > 0.0002) or (abs(yDifference) > 0.0002)):
+                return 0
 
     WAYPOINT_INDEX = WAYPOINT_INDEX + 1
-    print("Drones:", DM_Wolfs_Cluster, "Made it to waypoint:", WAYPOINT_INDEX)
+    # print("Drones:", DM_Wolfs_Cluster, "Made it to waypoint:", WAYPOINT_INDEX)
+    # print("Drones:", DM_Wolfs_Cluster, "Made it to waypoint:", WAYPOINT_INDEX)
     return 1
 
 
@@ -446,44 +554,102 @@ def takeOff(droneName):
 
     return client
 
-def startWolfSearch( circleCenterGPS, circleRadiusGPS, circleRadiusMeters, spreadTimeS, searchTimeS ):
+def startLineBehavior(clusterName):
+    global Cluster
+    global Line_Behavior
+    Cluster = clusterName
+    Line_Behavior = True
+
+def endLineBehavior():
+    global Cluster
+    global Line_Behavior
+    Cluster = ""
+    Line_Behavior = False
+
+def startWolfSearch( circleCenterGPS, circleRadiusGPS, circleRadiusMeters, spreadTimeS, searchTimeS, taskGroup):
     global Wolf_Search_Behavior;
     global Circle_Center_GPS;
     global Circle_Radius_GPS, Circle_Radius_Meters;
     global Start_Time, Spread_Time, Search_Time;
-
+    global Task_Group;
 
     Circle_Center_GPS = circleCenterGPS;
     Circle_Radius_GPS, Circle_Radius_Meters = circleRadiusGPS, circleRadiusMeters;
     Search_Time = searchTimeS;
     Spread_Time = spreadTimeS;
     Start_Time = time.time();
+    Task_Group = taskGroup;
     Wolf_Search_Behavior = True;
+
+def wolfSearchBehaviorGetVector(currentDroneData):
+    radius = Circle_Radius_GPS
+    radiusM = Circle_Radius_Meters
+
+    timeDiff = time.time() - Start_Time;
+    if (timeDiff > Spread_Time):
+        timeDiv = (Search_Time - (timeDiff - Spread_Time)) / Search_Time
+        radius = (radius - MIN_CIRCLE_RADIUS_GPS)*timeDiv + MIN_CIRCLE_RADIUS_GPS;
+        radiusM = (radiusM - MIN_CIRCLE_RADIUS_METERS)*timeDiv + MIN_CIRCLE_RADIUS_METERS;
+    
+    wolfDataArray = wolfService.getWolfDataOfTaskGroup(DM_Drone_Name, Task_Group);
+    # calcSpeedVector function variables
+    averageAlignmentSpeed = 12;
+    bonusAlignmentSpeed = 0;
+    maxCohSepSpeed = 4;
+    maxSpeed = 13;
+
+    vector = wolfSearchBehavior.calcSpeedVector(currentDroneData=currentDroneData, targetGPS=Circle_Center_GPS, \
+                radius=radius, radiusM=radiusM, wolfData=wolfDataArray, \
+                averageAlignmentSpeed=averageAlignmentSpeed, bonusAlignmentSpeed=bonusAlignmentSpeed, \
+                maxCohSepSpeed=maxCohSepSpeed, maxSpeed=maxSpeed);
+    
+    return vector;
+
 
 def endWolfSearch():
     global Wolf_Search_Behavior;
     global Circle_Center_GPS;
     global Circle_Radius_GPS, Circle_Radius_Meters;
     global Start_Time, Spread_Time, Search_Time;
-
+    global Task_Group;
 
     Circle_Center_GPS = None;
     Circle_Radius_GPS, Circle_Radius_Meters = None, None;
     Start_Time, Spread_Time, Search_Time = None, None, None;
+    Task_Group = "";
     Wolf_Search_Behavior = False;
 
-def startConsensusDecision( circleCenterGPS, circleRadiusGPS, circleRadiusMeters, searchTimeS ):
+def startConsensusDecision( circleCenterGPS, circleRadiusGPS, circleRadiusMeters, searchTimeS, taskGroup):
     global Consensus_Decision_Behavior;
     global Circle_Center_GPS;
     global Circle_Radius_GPS, Circle_Radius_Meters;
     global Start_Time, Spread_Time, Search_Time;
-
+    global Task_Group;
 
     Circle_Center_GPS = circleCenterGPS;
     Circle_Radius_GPS, Circle_Radius_Meters = circleRadiusGPS, circleRadiusMeters;
     Search_Time = searchTimeS;
     Start_Time = time.time();
+    Task_Group = taskGroup;
     Consensus_Decision_Behavior = True;
+    Wolf_Search_Behavior = False; 
+
+def consensusDecisionBehaviorGetVector(currentDroneData):
+    radius = Circle_Radius_GPS
+    radiusM = Circle_Radius_Meters
+    targetGPS = Circle_Center_GPS
+    wolfDataArray = wolfService.getWolfDataOfTaskGroup(DM_Drone_Name, Task_Group);
+    averageAlignmentSpeed = 12;
+    bonusAlignmentSpeed = 0;
+    maxCohSepSpeed = 4;
+    maxSpeed = 13
+    
+    vector = wolfSearchBehavior.calcSpeedVector(currentDroneData=currentDroneData, targetGPS=targetGPS, \
+                radius=radius, radiusM=radiusM, wolfData=wolfDataArray, \
+                averageAlignmentSpeed=averageAlignmentSpeed, bonusAlignmentSpeed=bonusAlignmentSpeed, \
+                maxCohSepSpeed=maxCohSepSpeed, maxSpeed=maxSpeed);
+
+    return vector;
 
 def updateConsensusDecisionCenter(circleCenterGPS):
     global Circle_Center_GPS;
@@ -495,11 +661,14 @@ def endConsensusDecision():
     global Circle_Center_GPS;
     global Circle_Radius_GPS, Circle_Radius_Meters;
     global Start_Time, Spread_Time, Search_Time;
+    global Task_Group;
 
     Circle_Center_GPS = None;
     Circle_Radius_GPS, Circle_Radius_Meters = None, None;
     Start_Time, Search_Time = None, None;
+    Task_Group = "";
     Consensus_Decision_Behavior = False;
+    
 
 
 def debugPrint( debugMessage):

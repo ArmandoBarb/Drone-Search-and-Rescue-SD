@@ -49,6 +49,7 @@ add_message_files(
   GimbalAngleEulerCmd.msg
   GimbalAngleQuatCmd.msg
   GPSYaw.msg
+  GPS.msg
   VelCmd.msg
   VelCmdGroup.msg
   CarControls.msg
@@ -56,6 +57,9 @@ add_message_files(
   Altimeter.msg
   Environment.msg
   droneData.msg
+  requestLineBehavior.msg
+  requestWolfSearchBehavior.msg
+  requestConsensusDecisionBehavior.msg
 )
 
 add_service_files(
@@ -68,6 +72,7 @@ add_service_files(
   Reset.srv
   SetLocalPosition.srv
   getDroneData.srv
+  sendCommand.srv
 )
 
 generate_messages(

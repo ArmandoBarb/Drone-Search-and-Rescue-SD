@@ -22,7 +22,7 @@ from threading import Thread # USe for important code running constantly
 from std_msgs.msg import String
 from std_srvs.srv import Trigger, TriggerResponse
 # Get service calls here
-from ServiceRequestors.instructWolf import sendWolfCommandClusterInfo
+from ServiceRequestors.instructWolf import sendLinebehaviorRequest
 from ServiceRequestors.overseerGetOverseerData import getOverseerState
 from ServiceRequestors.overseerGetWolfData import getOverseerGetWolfState
 from DroneBehaviors.lineBehavior import overseerWaypoint
@@ -30,7 +30,7 @@ from airsim_ros_pkgs.msg import droneData
 from ServiceRequestors.wolfGetWolfData import getWolfState
 
 # Environmental Variables
-RUNTIME = configDrones.RUNTIME
+LOOP_NUMBER = configDrones.LOOP_NUMBER
 LOCAL_IP = configDrones.LOCAL_IP
 
 # ros: topics
@@ -53,6 +53,9 @@ WAYPOINT_COORDS = []
 WAYPOINT_INDEX = 0
 GROUP_0_SEARCH = 'Constants/Group0Spiral.txt'
 GROUP_1_SEARCH = 'Constants/Group1Spiral.txt'
+Cluster = ""
+Task_Group = ""
+End_Loop = False
 
 # Main Process Start ----------------------------------------------
 # Main function for the overseer drone
@@ -78,13 +81,6 @@ def overseerDroneController(droneName, droneCount):
         readCoordFile(GROUP_1_SEARCH)
 
 
-    # Call startup service on each wolf
-    droneLimit = int(droneNum) * 3
-    for num in range(3):
-        wolfNum = num + droneLimit
-        wolfDroneService = WOLF_DRONE_SERVICE + str(wolfNum)
-        sendWolfCommandClusterInfo(wolfDroneService)
-
     # Start all threads here (if you have to make one somwhere else bring it up with the team)
     t = Thread(target = overseerCommunicationSubscriber, args=())
     t.start()
@@ -98,10 +94,22 @@ def overseerDroneController(droneName, droneCount):
     client = takeOff(droneName)
     client.moveToZAsync(z=-35, velocity=8, vehicle_name = droneName).join()
 
+    # Call startup service on each wolf
+    # THis is Hardcoded need to replace
+    droneLimit = int(droneNum) * 3
+    for num in range(3):
+        wolfNum = num + droneLimit
+        wolfDroneService = WOLF_DRONE_SERVICE + str(wolfNum)
+        # sendWolfCommandClusterInfo(wolfDroneService)
+        sendLinebehaviorRequest(wolfDroneService, droneName)
+
     # Overseer Drone search loop Start
     i = 0
     debugPrint("Starting Search and Rescue loop")
-    while (i < RUNTIME):
+    while (i < LOOP_NUMBER):
+        if (End_Loop):
+            print(droneName, "Ending loop")
+            return
         # Get Airsim Data and procesess it here
         # TODO: add infared image detector code here (if runtime is to long Seprate into thread that runs on intervals)
             # getDataFromAirsim -> imageProcessing ->
@@ -131,7 +139,7 @@ def overseerDroneController(droneName, droneCount):
         # TODO: Make Airsim call with desired action
 
         # Add in artifical loop delay (How fast the loop runs dictates the drones reaction speed)
-        time.sleep(1)
+        time.sleep(0.5)
         i+=1
     debugPrint("Ending Search and Rescue loop")
     # Overseer Drone search loop End
@@ -146,11 +154,16 @@ def commandSub():
 # TODO: overseer communication listen
 def overseerCommunicationSubscriber():
     rospy.Subscriber(OVERSEER_COMMUNICATION_TOPIC, String, handleOverseerCommunication, ())
+    rospy.Subscriber(ros.END_LOOP_TOPIC, String, handleEnd)
     rospy.spin()
 
 # Theads END ===========================================
 
 # TODO: Functions need to Refatctor +++++++++++++++++++++++++++++++++++
+def handleEnd(data):
+    global End_Loop
+    if (data.data == "End"):
+        End_Loop = True
 
 # Takes in strings from the (Command) topic for processing
 def handleCommand(data, args):
@@ -171,6 +184,8 @@ def handleOverseerCommunication(data, args):
 def overseerDataPublisher(pub, client, droneName):
     position = client.getMultirotorState(vehicle_name = droneName)
     velocity = client.getGpsData(vehicle_name = droneName)
+    global Cluster
+    global Task_Group
 
     # Creates droneMsg object and inserts values from AirSim apis
     droneMsg = droneData()
@@ -179,6 +194,8 @@ def overseerDataPublisher(pub, client, droneName):
     droneMsg.latitude = position.gps_location.latitude
     droneMsg.velocityX = velocity.gnss.velocity.x_val
     droneMsg.velocityY = velocity.gnss.velocity.y_val
+    droneMsg.cluster = droneName
+    droneMsg.taskGroup = Task_Group
 
     # Publishes to topic
     pub.publish(droneMsg)
@@ -232,6 +249,8 @@ def readCoordFile(filename):
 # Creates drone groups based on wolf number
 def wolfClusterCreation(droneName):
     global DM_Wolfs_Cluster
+    global Cluster
+    Cluster = droneName
     if (droneName == "Overseer_0"):
         DM_Wolfs_Cluster = [0, 1, 2]
     else:
@@ -245,7 +264,8 @@ def allDronesAtWaypoint():
         yDifference = wolfInfoArray[droneNum].latitude - float(WAYPOINT_COORDS[WAYPOINT_INDEX][1])
 
         # If any of the drones are out of bounds, return false
-        if ((abs(xDifference) > 0.00015) or (abs(yDifference) > 0.00015)):
+        if ((abs(xDifference) > 0.0003) or (abs(yDifference) > 0.0003)):
+            # print(droneNum, "X difference:", xDifference, "Y Difference:", yDifference)
             return 0
 
     WAYPOINT_INDEX = WAYPOINT_INDEX + 1

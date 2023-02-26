@@ -1,0 +1,6 @@
+string messageType
+requestLineBehavior lineBehaviorStart
+requestWolfSearchBehavior wolfSearchBehaviorStart
+requestConsensusDecisionBehavior consensusDecisionBehaviorStart
+---
+bool success

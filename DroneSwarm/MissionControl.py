@@ -22,7 +22,7 @@ import Constants.configDrones as configDrones
 import Constants.ros as ros
 
 # Environmental Variables
-RUNTIME = configDrones.RUNTIME
+LOOP_NUMBER = configDrones.LOOP_NUMBER
 
 # ros topics
 COMMAND_TOPIC = ros.COMMAND_TOPIC
@@ -62,6 +62,11 @@ if __name__ == '__main__': # Only runs if this is main processes
     nodeName = "MissionControl"
     rospy.init_node(nodeName, anonymous = True)
 
+    name = input('Enter "End" to finish program?\n')
+    endTaskPublish = rospy.Publisher(ros.END_LOOP_TOPIC, String, latch=True, queue_size=1)
+    if (name == "End"):
+        endTaskPublish.publish("End")
+
     # TODO: PUBLISHERS AND SUBSCRIBERS FOR MISSION CONTROL
     # # Subscribes to (Command) topic
     # t = Timer(1, commandResultSub, args=(nodeName)) # every 1.0 seconds
@@ -84,7 +89,7 @@ def commandPublisher():
     updateState(pub, client)
 
     i = 0
-    while (not rospy.is_shutdown() and i < RUNTIME):
+    while (not rospy.is_shutdown() and i < LOOP_NUMBER):
         updateState(pub, client, droneName)
         time.sleep(1)
         i+=1

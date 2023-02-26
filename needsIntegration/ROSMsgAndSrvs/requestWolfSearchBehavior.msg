@@ -1,0 +1,7 @@
+Header header
+GPS circleCenterGPS
+float64 circleRadiusGPS
+float64 circleRadiusMeters
+float64 spreadTimeS
+float64 searchTimeS
+string taskGroup
