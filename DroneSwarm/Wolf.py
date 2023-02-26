@@ -74,6 +74,7 @@ Circle_Radius_Meters = 0 # radius distance in meters
 Start_Time = 0 # time
 Spread_Time = 0 #  time in seconds # time to get in position 
 Search_Time = 0 #  time in seconds # time to search
+End_Loop = False
 # TODO: add tunning variables for behaviors (would be cool if we can train them)
 
 # Main Process Start ----------------------------------------------
@@ -82,6 +83,7 @@ def wolfDroneController(droneName, droneCount):
     global DM_Drone_Name
     DM_Drone_Name = droneName
     global WAYPOINT_INDEX
+    global End_Loop
 
     # Sets global values for wolf cluster and coordinate
     wolfClusterCreation(droneName)
@@ -102,6 +104,8 @@ def wolfDroneController(droneName, droneCount):
     # Start all threads here (if you have to make one somwhere else bring it up with the team)
     t = Thread(target = wolfServiceListeners, args=(droneName))
     t.start()
+    t2 = Thread(target = endListener)
+    t2.start()
 
 
     # Create topic publishers
@@ -139,6 +143,11 @@ def wolfDroneController(droneName, droneCount):
     timeSpent = 0;
     runtime = time.time()
     while (i < LOOP_NUMBER):
+        # If we receive end command, end the loop
+        if (End_Loop):
+            debugPrint("Ending loop")
+            return
+
         timeDiff = time.time() - runtime
         if (timeDiff > MAX_TIME):
             endLineBehavior()
@@ -275,6 +284,15 @@ def wolfServiceListeners(droneName):
     serviceName = WOLF_DRONE_SERVICE + droneName
     service = rospy.Service(serviceName, sendCommand, commandResponse)
     rospy.spin()
+
+def endListener():
+    rospy.Subscriber(ros.END_LOOP_TOPIC, String, handleEnd)
+    rospy.spin()
+
+def handleEnd(data):
+    global End_Loop
+    if (data.data == "End"):
+        End_Loop = True
 
 # checks drone camera with yolo detection
 def wolfCameraDetection(droneName):

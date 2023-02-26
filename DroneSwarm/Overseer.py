@@ -55,6 +55,7 @@ GROUP_0_SEARCH = 'Constants/Group0Spiral.txt'
 GROUP_1_SEARCH = 'Constants/Group1Spiral.txt'
 Cluster = ""
 Task_Group = ""
+End_Loop = False
 
 # Main Process Start ----------------------------------------------
 # Main function for the overseer drone
@@ -106,6 +107,9 @@ def overseerDroneController(droneName, droneCount):
     i = 0
     debugPrint("Starting Search and Rescue loop")
     while (i < LOOP_NUMBER):
+        if (End_Loop):
+            print(droneName, "Ending loop")
+            return
         # Get Airsim Data and procesess it here
         # TODO: add infared image detector code here (if runtime is to long Seprate into thread that runs on intervals)
             # getDataFromAirsim -> imageProcessing ->
@@ -150,11 +154,16 @@ def commandSub():
 # TODO: overseer communication listen
 def overseerCommunicationSubscriber():
     rospy.Subscriber(OVERSEER_COMMUNICATION_TOPIC, String, handleOverseerCommunication, ())
+    rospy.Subscriber(ros.END_LOOP_TOPIC, String, handleEnd)
     rospy.spin()
 
 # Theads END ===========================================
 
 # TODO: Functions need to Refatctor +++++++++++++++++++++++++++++++++++
+def handleEnd(data):
+    global End_Loop
+    if (data.data == "End"):
+        End_Loop = True
 
 # Takes in strings from the (Command) topic for processing
 def handleCommand(data, args):
