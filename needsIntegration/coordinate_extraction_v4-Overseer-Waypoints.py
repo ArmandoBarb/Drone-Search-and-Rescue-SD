@@ -21,6 +21,10 @@ centroids = []      # list of all centroids in given frame
 avgCentroidsX = 0
 avgCentroidsY = 0
 r = 50
+history = []        # list of previously encountered waypoints
+intersect = []      # list containing groups of intersecting circles
+avgCentroids = []   # holds the average centroid per circle group
+searchRadii = []    # list to hold search circle radii per group
 
 # replacement for math.dist
 # calculates euclidian distance
@@ -134,10 +138,6 @@ def drawBB(sceneRGB):
         centroids.append(centroid)
         centroidCount += 1
 
-        # average the centroids by adding them all up
-        avgCentroidsX += xC
-        avgCentroidsY += yC
-
         # draw bounding box
         bbw = x1 - x0 # width
         start_point = (x0-math.floor(bbw*.10), y1) # top left corner (corrected offset)
@@ -162,7 +162,26 @@ def distanceForm(centroid, avgCentroidsX, avgCentroidsY):
     return distance
 
 # function to calculate the far centroid
-def furthestCentroid(sceneRGB, centroids, avgCentroidsX, avgCentroidsY):
+# def furthestCentroid(sceneRGB, centroids, avgCentroidsX, avgCentroidsY):
+#     far = 0
+#     furthestCentroid = (0, 0)
+#     for centroid in centroids:
+#         # calculate distance between center and one of the cluster centroids
+#         distance = distanceForm(centroid, avgCentroidsX, avgCentroidsY)
+#
+#         # compare the distance to find the furthest centroid
+#         if distance >= far:
+#             furthestCentroid = centroid
+#             far = distance
+#
+#     # mark the furthest centroid
+#     cv2.circle(sceneRGB, (int(furthestCentroid[0]), int(furthestCentroid[1])), \
+#                radius=1, color=(164, 0, 255), thickness=1, lineType=8, \
+#                shift=0)
+#
+#     return furthestCentroid
+
+def furthestCentroid(centroids, avgCentroidsX, avgCentroidsY):
     far = 0
     furthestCentroid = (0, 0)
     for centroid in centroids:
@@ -173,11 +192,6 @@ def furthestCentroid(sceneRGB, centroids, avgCentroidsX, avgCentroidsY):
         if distance >= far:
             furthestCentroid = centroid
             far = distance
-
-    # mark the furthest centroid
-    cv2.circle(sceneRGB, (int(furthestCentroid[0]), int(furthestCentroid[1])), \
-               radius=1, color=(164, 0, 255), thickness=1, lineType=8, \
-               shift=0)
 
     return furthestCentroid
 
@@ -190,6 +204,98 @@ def drawOverlap(sceneRGB, r):
                    shift=0)
 
     return sceneRGB
+
+def circleGroups(r):
+    global intersect
+    global centroids
+    global avgCentroids
+    inGroup = []
+    elementsPerGroup = []
+    i = 0
+
+    # there's a possible speed up to this loop (TODO: find an optimized approach)
+    for centroid in centroids:
+        # create circle group
+        if len(intersect) == 0 or centroid not in inGroup:
+            intersect.append([centroid])
+            inGroup.append(centroid)    # keep track of what's in a group
+            avgCentroids.append(centroid)
+            elementsPerGroup.append(1)  # track the number of circles in group
+        else:
+            continue
+
+        for centroidPrime in centroids:
+            # skip the same element or already grouped elements
+            if centroid == centroidPrime or centroidPrime in inGroup:
+                continue
+
+            # calculate distance between centers
+            d = distanceForm(centroid, centroidPrime[0], centroidPrime[1])
+
+            # check for touching, intersecting circles, and when
+            # the center of one lies on the center of another
+            if d == 2*r or d == r - r or (d < 2*r and d > r - r) \
+               or d == r:
+               # add circle to the group of the
+               # centroid we were comparing it to
+               intersect[i].append(centroidPrime)
+               inGroup.append(centroidPrime)
+
+               # start taking an average for the ith group
+               avgCentroids[i] = list(avgCentroids[i])
+               (avgCentroids[i])[0] += centroidPrime[0]
+               (avgCentroids[i])[1] += centroidPrime[1]
+               avgCentroids[i] = tuple(avgCentroids[i])
+
+               # update the number of elements in current group
+               elementsPerGroup[i] += 1
+
+        # update the group counter
+        i += 1
+
+    print("Centroids len: ", len(avgCentroids))
+    # we are calculating the number of groups correctly
+    # but if two groups are present, a search circle for one gets drawn
+    # need to fix this issue
+    print("Number of circle groups ", len(intersect))
+
+    # finish the the averaging by dividing each group's
+    # average centroid by the number of circles in that group
+    for j in range(len(avgCentroids)):
+        # divide x and y component by number of circle centers
+        avgCentroids[j] = list(avgCentroids[j])
+        (avgCentroids[j])[0] /= elementsPerGroup[j]
+        (avgCentroids[j])[1] /= elementsPerGroup[j]
+        avgCentroids[j] = tuple(avgCentroids[j])
+
+# debug function for displaying and seeing if our circles are correct
+def drawCircles(sceneRGB, intersect, avgCentroids, searchRadii, r):
+    for (group, avg, radii) in zip(intersect, avgCentroids, searchRadii):
+        # plot the center of a particular group
+        cv2.circle(sceneRGB, (int(avg[0]), int(avg[1])), \
+                   radius=1, color=(0, 255, 0), thickness=1, lineType=8, \
+                   shift=0)
+
+        # plot all the circles in current group
+        for centroid in group:
+            cv2.circle(sceneRGB, (int(centroid[0]), int(centroid[1])), \
+                       radius=int(r), color=(255, 0, 0), thickness=1, lineType=8, \
+                       shift=0)
+
+        # plot the overall search circle calculate for the group
+        cv2.circle(sceneRGB, (int(avg[0]), int(avg[1])), \
+                   radius=int(radii), color=(0, 0, 255), thickness=1, lineType=8, \
+                   shift=0)
+
+        return sceneRGB
+
+def searchCircleCal(intersect, avgCentroids, r):
+    global searchRadii
+
+    for (group, avg) in zip(intersect, avgCentroids):
+        furthest = furthestCentroid(group, avg[0], avg[1])
+        rSearch = distanceForm(furthest, avg[0], avg[1]) + r
+        searchRadii.append(rSearch)
 
 # directory to store pictures
 coorDir = r'C:\Users\marii\source\repos\AirSim\PythonClient\custom_scripts\coordinate_extraction'
@@ -205,7 +311,8 @@ else:
     os.makedirs(coorDir) # make directory if not already there
 
 # set up client object to access multirotor drone
-client = airsim.MultirotorClient("10.115.194.23")
+client = airsim.MultirotorClient("10.115.194.23")  # home ipv4
+#client = airsim.MultirotorClient("10.32.33.209")    # school ipv4
 
 # Note: API Control must be off if you want to manually fly drone
 client.enableApiControl(False, vehicle_name)
@@ -251,32 +358,20 @@ while i < 100:
 
     # finish averaging all the centroids
     if centroidCount != 0:
-        avgCentroidsX /= centroidCount
-        avgCentroidsY /= centroidCount
-        print("centroidCount: ", centroidCount)
-        print("avg x centroid: ", avgCentroidsX)
-        print("avg y centroid: ", avgCentroidsY)
+        # calculate cluster groups
+        # and get average centroid for each group
+        circleGroups(r)
 
-        # plot out the center using a small circle
-        cv2.circle(sceneRGB, (int(avgCentroidsX), int(avgCentroidsY)), \
-                   radius=1, color=(0, 255, 0), thickness=1, lineType=8, \
-                   shift=0)
+        # calculate furthest centroid for each circle cluster
+        # calculate the overall search area circle for each circle cluster
+        # while taking into account that each waypoint circle radius
+        # will involve the distance to
+        # the far centroid plus the standard radius distance
+        searchCircleCal(intersect, avgCentroids, r)
 
-        # calculate and plot out circles for each cluster
-        sceneRGB = drawOverlap(sceneRGB, r)
-
-        # calculate farthest point
-        farCentroid = furthestCentroid(sceneRGB, centroids, avgCentroidsX, avgCentroidsY)
-        print("furthest centroid: ", farCentroid)
-
-        # calculate the overall search area circle
-        # while taking into account that
-        # it's radius will involve the distance to the far centroid
-        # plus the standard radius distance
-        rNew = distanceForm(farCentroid, avgCentroidsX, avgCentroidsY) + r
-        cv2.circle(sceneRGB, (int(avgCentroidsX), int(avgCentroidsY)), \
-                   radius=int(rNew), color=(164, 0, 255), thickness=1, lineType=8, \
-                   shift=0)
+        # for debugging: plot out the circles for each cluster
+        # along with their centers and their overall search circles
+        sceneRGB = drawCircles(sceneRGB, intersect, avgCentroids, searchRadii, r)
 
     sceneSavePath = coorDir+ "\\"+str(i)+"SceneBB.png" # Corrected BB offset
 
@@ -426,6 +521,9 @@ while i < 100:
     avgCentroidsX = 0
     avgCentroidsY = 0
     centroids = []
+    intersect = []
+    avgCentroids = []
+    searchRadii = []
 
     time.sleep(5)
     i+=1
