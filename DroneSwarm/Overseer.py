@@ -28,6 +28,8 @@ from ServiceRequestors.overseerGetWolfData import getOverseerGetWolfState
 from DroneBehaviors.lineBehavior import overseerWaypoint
 from airsim_ros_pkgs.msg import droneData
 from ServiceRequestors.wolfGetWolfData import getWolfState
+from HelperFunctions.waypointHelper import waypointDetect
+from HelperFunctions.waypointHelper import applyInfrared
 
 # Environmental Variables
 LOOP_NUMBER = configDrones.LOOP_NUMBER
@@ -94,6 +96,9 @@ def overseerDroneController(droneName, droneCount):
     client = takeOff(droneName)
     client.moveToZAsync(z=-35, velocity=8, vehicle_name = droneName).join()
 
+    # Apply infrared to AirSim animals
+    applyInfrared(client)
+
     # Call startup service on each wolf
     # THis is Hardcoded need to replace
     droneLimit = int(droneNum) * 3
@@ -115,6 +120,12 @@ def overseerDroneController(droneName, droneCount):
             # getDataFromAirsim -> imageProcessing ->
             # if Node detected calulate estimated node position ->
             # update internal drone state
+        print("Calling waypoint function")
+        waypointData = waypointDetect(i, droneName, client)
+        print("Doing waypoint Detect, Got: ", waypointData)
+        if (waypointData != None):
+            print(waypointData)
+
         # TODO: run drone node assignment if needed and message wolf node
 
         # Publishes to (OverseerData) topic
