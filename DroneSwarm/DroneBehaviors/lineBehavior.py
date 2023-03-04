@@ -119,20 +119,25 @@ def overseerWaypoint(client, curDroneIndex, waypoint):
         # Calculate difference between overseer and cluster
         curLongitude = overseerInfoArray[curDroneIndex].longitude
         curLatitide = overseerInfoArray[curDroneIndex].latitude
-        distance = sqrt( (curLongitude - averageLatitude)**2 + (curLatitide - averageLongitude)**2 )
-        print(clusterName, "distance from group", distance)
+        distance = sqrt( (curLongitude - averageLongitude)**2 + (curLatitide - averageLatitude)**2 )
+        # print(clusterName, "distance from group", distance)
 
         # If wolf cluster distance is closer to next waypoint, speed up overseer
+        overseerToWaypointDistance = sqrt( (xDifference)**2 + (yDifference)**2 )
+        groupToWaypointDistance = sqrt( (float(waypoint[0]) - averageLongitude)**2 + (float(waypoint[1]) - averageLatitude)**2 )
+        if (overseerToWaypointDistance > groupToWaypointDistance):
+            directionFactor = OVERSEER_DIRECTION_SPEED_UP
+            # print("OVERSEER", curDroneIndex, "Speeding up, wolfs average ahead")
 
         # If too close to group, speed up the overseer
-        if (distance < OVERSEER_TO_WOLF_GROUP_RADIUS):
+        elif (distance < OVERSEER_TO_WOLF_GROUP_RADIUS):
             directionFactor = OVERSEER_DIRECTION_SPEED_UP
-            print("OVERSEER", curDroneIndex, "Speeding up")
+            # print("OVERSEER", curDroneIndex, "Speeding up")
 
         # If too far from group, slow down the overseer
         elif (distance > OVERSEER_TO_WOLF_GROUP_RADIUS):
             directionFactor = OVERSEER_DIRECTION_SLOW_DOWN
-            print("OVERSEER", curDroneIndex, "Slowing down")
+            # print("OVERSEER", curDroneIndex, "Slowing down")
 
         # Gets normalized difference values and adds in directional factor
         xNormalized = (xDifference / sqrt(xDifference**2 + yDifference**2))*directionFactor
