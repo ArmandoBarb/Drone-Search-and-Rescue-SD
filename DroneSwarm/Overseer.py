@@ -124,6 +124,7 @@ def overseerDroneController(droneName, droneCount):
         overseerCommunicationPublisher(overseerCommunicationPublish, client, droneName)
         # TODO: Update assigned wolf drones on search area
 
+        # Gets waypoint and calculates movement vector to next waypoint
         waypoint = getNewWaypoint(droneName)
         vector = overseerWaypoint(client, int(droneNum), waypoint)
 

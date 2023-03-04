@@ -5,10 +5,13 @@ from std_srvs.srv import Trigger, TriggerResponse
 from airsim_ros_pkgs.msg import droneData
 from ServiceRequestors.wolfGetWolfData import getWolfState
 from ServiceRequestors.overseerGetOverseerData import getOverseerState
+from ServiceRequestors.overseerGetWolfData import getWolfDataOfCluster
 
 AVOID_FACTOR = 0.01
 DIRECTION_FACTOR = 9
-OVERSEER_DIRECTION_FACTOR = 16
+OVERSEER_DIRECTION_SPEED_UP = 16
+OVERSEER_DIRECTION_SLOW_DOWN = 5
+OVERSEER_TO_WOLF_GROUP_RADIUS = 0.0003
 REPULSION_RADIUS = 0.0003
 
 def repulsion(client, curDroneIndex):
@@ -98,9 +101,42 @@ def overseerWaypoint(client, curDroneIndex, waypoint):
 
     # Else move to waypoint
     else:
+        directionFactor = DIRECTION_FACTOR
+
+        # Get wolf data of cluster
+        clusterName = "Overseer_" + str(curDroneIndex)
+        cluster = getWolfDataOfCluster(clusterName)
+
+        # Calculate average wolf drone cluster location
+        averageLongitude = 0
+        averageLatitude = 0
+        for drone in cluster:
+            averageLongitude += drone.longitude
+            averageLatitude += drone.latitude
+        averageLatitude = averageLatitude / len(cluster)
+        averageLongitude = averageLongitude / len(cluster)
+
+        # Calculate difference between overseer and cluster
+        curLongitude = overseerInfoArray[curDroneIndex].longitude
+        curLatitide = overseerInfoArray[curDroneIndex].latitude
+        distance = sqrt( (curLongitude - averageLatitude)**2 + (curLatitide - averageLongitude)**2 )
+        print(clusterName, "distance from group", distance)
+
+        # If wolf cluster distance is closer to next waypoint, speed up overseer
+
+        # If too close to group, speed up the overseer
+        if (distance < OVERSEER_TO_WOLF_GROUP_RADIUS):
+            directionFactor = OVERSEER_DIRECTION_SPEED_UP
+            print("OVERSEER", curDroneIndex, "Speeding up")
+
+        # If too far from group, slow down the overseer
+        elif (distance > OVERSEER_TO_WOLF_GROUP_RADIUS):
+            directionFactor = OVERSEER_DIRECTION_SLOW_DOWN
+            print("OVERSEER", curDroneIndex, "Slowing down")
+
         # Gets normalized difference values and adds in directional factor
-        xNormalized = (xDifference / sqrt(xDifference**2 + yDifference**2))*OVERSEER_DIRECTION_FACTOR
-        yNormalized = (yDifference / sqrt(xDifference**2 + yDifference**2))*OVERSEER_DIRECTION_FACTOR
+        xNormalized = (xDifference / sqrt(xDifference**2 + yDifference**2))*directionFactor
+        yNormalized = (yDifference / sqrt(xDifference**2 + yDifference**2))*directionFactor
 
         # Saves final weighted vector to final velocity
         finalVelocity = [xNormalized, yNormalized]
