@@ -342,11 +342,17 @@ def waypointDetect(i, droneName, overseerClient):
     gps_data = client.getGpsData(gps_name = "", vehicle_name = vehicle_name)
     print("Got gps data", gps_data)
 
+
+    responses = client.simGetImages([
+        airsim.ImageRequest("front-center", airsim.ImageType.Infrared, False, False), 
+        airsim.ImageRequest("front-center", airsim.ImageType.Scene, False, False)], vehicle_name = vehicle_name)
+
     # ImageRequest(name, image_type, pixel_as_float, compress)
-    responses = client.simGetImages(
-        [airsim.ImageRequest("front-center", airsim.ImageType.Infrared, False, False),
-        airsim.ImageRequest("front-center", airsim.ImageType.Scene, False, False)],
-        vehicle_name)
+    #request = [airsim.ImageRequest("front-center", airsim.ImageType.Infrared, False, False),
+    #     airsim.ImageRequest("front-center", airsim.ImageType.Scene, False, False)]
+    # request = airsim.ImageRequest("front-center", airsim.ImageType.Infrared, False, False)
+
+    # responses = client.simGetImages(requests = request, vehicle_name = vehicle_name)
     
     print("Drone:", droneName, " Got responses")
 

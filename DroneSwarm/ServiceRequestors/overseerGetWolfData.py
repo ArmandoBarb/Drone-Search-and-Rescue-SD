@@ -1,6 +1,8 @@
 import rospy
 import ast
 from std_srvs.srv import Trigger, TriggerResponse
+from airsim_ros_pkgs.msg import droneData
+from airsim_ros_pkgs.srv import getDroneData
 # import constants
 import Constants.ros as ros
 

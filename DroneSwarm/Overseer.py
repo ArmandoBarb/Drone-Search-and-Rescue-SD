@@ -28,6 +28,7 @@ from ServiceRequestors.overseerGetWolfData import getOverseerGetWolfState
 from DroneBehaviors.lineBehavior import overseerWaypoint
 from airsim_ros_pkgs.msg import droneData
 from ServiceRequestors.wolfGetWolfData import getWolfState
+import ServiceRequestors.overseerGetWolfData as overseerGetWolfData 
 from HelperFunctions.waypointHelper import waypointDetect
 from HelperFunctions.waypointHelper import applyInfrared
 
@@ -269,7 +270,7 @@ def wolfClusterCreation(droneName):
 
 def allDronesAtWaypoint():
     global WAYPOINT_INDEX
-    wolfInfoArray = getWolfState()
+    wolfInfoArray = overseerGetWolfData.getOverseerGetWolfState()
     for droneNum in DM_Wolfs_Cluster:
         xDifference = wolfInfoArray[droneNum].longitude - float(WAYPOINT_COORDS[WAYPOINT_INDEX][0])
         yDifference = wolfInfoArray[droneNum].latitude - float(WAYPOINT_COORDS[WAYPOINT_INDEX][1])

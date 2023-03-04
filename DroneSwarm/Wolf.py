@@ -310,7 +310,8 @@ def wolfCameraDetection(droneName):
 
         # mock detection
         timeDiff = time.time() - runtime
-        if(not(Consensus_Decision_Behavior)):
+        # if(not(Consensus_Decision_Behavior)):
+        if(False):
             if(timeDiff > 18 and droneName == '1'):
                 # targetP is estimated gps position
                 targetP = threadClient.getMultirotorState(vehicle_name = "target")
