@@ -30,7 +30,7 @@ from airsim_ros_pkgs.msg import droneData
 from ServiceRequestors.wolfGetWolfData import getWolfState
 import ServiceRequestors.overseerGetWolfData as overseerGetWolfData 
 from HelperFunctions.waypointHelper import waypointDetect
-from HelperFunctions.waypointHelper import applyInfrared
+from HelperFunctions.waypointHelper import applyInfrared 
 
 # Environmental Variables
 LOOP_NUMBER = configDrones.LOOP_NUMBER
@@ -124,8 +124,14 @@ def overseerDroneController(droneName, droneCount):
         print("Calling waypoint function")
         waypointData = waypointDetect(i, droneName, client)
         print("Doing waypoint Detect, Got: ", waypointData)
-        if (waypointData != None):
-            print(waypointData)
+
+        # GETS OPTIMAL DRONE, NEEDS INCORPORATION TO IF STATEMENT
+        # nextWaypoint = getNewWaypoint(droneName)
+        # optimalDrone = overseerGetWolfData.getOptimalWolf(nextWaypoint, droneName)
+        # print("Send command to drone:", optimalDrone, "For cluster:", droneName)
+
+        # if (waypointData != None):
+        #     print(waypointData)
 
         # TODO: run drone node assignment if needed and message wolf node
 
