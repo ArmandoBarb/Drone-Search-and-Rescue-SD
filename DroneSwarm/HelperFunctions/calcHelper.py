@@ -39,7 +39,9 @@ def mapGPSPointOnLine(startLineGPS, endLineGPS, pointGPS):
         elif (t > 1):
             return startLineGPS;
         else:
-            NearestPointGPS = [startLineLatitude + (t * startEndLineLatitude), startLineLongitude + (t * startEndLineLongitude)];
+            # NearestPointGPS = [startLineLatitude + (t * startEndLineLatitude), startLineLongitude + (t * startEndLineLongitude)];
+            NearestPointGPS.latitude = startLineLatitude + (t * startEndLineLatitude);
+            NearestPointGPS.longitude = startLineLongitude + (t * startEndLineLongitude);
             return NearestPointGPS;
 
 def calcVectorBetweenGPS(currentGPS, targetGPS):
