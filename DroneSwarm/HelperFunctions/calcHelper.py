@@ -12,6 +12,38 @@ def normalizeVector(vector):
     vectorNormalized =  vector/np.linalg.norm(vector)
     return vectorNormalized;
 
+def mapGPSPointOnLine(startLineGPS, endLineGPS, pointGPS):
+    # vector goes from current to target
+    startLineLatitude = startLineGPS.latitude;
+    startLineLongitude = startLineGPS.longitude;
+    
+    endLineLatitude = endLineGPS.latitude;
+    endLineLongitude = endLineGPS.longitude;
+
+    pointLatitude = pointGPS.latitude;
+    pointLongitude = pointGPS.longitude;
+
+    startEndLineLatitude = endLineLatitude - startLineLatitude;
+    startEndLineLongitude = endLineLongitude - startLineLongitude;
+    
+    startEndSquared = lineLatitude ** 2 + lineLongitude ** 2
+
+    if (startEndSquared == 0): # start and end gps cordinate are the same
+        return startLineGPS;
+    else:
+        pointStartLineLatitude = endLineLatitude - startLineLatitude;
+        pointStartLineLongitude = endLineLongitude - startLineLongitude;
+        t = (pointStartLineLatitude ** 2 + pointStartLineLongitude ** 2) / startEndSquared;
+        if (t < 0):
+            return startLineGPS;
+        elif (t > 1):
+            return startLineGPS;
+        else:
+            # NearestPointGPS = [startLineLatitude + (t * startEndLineLatitude), startLineLongitude + (t * startEndLineLongitude)];
+            NearestPointGPS.latitude = startLineLatitude + (t * startEndLineLatitude);
+            NearestPointGPS.longitude = startLineLongitude + (t * startEndLineLongitude);
+            return NearestPointGPS;
+
 def calcVectorBetweenGPS(currentGPS, targetGPS):
     # vector goes from current to target
     currentLatitude = currentGPS.latitude;
