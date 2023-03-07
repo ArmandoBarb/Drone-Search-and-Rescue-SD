@@ -75,6 +75,7 @@ Start_Time = 0 # time
 Spread_Time = 0 #  time in seconds # time to get in position 
 Search_Time = 0 #  time in seconds # time to search
 End_Loop = False
+NEARBY_DRONE_RADIUS = 0.0003
 # TODO: add tunning variables for behaviors (would be cool if we can train them)
 
 # Main Process Start ----------------------------------------------
@@ -349,6 +350,8 @@ def wolfClusterCreation(droneName):
         DM_Wolfs_Cluster = [3, 4, 5]
 
 def commandResponse(request):
+    global DM_Drone_Name
+    global Task_Group
     messageType = request.messageType
     lineInfo = request.lineBehaviorStart
     wolfSearchInfo = request.wolfSearchBehaviorStart
@@ -365,7 +368,33 @@ def commandResponse(request):
 
     elif (messageType == "RequestWolfSearch"):
         # debugPrint("Do wolf search")
-        return True
+
+        # Return false is wolf is already in a task group
+        if (Task_Group != ""):
+            debugPrint("Unable to complete wolf search request")
+            return False
+
+        # Check if we got message from overseer
+        if (wolfSearchInfo.taskGroup == ""):
+            # if so create task group with wolf name
+            debugPrint("Got request wolf search from Overseer")
+            taskGroup = "Task_Group_Search_" + DM_Drone_Name
+
+            # Request nearby drones
+            debugPrint("Requesting neaby wolfs")
+            requestNearbyDrones(DM_Drone_Name, wolfSearchInfo.circleCenterGPS, wolfSearchInfo.circleRadiusGPS, wolfSearchInfo.circleRadiusMeters, wolfSearchInfo.spreadTimeS, wolfSearchInfo.searchTimeS,  taskGroup)
+
+            # Start wolf search
+            debugPrint("Doing search")
+            startWolfSearch(wolfSearchInfo.circleCenterGPS, wolfSearchInfo.circleRadiusGPS, wolfSearchInfo.circleRadiusMeters, wolfSearchInfo.spreadTimeS, wolfSearchInfo.searchTimeS,  taskGroup)
+            return True      
+        # Got message from wolf, no need to request from nearby
+        else:
+            debugPrint("Got request for help at waypoint")
+            startWolfSearch(wolfSearchInfo.circleCenterGPS, wolfSearchInfo.circleRadiusGPS, wolfSearchInfo.circleRadiusMeters, wolfSearchInfo.spreadTimeS, wolfSearchInfo.searchTimeS,  wolfSearchInfo.taskGroup)
+            return True
+
+        return False
 
     elif (messageType == "RequestConsensusDecision"):
         # debugPrint("Do consensus decision")
@@ -396,6 +425,23 @@ def wolfDataPublisher(pub, client, droneName):
 
     # Publishes to topic
     pub.publish(droneMsg)
+
+# Requests nearby drones to do search
+def requestNearbyDrones(droneName, circleCenterGPS, circleRadiusGPS, circleRadiusMeters, spreadTimeS, searchTimeS,  taskGroup):
+    # Get drone info array and sender info
+    droneData = wolfService.getWolfState()
+    senderDrone = droneData[int(droneName)]
+
+    # Go through each drones and request to nearby drones in cluster
+    for drone in droneData:
+        # Gets distance between waypoint and drone
+        distance = sqrt( (senderDrone.longitude - drone.longitude)**2 + (senderDrone.latitude - drone.latitude)**2 )
+
+        # If a drone is within a certain radius of requestor 
+        if ((distance < NEARBY_DRONE_RADIUS) and (drone.droneName != senderDrone.droneName) and (drone.cluster == senderDrone.cluster) and (drone.taskGroup == "")):
+            serviceName = WOLF_DRONE_SERVICE + drone.droneName
+            requestStatus = instructWolf.sendWolfSearchBehaviorRequest(serviceName, circleCenterGPS, circleRadiusGPS, circleRadiusMeters, spreadTimeS, searchTimeS,  taskGroup)
+            print("Request bool:", requestStatus, "From drone", droneName)
 
 # Function get drones subwaypoint based on index
 def getNewWaypoint(droneName):

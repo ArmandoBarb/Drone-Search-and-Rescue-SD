@@ -4,6 +4,7 @@ from airsim_ros_pkgs.msg import droneData
 from airsim_ros_pkgs.msg import requestLineBehavior
 from airsim_ros_pkgs.msg import requestWolfSearchBehavior
 from airsim_ros_pkgs.msg import requestConsensusDecisionBehavior
+from airsim_ros_pkgs.msg import GPS
 from airsim_ros_pkgs.srv import getDroneData
 from airsim_ros_pkgs.srv import sendCommand
 

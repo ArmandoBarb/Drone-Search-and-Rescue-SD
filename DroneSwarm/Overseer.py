@@ -12,6 +12,7 @@ import rospy
 import time
 import json
 import ast
+from math import sqrt
 # import constants
 import Constants.configDrones as configDrones
 import Constants.ros as ros
@@ -28,6 +29,19 @@ from ServiceRequestors.overseerGetWolfData import getOverseerGetWolfState
 from DroneBehaviors.lineBehavior import overseerWaypoint
 from airsim_ros_pkgs.msg import droneData
 from ServiceRequestors.wolfGetWolfData import getWolfState
+import ServiceRequestors.overseerGetWolfData as overseerGetWolfData 
+from HelperFunctions.waypointHelper import waypointDetect
+from HelperFunctions.waypointHelper import applyInfrared 
+import ServiceRequestors.instructWolf as instructWolf
+from airsim_ros_pkgs.msg import GPS
+import HelperFunctions.waypointHelper as waypointHelper 
+from ImageProcessing import getInfo
+from ImageProcessing import clustering
+from HelperFunctions import clusterHelper
+import warnings
+
+# for a clearner output
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 # Environmental Variables
 LOOP_NUMBER = configDrones.LOOP_NUMBER
@@ -56,6 +70,7 @@ GROUP_1_SEARCH = 'Constants/Group1Spiral.txt'
 Cluster = ""
 Task_Group = ""
 End_Loop = False
+Waypoint_History = []
 
 # Main Process Start ----------------------------------------------
 # Main function for the overseer drone
@@ -94,6 +109,9 @@ def overseerDroneController(droneName, droneCount):
     client = takeOff(droneName)
     client.moveToZAsync(z=-35, velocity=8, vehicle_name = droneName).join()
 
+    # Apply infrared to AirSim animals
+    clusterHelper.applyInfrared(client)
+
     # Call startup service on each wolf
     # THis is Hardcoded need to replace
     droneLimit = int(droneNum) * 3
@@ -106,7 +124,10 @@ def overseerDroneController(droneName, droneCount):
     # Overseer Drone search loop Start
     i = 0
     debugPrint("Starting Search and Rescue loop")
+
+    runtime = time.time() # USED FOR TESTING
     while (i < LOOP_NUMBER):
+        waypointData = None
         if (End_Loop):
             print(droneName, "Ending loop")
             return
@@ -115,6 +136,86 @@ def overseerDroneController(droneName, droneCount):
             # getDataFromAirsim -> imageProcessing ->
             # if Node detected calulate estimated node position ->
             # update internal drone state
+        # print("Calling waypoint function")
+        # waypointData = waypointDetect(i, droneName, client)
+        # print("Doing waypoint Detect, Got: ", waypointData)
+
+        # START OF CHARLIES SECTION
+        # USER FOR TESTING, REMOVE
+        timeDiff = time.time() - runtime
+        if ((timeDiff > 20) and (droneName == "Overseer_0")):
+            # CHECKS IF VALID BASED ON HISTORY
+            overseerLocation = getOverseerState()
+            overseer0Data = overseerLocation[0]
+
+            waypointData = [overseer0Data.longitude, overseer0Data.latitude]
+
+        if (waypointData != None):
+            waypointCheck = isValidWaypoint(waypointData)
+            print("Checking if example waypoint is valid: ", waypointCheck, "On: ", droneName)
+
+            # GETS OPTIMAL DRONE, NEEDS INCORPORATION TO IF STATEMENT
+            nextWaypoint = getNewWaypoint(droneName)
+            optimalDrone = overseerGetWolfData.getOptimalWolf(nextWaypoint, droneName)
+            print("Send command to drone:", optimalDrone, "For cluster:", droneName)
+
+            # Sends if we have a valid waypoint and have an optimal drone
+            if (waypointCheck and (optimalDrone != "")):
+
+                gpsDataObject = GPS()
+                gpsDataObject.longitude = waypointData[0]
+                gpsDataObject.latitude = waypointData[1]
+
+                # SEND MESSAGE TO OPTIMAL DRONE
+                serviceName = WOLF_DRONE_SERVICE + str(optimalDrone)
+                circleCenterGPS =  gpsDataObject
+                circleRadiusGPS = 0.00008983152373552244
+                circleRadiusMeters = 6.988048291572515
+                spreadTimeS = 15
+                searchTimeS = 50
+                taskGroup = ""
+
+                # IF TASK GROUP IS EMPTY, THE REQUEST IS FROM THE OVERSEER
+                # IF HAS NAME, IS FROM WOLF
+                requestStatus = instructWolf.sendWolfSearchBehaviorRequest(serviceName, circleCenterGPS, circleRadiusGPS, circleRadiusMeters, spreadTimeS, searchTimeS,  taskGroup)
+                print("Request bool:", requestStatus, "From Overseer:", droneName, "To:", optimalDrone)
+        # END OF CHARLIES CHANGES
+        
+        #print("Calling waypoint function")
+        #waypointData = waypointDetect(i, droneName, client)
+        #print("Doing waypoint Detect, Got: ", waypointData)
+
+        #---Waypoint Detection---
+        # get response object and retrieve segmentation
+        # responses = getInfo.getInfrared(client, droneName)
+        # height, width, segRGB = getInfo.getSegInfo(responses)
+
+        # # cluster heat signatures from segmenation map
+        # clusters = clustering.pixelClustering(height, width, segRGB)
+
+        # # if no detections then avoid unecessary calculations
+        # if clusters != None:
+        #     # get centroids of each pixel cluster
+        #     centroids = getInfo.getCentroids(clusters)
+
+        #     # calculate circle groups and get average centers per group
+        #     intersectGroups, avgCentroids = clustering.circleGroups(centroids, 50)
+
+        #     # calculate search circle
+        #     searchRadii = getInfo.getSearchCircles(intersectGroups, avgCentroids, 50)
+
+        #     # convert circle pixel info to geospatial info
+        #     # searchRadii and avgCentroids need to be converted
+        #     getInfo.convertToGeo(searchRadii, avgCentroids, vehicleName, client)
+
+            # GETS OPTIMAL DRONE, NEEDS INCORPORATION TO IF STATEMENT
+            # nextWaypoint = getNewWaypoint(droneName)
+            # optimalDrone = overseerGetWolfData.getOptimalWolf(nextWaypoint, droneName)
+            # print("Send command to drone:", optimalDrone, "For cluster:", droneName)
+
+            # if (waypointData != None):
+            #     print(waypointData)
+
         # TODO: run drone node assignment if needed and message wolf node
 
         # Publishes to (OverseerData) topic
@@ -161,6 +262,30 @@ def overseerCommunicationSubscriber():
 # Theads END ===========================================
 
 # TODO: Functions need to Refatctor +++++++++++++++++++++++++++++++++++
+def isValidWaypoint(waypoint):
+    global Waypoint_History
+
+    # If history is empty, append waypoint and return true
+    if (len(Waypoint_History) == 0):
+        Waypoint_History.append(waypoint)
+        return True
+
+    # Check is waypoint is not near any previous waypoints
+    for waypointInHistory in Waypoint_History:
+
+        # Gets distance between current waypoint and previous waypoint in history
+        distance = sqrt( (float(waypointInHistory[0]) - float(waypoint[0]))**2 + (float(waypointInHistory[1]) - float(waypoint[1]))**2 )
+        # print("Distance from waypoint in history:", distance)
+
+        # If distance from current waypoint to waypoint in history is less than error, return false
+        if (distance < configDrones.WAPOINT_HISTORY_DISTANCE_ERROR):
+            return False
+
+    # Appends new waypoint to history
+    Waypoint_History.append(waypoint)        
+    return True
+
+
 def handleEnd(data):
     global End_Loop
     if (data.data == "End"):
@@ -259,7 +384,7 @@ def wolfClusterCreation(droneName):
 
 def allDronesAtWaypoint():
     global WAYPOINT_INDEX
-    wolfInfoArray = getWolfState()
+    wolfInfoArray = overseerGetWolfData.getOverseerGetWolfState()
     for droneNum in DM_Wolfs_Cluster:
         xDifference = wolfInfoArray[droneNum].longitude - float(WAYPOINT_COORDS[WAYPOINT_INDEX][0])
         yDifference = wolfInfoArray[droneNum].latitude - float(WAYPOINT_COORDS[WAYPOINT_INDEX][1])
