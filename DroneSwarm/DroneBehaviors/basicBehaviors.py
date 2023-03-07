@@ -68,7 +68,7 @@ def alignmentMagnitude(currentGPS, alignmentVector, speed, maxBonusSpeed, radius
     sideLength = 0
 
     if (droneNumber == 1):
-        return (speed + speedVariation);
+        return (speed + maxBonusSpeed);
     elif (droneNumber == 2):
         sideLength = radius * 2;
     else:

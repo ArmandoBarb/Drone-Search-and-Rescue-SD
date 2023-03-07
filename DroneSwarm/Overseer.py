@@ -12,6 +12,7 @@ import rospy
 import time
 import json
 import ast
+from math import sqrt
 # import constants
 import Constants.configDrones as configDrones
 import Constants.ros as ros
@@ -31,6 +32,8 @@ from ServiceRequestors.wolfGetWolfData import getWolfState
 import ServiceRequestors.overseerGetWolfData as overseerGetWolfData 
 from HelperFunctions.waypointHelper import waypointDetect
 from HelperFunctions.waypointHelper import applyInfrared 
+import ServiceRequestors.instructWolf as instructWolf
+from airsim_ros_pkgs.msg import GPS
 
 # Environmental Variables
 LOOP_NUMBER = configDrones.LOOP_NUMBER
@@ -59,6 +62,7 @@ GROUP_1_SEARCH = 'Constants/Group1Spiral.txt'
 Cluster = ""
 Task_Group = ""
 End_Loop = False
+Waypoint_History = []
 
 # Main Process Start ----------------------------------------------
 # Main function for the overseer drone
@@ -112,7 +116,10 @@ def overseerDroneController(droneName, droneCount):
     # Overseer Drone search loop Start
     i = 0
     debugPrint("Starting Search and Rescue loop")
+
+    runtime = time.time() # USED FOR TESTING
     while (i < LOOP_NUMBER):
+        waypointData = None
         if (End_Loop):
             print(droneName, "Ending loop")
             return
@@ -121,17 +128,49 @@ def overseerDroneController(droneName, droneCount):
             # getDataFromAirsim -> imageProcessing ->
             # if Node detected calulate estimated node position ->
             # update internal drone state
-        print("Calling waypoint function")
-        waypointData = waypointDetect(i, droneName, client)
-        print("Doing waypoint Detect, Got: ", waypointData)
+        # print("Calling waypoint function")
+        # waypointData = waypointDetect(i, droneName, client)
+        # print("Doing waypoint Detect, Got: ", waypointData)
 
-        # GETS OPTIMAL DRONE, NEEDS INCORPORATION TO IF STATEMENT
-        # nextWaypoint = getNewWaypoint(droneName)
-        # optimalDrone = overseerGetWolfData.getOptimalWolf(nextWaypoint, droneName)
-        # print("Send command to drone:", optimalDrone, "For cluster:", droneName)
+        # USER FOR TESTING, REMOVE
+        timeDiff = time.time() - runtime
+        if ((timeDiff > 20) and (droneName == "Overseer_0")):
+            # CHECKS IF VALID BASED ON HISTORY
+            overseerLocation = getOverseerState()
+            overseer0Data = overseerLocation[0]
 
-        # if (waypointData != None):
-        #     print(waypointData)
+            waypointData = [overseer0Data.longitude, overseer0Data.latitude]
+
+        if (waypointData != None):
+            waypointCheck = isValidWaypoint(waypointData)
+            print("Checking if example waypoint is valid: ", waypointCheck, "On: ", droneName)
+
+            # GETS OPTIMAL DRONE, NEEDS INCORPORATION TO IF STATEMENT
+            nextWaypoint = getNewWaypoint(droneName)
+            optimalDrone = overseerGetWolfData.getOptimalWolf(nextWaypoint, droneName)
+            print("Send command to drone:", optimalDrone, "For cluster:", droneName)
+
+            # Sends if we have a valid waypoint and have an optimal drone
+            if (waypointCheck and (optimalDrone != "")):
+
+                gpsDataObject = GPS()
+                gpsDataObject.longitude = waypointData[0]
+                gpsDataObject.latitude = waypointData[1]
+
+                # SEND MESSAGE TO OPTIMAL DRONE
+                serviceName = WOLF_DRONE_SERVICE + str(optimalDrone)
+                circleCenterGPS =  gpsDataObject
+                circleRadiusGPS = 0.00008983152373552244
+                circleRadiusMeters = 6.988048291572515
+                spreadTimeS = 15
+                searchTimeS = 50
+                taskGroup = ""
+
+                # IF TASK GROUP IS EMPTY, THE REQUEST IS FROM THE OVERSEER
+                # IF HAS NAME, IS FROM WOLF
+                requestStatus = instructWolf.sendWolfSearchBehaviorRequest(serviceName, circleCenterGPS, circleRadiusGPS, circleRadiusMeters, spreadTimeS, searchTimeS,  taskGroup)
+                print("Request bool:", requestStatus, "From Overseer:", droneName, "To:", optimalDrone)
+
 
         # TODO: run drone node assignment if needed and message wolf node
 
@@ -178,6 +217,30 @@ def overseerCommunicationSubscriber():
 # Theads END ===========================================
 
 # TODO: Functions need to Refatctor +++++++++++++++++++++++++++++++++++
+def isValidWaypoint(waypoint):
+    global Waypoint_History
+
+    # If history is empty, append waypoint and return true
+    if (len(Waypoint_History) == 0):
+        Waypoint_History.append(waypoint)
+        return True
+
+    # Check is waypoint is not near any previous waypoints
+    for waypointInHistory in Waypoint_History:
+
+        # Gets distance between current waypoint and previous waypoint in history
+        distance = sqrt( (float(waypointInHistory[0]) - float(waypoint[0]))**2 + (float(waypointInHistory[1]) - float(waypoint[1]))**2 )
+        # print("Distance from waypoint in history:", distance)
+
+        # If distance from current waypoint to waypoint in history is less than error, return false
+        if (distance < configDrones.WAPOINT_HISTORY_DISTANCE_ERROR):
+            return False
+
+    # Appends new waypoint to history
+    Waypoint_History.append(waypoint)        
+    return True
+
+
 def handleEnd(data):
     global End_Loop
     if (data.data == "End"):
