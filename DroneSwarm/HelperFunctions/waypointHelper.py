@@ -33,22 +33,22 @@ searchRadii = []    # list to hold search circle radii per group  Convert to gps
 
 # replacement for math.dist
 # calculates euclidian distance
-def dist(P, Q):
-    return (sum((pi - qi)**2 for pi, qi in zip(P, Q)))**0.5
+# def dist(P, Q):
+#     return (sum((pi - qi)**2 for pi, qi in zip(P, Q)))**0.5
 
 # list of pixel clusters (a list of lists)
 clusters = []
 
-def checkSiblingClusterExists(pixelRGB, currentCluster, sceneRGB):
-    if currentCluster==len(clusters):
-        return False
+# def checkSiblingClusterExists(pixelRGB, currentCluster, sceneRGB):
+#     if currentCluster==len(clusters):
+#         return False
 
-    for i in range(currentCluster+1, len(clusters)):
-        clusterColor = segRGB[clusters[i][0][0]][clusters[i][0][1]][0]
-        if(pixelRGB==clusterColor):
-            return True
+#     for i in range(currentCluster+1, len(clusters)):
+#         clusterColor = segRGB[clusters[i][0][0]][clusters[i][0][1]][0]
+#         if(pixelRGB==clusterColor):
+#             return True
 
-    return False
+#     return False
 
 
 def pixelClustering(height, width, segRGB, sceneRGB):
@@ -160,11 +160,11 @@ def drawBB(sceneRGB):
 
     return sceneRGB
 
-def distanceForm(centroid, avgCentroidsX, avgCentroidsY):
-    distance = ((centroid[0] - avgCentroidsX)**2 + \
-                (centroid[1] - avgCentroidsY)**2)**0.5
+# def distanceForm(centroid, avgCentroidsX, avgCentroidsY):
+#     distance = ((centroid[0] - avgCentroidsX)**2 + \
+#                 (centroid[1] - avgCentroidsY)**2)**0.5
 
-    return distance
+#     return distance
 
 # function to calculate the far centroid
 # def furthestCentroid(sceneRGB, centroids, avgCentroidsX, avgCentroidsY):
@@ -186,19 +186,19 @@ def distanceForm(centroid, avgCentroidsX, avgCentroidsY):
 #
 #     return furthestCentroid
 
-def furthestCentroid(centroids, avgCentroidsX, avgCentroidsY):
-    far = 0
-    furthestCentroid = (0, 0)
-    for centroid in centroids:
-        # calculate distance between center and one of the cluster centroids
-        distance = distanceForm(centroid, avgCentroidsX, avgCentroidsY)
+# def furthestCentroid(centroids, avgCentroidsX, avgCentroidsY):
+#     far = 0
+#     furthestCentroid = (0, 0)
+#     for centroid in centroids:
+#         # calculate distance between center and one of the cluster centroids
+#         distance = distanceForm(centroid, avgCentroidsX, avgCentroidsY)
 
-        # compare the distance to find the furthest centroid
-        if distance >= far:
-            furthestCentroid = centroid
-            far = distance
+#         # compare the distance to find the furthest centroid
+#         if distance >= far:
+#             furthestCentroid = centroid
+#             far = distance
 
-    return furthestCentroid
+#     return furthestCentroid
 
 def drawOverlap(sceneRGB, r):
     global centroids

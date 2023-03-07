@@ -34,6 +34,14 @@ from HelperFunctions.waypointHelper import waypointDetect
 from HelperFunctions.waypointHelper import applyInfrared 
 import ServiceRequestors.instructWolf as instructWolf
 from airsim_ros_pkgs.msg import GPS
+import HelperFunctions.waypointHelper as waypointHelper 
+from ImageProcessing import getInfo
+from ImageProcessing import clustering
+from HelperFunctions import clusterHelper
+import warnings
+
+# for a clearner output
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 # Environmental Variables
 LOOP_NUMBER = configDrones.LOOP_NUMBER
@@ -102,7 +110,7 @@ def overseerDroneController(droneName, droneCount):
     client.moveToZAsync(z=-35, velocity=8, vehicle_name = droneName).join()
 
     # Apply infrared to AirSim animals
-    applyInfrared(client)
+    clusterHelper.applyInfrared(client)
 
     # Call startup service on each wolf
     # THis is Hardcoded need to replace
@@ -132,6 +140,7 @@ def overseerDroneController(droneName, droneCount):
         # waypointData = waypointDetect(i, droneName, client)
         # print("Doing waypoint Detect, Got: ", waypointData)
 
+        # START OF CHARLIES SECTION
         # USER FOR TESTING, REMOVE
         timeDiff = time.time() - runtime
         if ((timeDiff > 20) and (droneName == "Overseer_0")):
@@ -170,7 +179,42 @@ def overseerDroneController(droneName, droneCount):
                 # IF HAS NAME, IS FROM WOLF
                 requestStatus = instructWolf.sendWolfSearchBehaviorRequest(serviceName, circleCenterGPS, circleRadiusGPS, circleRadiusMeters, spreadTimeS, searchTimeS,  taskGroup)
                 print("Request bool:", requestStatus, "From Overseer:", droneName, "To:", optimalDrone)
+        # END OF CHARLIES CHANGES
+        
+        #print("Calling waypoint function")
+        #waypointData = waypointDetect(i, droneName, client)
+        #print("Doing waypoint Detect, Got: ", waypointData)
 
+        #---Waypoint Detection---
+        # get response object and retrieve segmentation
+        # responses = getInfo.getInfrared(client, droneName)
+        # height, width, segRGB = getInfo.getSegInfo(responses)
+
+        # # cluster heat signatures from segmenation map
+        # clusters = clustering.pixelClustering(height, width, segRGB)
+
+        # # if no detections then avoid unecessary calculations
+        # if clusters != None:
+        #     # get centroids of each pixel cluster
+        #     centroids = getInfo.getCentroids(clusters)
+
+        #     # calculate circle groups and get average centers per group
+        #     intersectGroups, avgCentroids = clustering.circleGroups(centroids, 50)
+
+        #     # calculate search circle
+        #     searchRadii = getInfo.getSearchCircles(intersectGroups, avgCentroids, 50)
+
+        #     # convert circle pixel info to geospatial info
+        #     # searchRadii and avgCentroids need to be converted
+        #     getInfo.convertToGeo(searchRadii, avgCentroids, vehicleName, client)
+
+            # GETS OPTIMAL DRONE, NEEDS INCORPORATION TO IF STATEMENT
+            # nextWaypoint = getNewWaypoint(droneName)
+            # optimalDrone = overseerGetWolfData.getOptimalWolf(nextWaypoint, droneName)
+            # print("Send command to drone:", optimalDrone, "For cluster:", droneName)
+
+            # if (waypointData != None):
+            #     print(waypointData)
 
         # TODO: run drone node assignment if needed and message wolf node
 
