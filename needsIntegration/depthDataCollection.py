@@ -6,39 +6,64 @@ import pprint
 import time
 from split_image import split_image
 import math
+from matplotlib import pyplot as plt
 
 # drone size 1m x 1m
+def getDistanceXConeArray(client,vehicle_name):
 
-# directory to store pictures
-imgDir = 'D:\AirSim\AirSim\dataCollection'
-vehicle_name = "0"
-DIRECTION_FACTOR = 5
+    distanceXConeArray = [client.getDistanceSensorData(distance_sensor_name="Front",vehicle_name=vehicle_name).distance,
+                    client.getDistanceSensorData(distance_sensor_name="Left(-5)",vehicle_name=vehicle_name).distance,
+                    client.getDistanceSensorData(distance_sensor_name="Right(5)",vehicle_name=vehicle_name).distance,
+                    client.getDistanceSensorData(distance_sensor_name="Left(-8.5)",vehicle_name=vehicle_name).distance,
+                    client.getDistanceSensorData(distance_sensor_name="Right(8.5)",vehicle_name=vehicle_name).distance,]
 
-# check that directory exists
-isExist = os.path.exists(imgDir)
-if not isExist:
-    # make directory if not already there
-    os.makedirs(imgDir)
-    print('Created: ' + imgDir)
+    for distance in distanceXConeArray:
+        print(distance)
 
-# set up client object to access multirotor drone
-client = airsim.MultirotorClient()
-client.confirmConnection()
-client.enableApiControl(True)
-client.armDisarm(True)
+    return distanceXConeArray
 
-i=0
-lowDepth = 0
-imageContainer = []
+def getDistanceCautionArray(client,vehicle_name):
 
-# image collection loop:
-# we have to test out how many pictures it should take so the while loop can end
-while i < 1:
+    distanceCautionArray = [client.getDistanceSensorData(distance_sensor_name="Left(-8.5)",vehicle_name=vehicle_name).distance,
+                    client.getDistanceSensorData(distance_sensor_name="Right(8.5)",vehicle_name=vehicle_name).distance,
+                    client.getDistanceSensorData(distance_sensor_name="Close_Left",vehicle_name=vehicle_name).distance,
+                    client.getDistanceSensorData(distance_sensor_name="Close_Right",vehicle_name=vehicle_name).distance,
+                    client.getDistanceSensorData(distance_sensor_name="Up(5)",vehicle_name=vehicle_name).distance,
+                    client.getDistanceSensorData(distance_sensor_name="Up(10)",vehicle_name=vehicle_name).distance]
 
-    # take images
-    # ImageRequest(name, image_type, pixel_as_float, compress)
+    # print(distanceCautionArray[2])
+    # print(distanceCautionArray[3])
+
+    return distanceCautionArray
+
+def getSideSensors(client,vehicle_name):
+
+    sideSensors = [client.getDistanceSensorData(distance_sensor_name="Left_Side",vehicle_name=vehicle_name).distance,
+                    client.getDistanceSensorData(distance_sensor_name="Right_Side",vehicle_name=vehicle_name).distance]
+
+    print(sideSensors)
+
+    return sideSensors
+
+def getVelo(x,y,DIRECTION_FACTOR):
+
+    velY = math.sqrt((0 - 0)**2 + ((y)-0)**2)
+    velX = math.sqrt((x - 0)**2 + (0-0)**2)
+
+    velY = velY/DIRECTION_FACTOR
+    velX = velX/DIRECTION_FACTOR
+
+    return velX,velY
+
+def collisionAlgo(client,imgDir,osImgDir,vehicle_name,closestObjectDistance,DIRECTION_FACTOR):
+    i=0
+    lowDepth = 0
+    imageContainer = []
+        # image collection loop:
+        # we have to test out how many pictures it should take so the while loop can end
+        # take images
+        # ImageRequest(name, image_type, pixel_as_float, compress)
     response = client.simGetImages([airsim.ImageRequest("0", airsim.ImageType.DepthVis, True)],vehicle_name)
-
     responseDepth = response[0]
 
     depth = np.array(responseDepth.image_data_float,dtype=np.float32)
@@ -46,12 +71,13 @@ while i < 1:
     depth = np.array(depth*255,dtype=np.uint8)
     depthClose = depth * 1000
     depthCloce16 = np.clip(depthClose,0,65535)
-    os.chdir(imgDir)
+
+    os.chdir(imgDir+osImgDir)
     cv2.imwrite('DepthImage.png', depthCloce16)
 
     # we split the image into multiple parts(3 col 1 row)
     split_image('DepthImage.png',1,3,False,False)
-    files = os.listdir(imgDir)
+    files = os.listdir(imgDir+osImgDir)
 
     # we find the average pixels in the image and we store it in the imageContainer
     for images in files:
@@ -63,46 +89,79 @@ while i < 1:
             lowDepth = temp
             imageContainer.append(images)
 
-    # this is converting the pixels into meters converstion 
-    picDiviation = cv2.imread(imageContainer[0])
-    originPicWidth = depthCloce16.shape[1]
-    width = picDiviation.shape[1]
-    centerDrone = width/2
-    width = originPicWidth + width + centerDrone
-    meterConvertion = ((width*24000)*0.000265)+1
+    print(imageContainer)
+    treeWidth = (242.7/100) + 1
 
-    
-    distanceFromObsitcal = client.getDistanceSensorData(vehicle_name=vehicle_name).distance
-    droneData = client.getGpsData()
-    lidarData = client.getLidarData()
-    
-    # we have to play with this moveByVelo thing because for the collision algo to work the drone has to be moving 
-    client.moveByVelocityZAsync(5,0, -5, duration =2,vehicle_name=vehicle_name).join()
+    velX,velY = getVelo(treeWidth, closestObjectDistance,DIRECTION_FACTOR)
 
-    velocity = client.getGpsData(vehicle_name = vehicle_name)
+    if(imageContainer[0].__contains__('0')):
+        velX = -velX
 
-    # math to find the x and y values to find the vectors
-    theta = math.atan2(distanceFromObsitcal,meterConvertion)/math.pi*180
-    cs = math.cos(theta)
-    sn = math.sin(theta)
+    # if(closestObjectDistance < 5):
+    #     client.moveByVelocityZAsync(0,velX, 0, duration=DIRECTION_FACTOR,vehicle_name=vehicle_name)
+    # else:
+    client.moveByVelocityZAsync(velY,velX, 0, duration=DIRECTION_FACTOR,vehicle_name=vehicle_name)
 
-    print(velocity.gnss.velocity.x_val)
-    print(velocity.gnss.velocity.y_val)
-    px = velocity.gnss.velocity.x_val * cs - velocity.gnss.velocity.y_val * sn
-    py = velocity.gnss.velocity.x_val * sn + velocity.gnss.velocity.y_val * cs
+def repulsion(client,vehicle_name,DIRECTION_FACTOR):
 
+    sideSensors = getSideSensors(client, vehicle_name)
 
-    pxNormalized = (px / math.sqrt(px**2 + py**2))*DIRECTION_FACTOR
-    pyNormalized = (py / math.sqrt(px**2 + py**2))*DIRECTION_FACTOR
+    if(sideSensors[0] < 0.8):
+        difference = 0.8-sideSensors[0]
+        print(difference)
+        velX,velY = getVelo(difference, 0, DIRECTION_FACTOR)
 
-    print(pxNormalized)
-    print(pyNormalized)
+    if(sideSensors[1] < 0.8):
+        difference = 0.8-sideSensors[1]
+        print(difference)
+        velX,velY = getVelo(difference, 0, DIRECTION_FACTOR)
+        velX = -velX
 
-    client.moveByVelocityZAsync(pyNormalized,pxNormalized, -5, duration =1,vehicle_name=vehicle_name)
-    print('works')
+    client.moveByVelocityZAsync(velY,velX, 0, duration=DIRECTION_FACTOR,vehicle_name=vehicle_name)
 
+def tweakDronePath(client,vehicle_name):
+    distanceCautionArray = getDistanceCautionArray(client, vehicle_name)
 
-    time.sleep(1)
-    i+=1
+    if(distanceCautionArray[2] < 2):
+        velX,velY = getVelo(distanceCautionArray[2], 0, 1)
+        client.moveByVelocityZAsync(velY,velX, 0, duration=1,vehicle_name=vehicle_name)
 
 
+    if(distanceCautionArray[3] < 2):
+        velX,velY = getVelo(distanceCautionArray[3], 0, 1)
+        velX = -velX
+        client.moveByVelocityZAsync(velY,velX, 0, duration=1,vehicle_name=vehicle_name)
+
+def start():
+      # directory to store pictures
+    imgDir = '..\\'
+    osImgDir = "dataCollection"
+    vehicle_name = "0"
+    DIRECTION_FACTOR = 5
+
+    # check that directory exists
+    isExist = os.path.exists(imgDir+osImgDir)
+    if not isExist:
+        # make directory if not already there
+        os.mkdir(imgDir+osImgDir)
+        print('Created: ' + imgDir+osImgDir)
+
+    # set up client object to access multirotor drone
+    client = airsim.MultirotorClient()
+    client.confirmConnection()
+    client.enableApiControl(True)
+    client.armDisarm(True)
+
+    # tweakDronePath(client, vehicle_name)
+    repulsion(client, vehicle_name, DIRECTION_FACTOR)
+    # distanceXConeArray = getDistanceXConeArray(client, vehicle_name)
+    # closestObjectDistance = 50
+
+    # for distance in distanceXConeArray:
+    #    if(closestObjectDistance > distance):
+    #         closestObjectDistance = distance 
+
+    # if(16 > closestObjectDistance):
+    #     collisionAlgo(client,imgDir,osImgDir,vehicle_name,closestObjectDistance,DIRECTION_FACTOR)
+
+start()
