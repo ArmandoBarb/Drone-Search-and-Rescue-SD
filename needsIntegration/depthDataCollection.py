@@ -17,8 +17,8 @@ def getDistanceXConeArray(client,vehicle_name):
                     client.getDistanceSensorData(distance_sensor_name="Left(-8.5)",vehicle_name=vehicle_name).distance,
                     client.getDistanceSensorData(distance_sensor_name="Right(8.5)",vehicle_name=vehicle_name).distance,]
 
-    for distance in distanceXConeArray:
-        print(distance)
+    # for distance in distanceXConeArray:
+    #     print(distance)
 
     return distanceXConeArray
 
@@ -41,7 +41,7 @@ def getSideSensors(client,vehicle_name):
     sideSensors = [client.getDistanceSensorData(distance_sensor_name="Left_Side",vehicle_name=vehicle_name).distance,
                     client.getDistanceSensorData(distance_sensor_name="Right_Side",vehicle_name=vehicle_name).distance]
 
-    print(sideSensors)
+    # print(sideSensors)
 
     return sideSensors
 
@@ -88,8 +88,6 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,DIRECTION_FAC
                 imageContainer.clear()
             lowDepth = temp
             imageContainer.append(images)
-
-    print(imageContainer)
     treeWidth = (242.7/100) + 1
 
     velX,velY = getVelo(treeWidth, closestObjectDistance,DIRECTION_FACTOR)
@@ -132,7 +130,6 @@ def tweakDronePath(client,vehicle_name):
         velX = -velX
         client.moveByVelocityZAsync(velY,velX, 0, duration=1,vehicle_name=vehicle_name)
 
-
 def collisionAvoidanceCheck(client, vehicle_name, threshhold):
     # tweakDronePath(client, vehicle_name)
     # repulsion(client, vehicle_name, DIRECTION_FACTOR)
@@ -151,7 +148,7 @@ def collisionAvoidanceCheck(client, vehicle_name, threshhold):
 def start():
     
     # directory to store pictures
-    imgDir = os.path.abspath("D:\AirSim\PythonClient\multirotor\Drone-Search-and-Rescue-SD\needsIntegration\depthCollection")
+    imgDir = os.path.abspath("..\depthCollection")
     vehicle_name = "0"
     DIRECTION_FACTOR = 5
 
