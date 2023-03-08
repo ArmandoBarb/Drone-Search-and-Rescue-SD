@@ -21,10 +21,8 @@ def getOverseerGetWolfState():
 
     return responseText
 
-def getOptimalWolf(waypoint, clusterName):
-    shortestDistance = 10000000
-    optimalDrone = ""
-
+# Gets wolf data of cluster, excluded current drone
+def getWolfDataOfCluster(clusterName):
     # Get wolf data using a service
     rospy.wait_for_service(PROXIMITY_WOLF_SERVICE)
 
@@ -33,13 +31,30 @@ def getOptimalWolf(waypoint, clusterName):
     resp = response()
 
     responseText = []
-    for drone in resp.droneDataArray:
-        # Get drones distance to waypoint
-        curDroneDistance = sqrt( (float(waypoint[0]) - drone.longitude)**2 + (float(waypoint[1]) - drone.latitude)**2 )
+    for x in resp.droneDataArray:
+        if (x.cluster == clusterName):
+            responseText.append(x)
 
-        # If drone is close and available, save the drone name
-        if ((curDroneDistance < shortestDistance) and (drone.taskGroup == "") and (drone.cluster == clusterName)):
-            optimalDrone = drone.droneName
-            shortestDistance = curDroneDistance
+    return responseText
 
-    return optimalDrone
+# def getOptimalWolf(waypoint, clusterName):
+#     shortestDistance = 10000000
+#     optimalDrone = ""
+
+#     # Get wolf data using a service
+#     rospy.wait_for_service(PROXIMITY_WOLF_SERVICE)
+
+#     # Gets service response and droneDataArray from WolfData
+#     response = rospy.ServiceProxy(PROXIMITY_WOLF_SERVICE, getDroneData)
+#     resp = response()
+
+#     for drone in resp.droneDataArray:
+#         # Get drones distance to waypoint
+#         curDroneDistance = sqrt( (float(waypoint[0]) - drone.longitude)**2 + (float(waypoint[1]) - drone.latitude)**2 )
+
+#         # If drone is close and available, save the drone name
+#         if ((curDroneDistance < shortestDistance) and (drone.taskGroup == "") and (drone.cluster == clusterName)):
+#             optimalDrone = drone.droneName
+#             shortestDistance = curDroneDistance
+
+#     return optimalDrone

@@ -23,7 +23,7 @@ def circleGroups(centroids, r):
                 continue
 
             # calculate distance between centers
-            d = distanceForm(centroid, centroidPrime[0], centroidPrime[1])
+            d = clusterHelper.distanceForm(centroid, centroidPrime[0], centroidPrime[1])
 
             # check for touching, intersecting circles, and when
             # the center of one lies on the center of another

@@ -11,3 +11,5 @@ PROXIMITY_OVERSEER_SERVICE = "ProximityOverseerService"
 PROXIMITY_WOLF_SERVICE = "PromixityWolfService"
 # dynamic services : need tp apend value
 WOLF_DRONE_SERVICE = "wolf_service_"
+# task group name beginning
+SEARCH_TASK_GROUP = "Task_Group_Search_"
