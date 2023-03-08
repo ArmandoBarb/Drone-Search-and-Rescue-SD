@@ -3,207 +3,183 @@
   "SettingsVersion": 1.2,
   "SimMode": "Multirotor",
   "ClockSpeed": 1,
-  "OriginGeopoint": {
-    "Latitude": 0,
-    "Longitude": 0,
-    "Altitude": 0
-  },
-  "Vehicles":
-  {
+  "Vehicles": {
     "0": {
       "VehicleType": "SimpleFlight",
-      "EnableCollisions": true,
-      "AllowAPIAlways": true,
-      "DefaultVehicleState": "Disarmed",
-      "EnableTrace": true,
-      "ControlIp": "172.17.0.1",
-      "ControlPort": 139,
-      "LocalHostIp": "192.168.86.40",
-      "Cameras": {
+      "Sensors":{
+          "Left(-8.5)": {
+            "SensorType": 5,
+            "Enabled" : true,
+            "MinDistance": 0.2,
+            "MaxDistance": 40,
+            "X": 0, "Y": 0, "Z": -1,
+            "Yaw": -8.5, "Pitch": 0, "Roll": 0,
+            "DrawDebugPoints": true
+          },
+          "Left(-5)": {
+            "SensorType": 5,
+            "Enabled" : true,
+            "MinDistance": 0.2,
+            "MaxDistance": 40,
+            "X": 0, "Y": 0, "Z": -1,
+            "Yaw": -5, "Pitch": 0, "Roll": 0,
+            "DrawDebugPoints": true
+          },
+          "Right(5)": {
+            "SensorType": 5,
+            "Enabled" : true,
+            "MinDistance": 0.2,
+            "MaxDistance": 40,
+            "X": 0, "Y": 0, "Z": -1,
+            "Yaw": 5, "Pitch": 0, "Roll": 0,
+            "DrawDebugPoints": true
+          },
+          "Right(8.5)": {
+            "SensorType": 5,
+            "Enabled" : true,
+            "MinDistance": 0.2,
+            "MaxDistance": 40,
+            "X": 0, "Y": 0, "Z": -1,
+            "Yaw": 8.5, "Pitch": 0, "Roll": 0,
+            "DrawDebugPoints": true
+          },
+          "Front": {
+            "SensorType": 5,
+            "Enabled" : true,
+            "MinDistance": 0.2,
+            "MaxDistance": 40,
+            "X": 0, "Y": 0, "Z": -1,
+            "Yaw": 0, "Pitch": 0, "Roll": 0,
+            "DrawDebugPoints": true
+          },
+          "Up(5)": {
+            "SensorType": 5,
+            "Enabled" : true,
+            "MinDistance": 0.2,
+            "MaxDistance": 40,
+            "X": 0, "Y": 0, "Z": -1,
+            "Yaw": 0, "Pitch": 5, "Roll": 0,
+            "DrawDebugPoints": true
+          },
+          "Up(10)": {
+            "SensorType": 5,
+            "Enabled" : true,
+            "MinDistance": 0.2,
+            "MaxDistance": 40,
+            "X": 0, "Y": 0, "Z": -1,
+            "Yaw": 0, "Pitch": 10, "Roll": 0,
+            "DrawDebugPoints": true
+          },
+          "Close_Left": {
+            "SensorType": 5,
+            "Enabled" : true,
+            "MinDistance": 0.2,
+            "MaxDistance": 40,
+            "X": 0, "Y": 0, "Z": -1,
+            "Yaw": -12, "Pitch": 0, "Roll": 0,
+            "DrawDebugPoints": true
+          }, 
+          "Close_Right": {
+            "SensorType": 5,
+            "Enabled" : true,
+            "MinDistance": 0.2,
+            "MaxDistance": 40,
+            "X": 0, "Y": 0, "Z": -1,
+            "Yaw": 12, "Pitch": 0, "Roll": 0,
+            "DrawDebugPoints": true
+          },
+          "Left_Side": {
+            "SensorType": 5,
+            "Enabled" : true,
+            "MinDistance": 0.2,
+            "MaxDistance": 40,
+            "X": 0, "Y": 0, "Z": -1,
+            "Yaw": -90, "Pitch": 0, "Roll": 0,
+            "DrawDebugPoints": true
+          },
+          "Right_Side": {
+            "SensorType": 5,
+            "Enabled" : true,
+            "MinDistance": 0.2,
+            "MaxDistance": 40,
+            "X": 0, "Y": 0, "Z": -1,
+            "Yaw": 90, "Pitch": 0, "Roll": 0,
+            "DrawDebugPoints": true
+          }
       },
-      "X": 0,
-      "Y": 4,
-      "Z": 0
-    },
-    "1": {
-      "VehicleType": "SimpleFlight",
       "EnableCollisions": true,
       "AllowAPIAlways": true,
-      "DefaultVehicleState": "Disarmed",
       "EnableTrace": true,
-      "ControlIp": "172.17.0.1",
-      "ControlPort": 139,
-      "LocalHostIp": "192.168.86.40",
-      "Cameras": {
-      },
-      "X": 0,
-      "Y": 2,
-      "Z": 0
-    },
-    "2": {
-      "VehicleType": "SimpleFlight",
-      "EnableCollisions": true,
-      "AllowAPIAlways": true,
-      "DefaultVehicleState": "Disarmed",
-      "EnableTrace": true,
-      "ControlIp": "172.17.0.1",
-      "ControlPort": 139,
-      "LocalHostIp": "192.168.86.40",
       "Cameras": {
       },
       "X": 0,
       "Y": 0,
       "Z": 0
-    },
-    "3": {
-      "VehicleType": "SimpleFlight",
-      "EnableCollisions": true,
-      "AllowAPIAlways": true,
-      "DefaultVehicleState": "Disarmed",
-      "EnableTrace": true,
-      "ControlIp": "172.17.0.1",
-      "ControlPort": 139,
-      "LocalHostIp": "192.168.86.40",
-      "Cameras": {
-      },
-      "X": 0,
-      "Y": -2,
-      "Z": 0
-    },
-    "4": {
-      "VehicleType": "SimpleFlight",
-      "EnableCollisions": true,
-      "AllowAPIAlways": true,
-      "DefaultVehicleState": "Disarmed",
-      "EnableTrace": true,
-      "ControlIp": "172.17.0.1",
-      "ControlPort": 139,
-      "LocalHostIp": "192.168.86.40",
-      "Cameras": {
-      },
-      "X": 0,
-      "Y": -4,
-      "Z": 0
-    },
-    "5": {
-      "VehicleType": "SimpleFlight",
-      "EnableCollisions": true,
-      "AllowAPIAlways": true,
-      "DefaultVehicleState": "Disarmed",
-      "EnableTrace": true,
-      "ControlIp": "172.17.0.1",
-      "ControlPort": 139,
-      "LocalHostIp": "192.168.86.40",
-      "Cameras": {
-      },
-      "X": 0,
-      "Y": -6,
-      "Z": 0
-    },
-    "6": {
-      "VehicleType": "SimpleFlight",
-      "EnableCollisions": true,
-      "AllowAPIAlways": true,
-      "DefaultVehicleState": "Disarmed",
-      "EnableTrace": true,
-      "ControlIp": "172.17.0.1",
-      "ControlPort": 139,
-      "LocalHostIp": "192.168.86.40",
-      "Cameras": {
-      },
-      "X": 0,
-      "Y": 6,
-      "Z": 0
-    },
-    "7": {
-      "VehicleType": "SimpleFlight",
-      "EnableCollisions": true,
-      "AllowAPIAlways": true,
-      "DefaultVehicleState": "Disarmed",
-      "EnableTrace": true,
-      "ControlIp": "172.17.0.1",
-      "ControlPort": 139,
-      "LocalHostIp": "192.168.86.40",
-      "Cameras": {
-      },
-      "X": 0,
-      "Y": 8,
-      "Z": 0
-    },
-    "8": {
-      "VehicleType": "SimpleFlight",
-      "EnableCollisions": true,
-      "AllowAPIAlways": true,
-      "DefaultVehicleState": "Disarmed",
-      "EnableTrace": true,
-      "ControlIp": "172.17.0.1",
-      "ControlPort": 139,
-      "LocalHostIp": "192.168.86.40",
-      "Cameras": {
-      },
-      "X": 0,
-      "Y": -8,
-      "Z": 0
-    },
-    "9": {
-      "VehicleType": "SimpleFlight",
-      "EnableCollisions": true,
-      "AllowAPIAlways": true,
-      "DefaultVehicleState": "Disarmed",
-      "EnableTrace": true,
-      "ControlIp": "172.17.0.1",
-      "ControlPort": 139,
-      "LocalHostIp": "192.168.86.40",
-      "Cameras": {
-      },
-      "X": 0,
-      "Y": 10,
-      "Z": 0
-    },
-    "10": {
-      "VehicleType": "SimpleFlight",
-      "EnableCollisions": true,
-      "AllowAPIAlways": true,
-      "DefaultVehicleState": "Disarmed",
-      "EnableTrace": true,
-      "ControlIp": "172.17.0.1",
-      "ControlPort": 139,
-      "LocalHostIp": "192.168.86.40",
-      "Cameras": {
-      },
-      "X": 0,
-      "Y": -10,
-      "Z": 0
-    },
-    "Overseer_0": {
-      "VehicleType": "SimpleFlight",
-      "EnableCollisions": true,
-      "AllowAPIAlways": true,
-      "DefaultVehicleState": "Disarmed",
-      "EnableTrace": true,
-      "ControlIp": "172.17.0.1",
-      "ControlPort": 139,
-      "LocalHostIp": "192.168.86.40",
-      "Cameras": {
-      },
-      "X": 0,
-      "Y": 12,
-      "Z": 0
-    },
-    "Overseer_1": {
-      "VehicleType": "SimpleFlight",
-      "EnableCollisions": true,
-      "AllowAPIAlways": true,
-      "DefaultVehicleState": "Disarmed",
-      "EnableTrace": true,
-      "ControlIp": "172.17.0.1",
-      "ControlPort": 139,
-      "LocalHostIp": "192.168.86.40",
-      "Cameras": {
-      },
-      "X": 0,
-      "Y": -12,
-      "Z": 0
     }
+  },
+  "CameraDirector": {
+    "FollowDistance": -8
+  },
+  "CameraDefaults": {
+    "CaptureSettings": [
+      {
+        "ImageType": 1,
+        "Width": 256,
+        "Height": 144,
+        "Lenght":35,
+        "FOV_Degrees": 90,
+        "AutoExposureSpeed": 100,
+        "AutoExposureBias": 0,
+        "AutoExposureMaxBrightness": 0.64,
+        "AutoExposureMinBrightness": 0.03,
+        "MotionBlurAmount": 0,
+        "TargetGamma": 1.0,
+        "ProjectionMode": "",
+        "OrthoWidth": 5.12
+      }
+    ],
+    "NoiseSettings": [
+      {
+        "Enabled": false,
+        "ImageType": 1,
+
+        "RandContrib": 0.2,
+        "RandSpeed": 100000.0,
+        "RandSize": 500.0,
+        "RandDensity": 2,
+
+        "HorzWaveContrib":0.03,
+        "HorzWaveStrength": 0.08,
+        "HorzWaveVertSize": 1.0,
+        "HorzWaveScreenSize": 1.0,
+
+        "HorzNoiseLinesContrib": 1.0,
+        "HorzNoiseLinesDensityY": 0.01,
+        "HorzNoiseLinesDensityXY": 0.5,
+
+        "HorzDistortionContrib": 1.0,
+        "HorzDistortionStrength": 0.002
+      }
+    ]
+  },
+  "SubWindows": [
+      {
+        "WindowID": 0,
+        "CameraName": "0",
+        "ImageType": 0,
+        "VehicleName": "",
+        "Visible": true
+      },
+      {
+        "WindowID": 2,
+        "CameraName": "1",
+        "ImageType": 3,
+        "Width": 50,
+        "Height": 50,
+        "FOV_Degrees": 90,
+        "MotionBlurAmount": 0,
+        "VehicleName": "",
+        "Visible": true
+      }
+    ]
   }
-}
