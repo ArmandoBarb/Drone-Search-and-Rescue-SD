@@ -16,8 +16,18 @@ def getDistanceXConeArray(client,vehicle_name):
                     client.getDistanceSensorData(distance_sensor_name="Right(5)",vehicle_name=vehicle_name).distance,
                     client.getDistanceSensorData(distance_sensor_name="Left(-6.5)",vehicle_name=vehicle_name).distance,
                     client.getDistanceSensorData(distance_sensor_name="Right(6.5)",vehicle_name=vehicle_name).distance,
+                    client.getDistanceSensorData(distance_sensor_name="Left(-3.5)",vehicle_name=vehicle_name).distance,
+                    client.getDistanceSensorData(distance_sensor_name="Right(3.5)",vehicle_name=vehicle_name).distance,
                     client.getDistanceSensorData(distance_sensor_name="Left(-8.5)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Right(8.5)",vehicle_name=vehicle_name).distance,]
+                    client.getDistanceSensorData(distance_sensor_name="Right(8.5)",vehicle_name=vehicle_name).distance,
+                    client.getDistanceSensorData(distance_sensor_name="Left(-4)",vehicle_name=vehicle_name).distance,
+                    client.getDistanceSensorData(distance_sensor_name="Right(4)",vehicle_name=vehicle_name).distance,
+                    client.getDistanceSensorData(distance_sensor_name="Left(-3)",vehicle_name=vehicle_name).distance,
+                    client.getDistanceSensorData(distance_sensor_name="Right(3)",vehicle_name=vehicle_name).distance,
+                    client.getDistanceSensorData(distance_sensor_name="Left(-2)",vehicle_name=vehicle_name).distance,
+                    client.getDistanceSensorData(distance_sensor_name="Right(2)",vehicle_name=vehicle_name).distance,
+                    client.getDistanceSensorData(distance_sensor_name="Left(-1)",vehicle_name=vehicle_name).distance,
+                    client.getDistanceSensorData(distance_sensor_name="Right(1)",vehicle_name=vehicle_name).distance]
 
     # for distance in distanceXConeArray:
     #     print(distance)
@@ -149,7 +159,7 @@ def collisionAvoidanceCheck(client, vehicle_name, threshhold):
 
 def setupCollisionDirectory(vehicle_name):
     # directory to store pictures
-    imgDir = os.path.abspath("..\depthCollection"+str(vehicle_name))
+    imgDir = os.path.abspath("..\collisionDetectionImages"+str(vehicle_name))
 
     # check that directory exists
     isExist = os.path.exists(imgDir)
@@ -187,5 +197,4 @@ def start():
         
         client.moveByVelocityZAsync(vector[0], vector[1], -3, duration=1,vehicle_name=vehicle_name)
 
-
-start()
+# start()

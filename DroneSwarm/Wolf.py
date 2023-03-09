@@ -35,6 +35,7 @@ from airsim_ros_pkgs.srv import sendCommand
 import ServiceRequestors.wolfGetWolfData as wolfService
 import ServiceRequestors.instructWolf as instructWolf
 import HelperFunctions.calcHelper as helper
+import DroneBehaviors.collisionDetectionBehavior as collisionDetectionBehavior
 
 # Environmental Variables
 LOOP_NUMBER = configDrones.LOOP_NUMBER
@@ -76,6 +77,8 @@ Spread_Time = 0 #  time in seconds # time to get in position
 Search_Time = 0 #  time in seconds # time to search
 End_Loop = False
 NEARBY_DRONE_RADIUS = 0.0003
+THRESHOLD = 16  # TODO: Needs to be scalable
+COLLISION_DIRECTION_FACTOR = 5
 # TODO: add tunning variables for behaviors (would be cool if we can train them)
 
 # Main Process Start ----------------------------------------------
@@ -108,6 +111,8 @@ def wolfDroneController(droneName, droneCount):
     t2 = Thread(target = endListener)
     t2.start()
 
+    # Setup collision directory
+    imgDir = collisionDetectionBehavior.setupCollisionDirectory(droneName)
 
     # Create topic publishers
     # (TODO: ADD IN SLAM MERGE AND COMMAND RESULT PUBLISHERS)
@@ -209,10 +214,17 @@ def wolfDroneController(droneName, droneCount):
         # TODO: add Collision detecotr
             # getNeededAirSimData -> checkForCollision -> update collision behavior
         collisionAvoidance = False # set to true if need to do collision avoidance (open to better integration method)
-
+        collisionAvoidance, closestObjectDistance = collisionDetectionBehavior.collisionAvoidanceCheck(client, droneName, THRESHOLD)
+        if(collisionAvoidance):
+            vector = collisionDetectionBehavior.collisionAlgo(client,imgDir,droneName,closestObjectDistance,COLLISION_DIRECTION_FACTOR)
+            yaw = math.atan2(vector[0], vector[1])
+            degrees = math.degrees(yaw)
+            print("Our degrees", degrees)
+            yaw_mode = airsim.YawMode(is_rate=False, yaw_or_rate=(degrees));
+            client.moveByVelocityZAsync(vector[0], vector[1], -4, duration = COLLISION_DIRECTION_FACTOR, yaw_mode=yaw_mode, vehicle_name=droneName)
 
         # # TODO: Add in Drone behavior desion making
-        if (Consensus_Decision_Behavior): # Consensus Descion behavior
+        elif (Consensus_Decision_Behavior): # Consensus Descion behavior
             currentDroneData = client.getMultirotorState(vehicle_name = droneName);
             
             vector = consensusDecisionBehaviorGetVector(currentDroneData);
@@ -260,9 +272,9 @@ def wolfDroneController(droneName, droneCount):
         # TODO: Apply turning to desired action
         # TODO: Overide other behaviors if collisionAvoidance is needed
 
-
-        # TODO: Make Airsim call with desired action
-        client.moveByVelocityZAsync(vector[0], vector[1], -8, duration = 0.5, yaw_mode=yaw_mode, vehicle_name=droneName)
+        if (not collisionAvoidance):
+            # TODO: Make Airsim call with desired action
+            client.moveByVelocityZAsync(vector[0], vector[1], -4, duration = 0.5, yaw_mode=yaw_mode, vehicle_name=droneName)
         
         # Add in artifical loop delay (How fast the loop runs dictates the drones reaction speed)
 

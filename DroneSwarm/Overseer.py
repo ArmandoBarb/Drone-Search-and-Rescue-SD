@@ -143,12 +143,12 @@ def overseerDroneController(droneName, droneCount):
         # START OF CHARLIES SECTION
         # USER FOR TESTING, REMOVE
         timeDiff = time.time() - runtime
-        if ((timeDiff > 20) and (droneName == "Overseer_0")):
-            # CHECKS IF VALID BASED ON HISTORY
-            overseerLocation = getOverseerState()
-            overseer0Data = overseerLocation[0]
+        # if ((timeDiff > 20) and (droneName == "Overseer_0")):
+        #     # CHECKS IF VALID BASED ON HISTORY
+        #     overseerLocation = getOverseerState()
+        #     overseer0Data = overseerLocation[0]
 
-            waypointData = [overseer0Data.longitude, overseer0Data.latitude]
+        #     waypointData = [overseer0Data.longitude, overseer0Data.latitude]
 
         if (waypointData != None):
             waypointCheck = isValidWaypoint(waypointData)
