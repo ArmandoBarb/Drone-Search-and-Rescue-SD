@@ -87,9 +87,9 @@ def wolfDroneController(droneName, droneCount):
     global End_Loop
 
     # Sets global values for wolf cluster and coordinate
-    wolfClusterCreation(droneName)
+    wolfClusterCreation(droneName, droneCount)
     droneBoundary = (int(droneCount) / 2)
-    if (int(droneName) <= 2):
+    if (int(droneName) < droneBoundary):
         readCoordFile(GROUP_0_SEARCH)
     else:
         readCoordFile(GROUP_1_SEARCH)
@@ -341,13 +341,23 @@ def wolfCameraDetection(droneName):
 # TODO: Functions need to Refatctor +++++++++++++++++++++++++++++++++++
 
 # Creates drone groups based on wolf number
-def wolfClusterCreation(droneName):
+def wolfClusterCreation(droneName, droneCount):
     droneNum = int(droneName)
     global DM_Wolfs_Cluster
-    if (droneNum <= 2):
-        DM_Wolfs_Cluster = [0, 1, 2]
+    clusterCount = int(droneCount / 2)
+    # Calculates group 0 cluster
+    if (droneNum < clusterCount):
+        for droneName in range(clusterCount):
+            DM_Wolfs_Cluster.append(droneName)
+
+    # Calculates group 1 cluster
     else:
-        DM_Wolfs_Cluster = [3, 4, 5]
+        for droneName in range(clusterCount):
+            droneNum = droneName + clusterCount
+            DM_Wolfs_Cluster.append(droneNum)
+
+    droneCluster = str(DM_Wolfs_Cluster)
+    debugPrint(DM_Wolfs_Cluster)
 
 def commandResponse(request):
     global DM_Drone_Name
@@ -460,6 +470,7 @@ def getNewWaypoint(droneName):
 
 
 def oddClusterNumWaypointCalculator(currentWaypoint, previousWaypoint, radius, droneName):
+    global Cluster
     # 0 is longitude, 1 is latitude
     newWaypoint = []
 
@@ -472,22 +483,41 @@ def oddClusterNumWaypointCalculator(currentWaypoint, previousWaypoint, radius, d
     xDirection = (waypointDiffX/vectorVal) * radius
     yDirection = (waypointDiffY/vectorVal) * radius
 
-
+    # Calculates horizontal and vertical changes
     horizonalChange = xDirection - yDirection
     verticalChange = xDirection + yDirection
 
-    if ((int(droneName) % 3) == 0):
-        newWaypointX = float(currentWaypoint[0]) - yDirection + xDirection
-        newWaypointY = float(currentWaypoint[1]) + xDirection + yDirection
-        newWaypoint = [float(newWaypointX), float(newWaypointY)]
-    # Moves second drone directly to waypoint
-    elif((int(droneName) % 3) == 1):
-        newWaypoint = currentWaypoint
-    # Moves third drone right of the waypoint
-    elif((int(droneName) % 3) == 2):
-        newWaypointX = float(currentWaypoint[0]) + yDirection - xDirection
-        newWaypointY = float(currentWaypoint[1]) - xDirection - yDirection
-        newWaypoint = [float(newWaypointX), float(newWaypointY)]
+    # Get cluster and size information
+    wolfCluster = wolfService.getWolfDataOfClusterWCurWolf(Cluster)
+    clusterSize = len(wolfCluster)
+
+    # LANES       3  1  0  2  4
+    # DISTANCE    2  1  0  1  2
+    subwaypointList = []
+
+    # Calculates list of subwaypoint
+    # Append middle waypoint
+    subwaypointList.append(currentWaypoint)
+    for lane in range(1, clusterSize):
+        distanceFromCenterLeft = 1
+        distanceFromCenterRight = 1
+
+        # Odd go to the left of center
+        if (lane % 2 == 1):
+            newWaypointX = float(currentWaypoint[0]) + (horizonalChange * distanceFromCenterLeft)
+            newWaypointY = float(currentWaypoint[1]) + (verticalChange * distanceFromCenterLeft)
+            newWaypoint = [newWaypointX, newWaypointY]
+            subwaypointList.append(newWaypoint)
+        # Even go to the right of center
+        elif (lane % 2 == 0):
+            newWaypointX = float(currentWaypoint[0]) - (horizonalChange * distanceFromCenterRight)
+            newWaypointY = float(currentWaypoint[1]) - (verticalChange * distanceFromCenterRight)
+            newWaypoint = [newWaypointX, newWaypointY]
+            subwaypointList.append(newWaypoint)
+
+    # Gets lane and subwaypoint from calculated list
+    lane = int(droneName) % clusterSize
+    newWaypoint = subwaypointList[lane]
 
     return newWaypoint
 
