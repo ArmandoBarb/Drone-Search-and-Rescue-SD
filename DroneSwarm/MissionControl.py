@@ -55,7 +55,7 @@ if __name__ == '__main__': # Only runs if this is main processes
     for overseer in range(overseerCount):
         droneNum = str(overseer)
         droneName = "Overseer_" + droneNum
-        mp.Process(target=overseerDroneController, args=(droneName,overseerCount)).start()
+        mp.Process(target=overseerDroneController, args=(droneName,overseerCount, wolfCount)).start()
 
 
     # One node for "MissionControl"

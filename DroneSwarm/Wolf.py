@@ -449,66 +449,77 @@ def getNewWaypoint(droneName):
     global WAYPOINT_INDEX
     # print("DroneName: ", droneName, "Current waypoint index", WAYPOINT_INDEX)
     currentWaypoint = WAYPOINT_COORDS[WAYPOINT_INDEX]
-    newWaypoint = currentWaypoint
 
+    # Calculates subwaypoint if past first spawn waypoint
     if (WAYPOINT_INDEX >= 1):
-        # Radius in charge of distance between drones
-        radius = 0.0001
         previousWaypoint = WAYPOINT_COORDS[WAYPOINT_INDEX-1]
+        radius = 0.0001
+        currentWaypoint = oddClusterNumWaypointCalculator(currentWaypoint, previousWaypoint, radius, droneName)
 
-        # Finds vector between waypoints
-        waypointDiffX = float(currentWaypoint[0]) - float(previousWaypoint[0])
-        waypointDiffY = float(currentWaypoint[1]) - float(previousWaypoint[1])
+    return currentWaypoint
 
-        # Gets normalized difference vector
-        vectorVal = sqrt(waypointDiffX**2 + waypointDiffY**2)
-        xDirection = (waypointDiffX/vectorVal) * radius
-        yDirection = (waypointDiffY/vectorVal) * radius
 
-        # Creates lanes for 3 group clusters
-        if (len(DM_Wolfs_Cluster) == 3):
-            # Moves first drone left of the waypoint
-            if ((int(droneName) % 3) == 0):
-                newWaypointX = float(currentWaypoint[0]) - yDirection + xDirection
-                newWaypointY = float(currentWaypoint[1]) + xDirection + yDirection
-                newWaypoint = [float(newWaypointX), float(newWaypointY)]
-            # Moves second drone directly to waypoint
-            elif((int(droneName) % 3) == 1):
-                newWaypoint = currentWaypoint
-            # Moves third drone right of the waypoint
-            elif((int(droneName) % 3) == 2):
-                newWaypointX = float(currentWaypoint[0]) + yDirection - xDirection
-                newWaypointY = float(currentWaypoint[1]) - xDirection - yDirection
-                newWaypoint = [float(newWaypointX), float(newWaypointY)]
+def oddClusterNumWaypointCalculator(currentWaypoint, previousWaypoint, radius, droneName):
+    # 0 is longitude, 1 is latitude
+    newWaypoint = []
 
-        # Creates lanes for 4 group clusters
-        if (len(DM_Wolfs_Cluster) == 4):
-            # Moves first drone left of the waypoint
-            if ((int(droneName) % 4) == 0):
-                newWaypointX = float(currentWaypoint[0]) - (yDirection * 1.5)
-                newWaypointY = float(currentWaypoint[1]) + (xDirection * 1.5)
-                newWaypoint = [float(newWaypointX), float(newWaypointY)]
-                # print("Drone", droneName, "Int dronename", (int(droneName)), "Moving to ", newWaypoint)
-            # Moves second drone directly to waypoint
-            elif((int(droneName) % 4) == 1):
-                newWaypointX = float(currentWaypoint[0]) - (yDirection * 0.5)
-                newWaypointY = float(currentWaypoint[1]) + (xDirection * 0.5)
-                newWaypoint = [float(newWaypointX), float(newWaypointY)]
-            elif ((int(droneName) % 4) == 2):
-                newWaypointX = float(currentWaypoint[0]) + (yDirection * 0.5)
-                newWaypointY = float(currentWaypoint[1]) - (xDirection * 0.5)
-                newWaypoint = [float(newWaypointX), float(newWaypointY)]
-                # print("Drone", droneName, "Moving to ", newWaypoint)
-            # Moves third drone right of the waypoint
-            elif((int(droneName) % 4) == 3):
-                newWaypointX = float(currentWaypoint[0]) + (yDirection * 1.5)
-                newWaypointY = float(currentWaypoint[1]) - (xDirection * 1.5)
-                newWaypoint = [float(newWaypointX), float(newWaypointY)]
-                # print("Drone", droneName, "Int dronename", (int(droneName)), "Moving to ", newWaypoint)
+    # Finds vector between waypoints
+    waypointDiffX = float(currentWaypoint[0]) - float(previousWaypoint[0])
+    waypointDiffY = float(currentWaypoint[1]) - float(previousWaypoint[1])
 
+    # Gets normalized difference vector
+    vectorVal = sqrt(waypointDiffX**2 + waypointDiffY**2)
+    xDirection = (waypointDiffX/vectorVal) * radius
+    yDirection = (waypointDiffY/vectorVal) * radius
+
+
+    horizonalChange = xDirection - yDirection
+    verticalChange = xDirection + yDirection
+
+    if ((int(droneName) % 3) == 0):
+        newWaypointX = float(currentWaypoint[0]) - yDirection + xDirection
+        newWaypointY = float(currentWaypoint[1]) + xDirection + yDirection
+        newWaypoint = [float(newWaypointX), float(newWaypointY)]
+    # Moves second drone directly to waypoint
+    elif((int(droneName) % 3) == 1):
+        newWaypoint = currentWaypoint
+    # Moves third drone right of the waypoint
+    elif((int(droneName) % 3) == 2):
+        newWaypointX = float(currentWaypoint[0]) + yDirection - xDirection
+        newWaypointY = float(currentWaypoint[1]) - xDirection - yDirection
+        newWaypoint = [float(newWaypointX), float(newWaypointY)]
 
     return newWaypoint
 
+
+def evenClusterCountWaypointCalculator():
+    # 0 is longitude, 1 is latitude
+    # newWaypoint = []
+    print("Needs integration")
+
+    # # Finds vector between waypoints
+    # waypointDiffX = float(currentWaypoint[0]) - float(previousWaypoint[0])
+    # waypointDiffY = float(currentWaypoint[1]) - float(previousWaypoint[1])
+
+    # # Gets normalized difference vector
+    # vectorVal = sqrt(waypointDiffX**2 + waypointDiffY**2)
+    # xDirection = (waypointDiffX/vectorVal) * radius
+    # yDirection = (waypointDiffY/vectorVal) * radius
+
+    # if ((int(droneName) % 3) == 0):
+    #     newWaypointX = float(currentWaypoint[0]) - yDirection + xDirection
+    #     newWaypointY = float(currentWaypoint[1]) + xDirection + yDirection
+    #     newWaypoint = [float(newWaypointX), float(newWaypointY)]
+    # # Moves second drone directly to waypoint
+    # elif((int(droneName) % 3) == 1):
+    #     newWaypoint = currentWaypoint
+    # # Moves third drone right of the waypoint
+    # elif((int(droneName) % 3) == 2):
+    #     newWaypointX = float(currentWaypoint[0]) + yDirection - xDirection
+    #     newWaypointY = float(currentWaypoint[1]) - xDirection - yDirection
+    #     newWaypoint = [float(newWaypointX), float(newWaypointY)]
+
+    # return newWaypoint
 
 # Reads values in SpiralSearch.txt and sets it to global variable
 def readCoordFile(filename):

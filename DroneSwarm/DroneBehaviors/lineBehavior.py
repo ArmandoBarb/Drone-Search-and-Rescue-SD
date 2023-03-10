@@ -23,7 +23,9 @@ def repulsion(client, curDroneIndex):
     finalVX = 0
     finalVY = 0
 
-    for nearbyDroneIndex in range(6):
+    wolfDroneCount = len(wolfInfoArray)
+
+    for nearbyDroneIndex in range(wolfDroneCount):
         # Get difference in location from drones
         xDifference = wolfInfoArray[curDroneIndex].longitude - wolfInfoArray[nearbyDroneIndex].longitude
         yDifference = wolfInfoArray[curDroneIndex].latitude - wolfInfoArray[nearbyDroneIndex].latitude
