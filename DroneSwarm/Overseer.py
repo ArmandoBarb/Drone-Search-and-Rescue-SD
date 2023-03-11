@@ -246,20 +246,20 @@ def overseerInfraredDetection(droneName):
         height, width, segRGB = getInfo.getSegInfo(responses)
 
         dataDir='/home/testuser/AirSim/PythonClient/multirotor/Drone-Search-and-Rescue-SD/DroneSwarm/infraredDebug'
-        isExist=os.path.exists(dataDir)
+        # isExist=os.path.exists(dataDir)
 
-        if not isExist:
-            # make directory if not already there
-            os.makedirs(dataDir)
-            print('Created: ' + dataDir)
+        # if not isExist:
+        #     # make directory if not already there
+        #     os.makedirs(dataDir)
+        #     print('Created: ' + dataDir)
 
-        j=0
-        while os.path.exists(dataDir + "/" + ('%s' % j)+"test.jpg"):
-            print("Found "+('%s' % j))
-            j+=1
+        # j=0
+        # while os.path.exists(dataDir + "/" + ('%s' % j)+"test.jpg"):
+        #     print("Found "+('%s' % j))
+        #     j+=1
 
-        # debug infrared
-        airsim.write_png(dataDir + '/' + str(j)+'test.jpg', segRGB)
+        # # debug infrared
+        # airsim.write_png(dataDir + '/' + str(j)+'test.jpg', segRGB)
 
         # cluster heat signatures from segmenation map
         clusters = clustering.pixelClustering(height, width, segRGB)
@@ -272,28 +272,35 @@ def overseerInfraredDetection(droneName):
             centroidsGPS = getInfo.getCentroids(clusters, threadClient, droneName, height, width)
 
             # filter centroids against past waypoints
-
             filteredCentroidsGPS = []
             for centroid in centroidsGPS:
                 if isValidCentroid(centroid):
                     filteredCentroidsGPS.append(centroid)
 
+            # generate search circles
+            # contains [radius, avg circle center, list of circle centers]
+            radius = MIN_CIRCLE_RADIUS_GPS
+            circleList = []
+            for centroid in centroidsGPS:
+                circle = clustering.circle(radius, centroid, [centroid])
+                circleList = clustering.addCircle(circle, circleList)
+
             # calculate circle groups and get average centers per group
             # since the centroids were already in gps form (lon, lat) the
             # avgCentroids calculation are also in terms of (lon, lat) 
-            intersectGroups, averageCentroidsGPS = clustering.circleGroups(filteredCentroidsGPS, MIN_CIRCLE_RADIUS_GPS)
+            #intersectGroups, averageCentroidsGPS = clustering.circleGroups(filteredCentroidsGPS, MIN_CIRCLE_RADIUS_GPS)
 
             # calculate search circle
             # for search circles we have a list of radii measured in meters
             # along with an associated tuple of the form (lon, lat)
-            searchRadii = getInfo.getSearchCircles(intersectGroups, averageCentroidsGPS, MIN_CIRCLE_RADIUS_GPS)
+            #searchRadii = getInfo.getSearchCircles(intersectGroups, averageCentroidsGPS, MIN_CIRCLE_RADIUS_GPS)
 
             wolfDataList = overseerGetWolfData.getWolfDataOfCluster(Cluster)
             cleanWaypointHistory(wolfDataList)
 
-            for x in range(len(averageCentroidsGPS)):
-                waypoint = averageCentroidsGPS[x]
-                radius = searchRadii[x]
+            for x in range(len(circleList)):
+                waypoint = circleList[x].avgCenter
+                radius = circleList[x].radius
 
                 # see whose available
                 optimalDroneName = algoHelper.getOptimalWolf(waypoint, wolfDataList, droneName)
@@ -311,10 +318,10 @@ def overseerInfraredDetection(droneName):
                     # SEND MESSAGE TO OPTIMAL DRONE
                     serviceName = WOLF_DRONE_SERVICE + str(optimalDroneName)
                     circleCenterGPS =  gpsDataObject
-                    circleRadiusGPS = searchRadii[x]
-                    circleRadiusMeters = (searchRadii[x]*MIN_CIRCLE_RADIUS_METERS)/MIN_CIRCLE_RADIUS_GPS
+                    circleRadiusGPS = circleList[x].radius
+                    circleRadiusMeters = (circleList[x].radius*MIN_CIRCLE_RADIUS_METERS)/MIN_CIRCLE_RADIUS_GPS
                     spreadTimeS = 30
-                    searchTimeS = (searchRadii[x]*20)/MIN_CIRCLE_RADIUS_GPS
+                    searchTimeS = (circleList[x].radius*20)/MIN_CIRCLE_RADIUS_GPS
                     taskGroup = ""  # Let's wolf know it comes from an overseer
 
                     # IF TASK GROUP IS EMPTY, THE REQUEST IS FROM THE OVERSEER
