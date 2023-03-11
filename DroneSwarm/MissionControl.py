@@ -39,7 +39,7 @@ if __name__ == '__main__': # Only runs if this is main processes
 
     # overseerCount = mp.cpu_count() - 5
     overseerCount = 2
-    wolfCount = 6
+    wolfCount = 7
 
     # TODO: start all procecess for ros Nodes here
     # Start wolf proximity subscriber and wolf nodes
@@ -47,7 +47,7 @@ if __name__ == '__main__': # Only runs if this is main processes
     time.sleep(1);
     for wolf in range(wolfCount): # str(x) = the vechical_name of the drone
         droneName = str(wolf)
-        mp.Process(target=wolfDroneController, args=(droneName,wolfCount)).start()
+        mp.Process(target=wolfDroneController, args=(droneName,wolfCount,overseerCount)).start()
 
     # Start overseer proximity subscriber and overseer nodes
 
@@ -55,7 +55,7 @@ if __name__ == '__main__': # Only runs if this is main processes
     for overseer in range(overseerCount):
         droneNum = str(overseer)
         droneName = "Overseer_" + droneNum
-        mp.Process(target=overseerDroneController, args=(droneName,overseerCount)).start()
+        mp.Process(target=overseerDroneController, args=(droneName,overseerCount, wolfCount)).start()
 
 
     # One node for "MissionControl"
