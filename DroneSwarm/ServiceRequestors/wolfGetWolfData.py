@@ -19,7 +19,7 @@ def getWolfState():
 
     return responseText
 
-# Gets wolf data of cluster, excluded current drone
+# Gets wolf data of cluster
 def getWolfDataOfClusterWCurWolf(clusterName):
     # Get wolf data using a service
     rospy.wait_for_service(PROXIMITY_WOLF_SERVICE)

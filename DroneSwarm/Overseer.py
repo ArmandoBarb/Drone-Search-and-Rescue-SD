@@ -12,6 +12,7 @@ import rospy
 import time
 import json
 import ast
+import math
 from math import sqrt
 # import constants
 import Constants.configDrones as configDrones
@@ -74,7 +75,7 @@ Waypoint_History = []
 
 # Main Process Start ----------------------------------------------
 # Main function for the overseer drone
-def overseerDroneController(droneName, droneCount, wolfCount):
+def overseerDroneController(droneName, overseerCount, wolfCount):
     global DM_Drone_Name
     DM_Drone_Name = droneName
 
@@ -113,8 +114,14 @@ def overseerDroneController(droneName, droneCount, wolfCount):
     clusterHelper.applyInfrared(client)
 
     # Call startup service on each wolf
-    clusterSize = int(wolfCount / 2)
+    clusterSize = math.floor(wolfCount / overseerCount)
     groupStartDroneNum = int(droneNum) * clusterSize  # Get number of first wolf in cluster
+    
+    if (int(droneNum) == (overseerCount - 1)):
+        reminder = wolfCount % overseerCount
+        if reminder != 0:
+            clusterSize = clusterSize + reminder
+    debugPrint(str(clusterSize))
     for num in range(clusterSize):
         wolfNum = num + groupStartDroneNum
         wolfDroneService = WOLF_DRONE_SERVICE + str(wolfNum)
@@ -147,7 +154,7 @@ def overseerDroneController(droneName, droneCount, wolfCount):
             overseerLocation = getOverseerState()
             overseer0Data = overseerLocation[0]
 
-            waypointData = [overseer0Data.longitude, overseer0Data.latitude]
+            # waypointData = [overseer0Data.longitude, overseer0Data.latitude]
 
         if (waypointData != None):
             waypointCheck = isValidWaypoint(waypointData)
@@ -249,7 +256,7 @@ def overseerDroneController(droneName, droneCount, wolfCount):
 # Theads Start ===========================================
 # Subscribes to (Command) topic
 def commandSub():
-    rospy.Subscriber(COMMAND_TOPIC, String, handleCommand, (droneCount, client))
+    rospy.Subscriber(COMMAND_TOPIC, String, handleCommand, (overseerCount, client))
     rospy.spin()
 
 # TODO: overseer communication listen

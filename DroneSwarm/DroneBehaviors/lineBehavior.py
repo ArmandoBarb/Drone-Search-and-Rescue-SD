@@ -70,7 +70,7 @@ def waypointDirection(client, curDroneIndex, waypoint):
     return finalVelocity
 
 # Uses repulsion and waypoint direction to move between waypoints
-def lineBehavior(client, curDroneIndex, DM_Wolfs_Cluster, waypoint_coords):
+def lineBehavior(client, curDroneIndex, waypoint_coords):
     # Gets current wolf data
     wolfInfoArray = getWolfState()
 
