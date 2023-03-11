@@ -12,6 +12,7 @@ import rospy
 import time
 import json
 import ast
+import math
 from math import sqrt
 # import constants
 import Constants.configDrones as configDrones
@@ -81,7 +82,7 @@ Waypoint_History = []
 
 # Main Process Start ----------------------------------------------
 # Main function for the overseer drone
-def overseerDroneController(droneName, droneCount):
+def overseerDroneController(droneName, overseerCount, wolfCount):
     global DM_Drone_Name
     DM_Drone_Name = droneName
 
@@ -94,7 +95,7 @@ def overseerDroneController(droneName, droneCount):
     rospy.init_node(nodeName, anonymous = True)
 
     # Get wolf cluster
-    wolfClusterCreation(droneName)
+    # wolfClusterCreation(droneName, wolfCount, droneNum)
 
     # Reads in coords for drone
     if (droneName == "Overseer_0"):
@@ -120,12 +121,17 @@ def overseerDroneController(droneName, droneCount):
     t1.start()
 
     # Call startup service on each wolf
-    # THis is Hardcoded need to replace
-    droneLimit = int(droneNum) * 3
-    for num in range(3):
-        wolfNum = num + droneLimit
+    clusterSize = math.floor(wolfCount / overseerCount)
+    groupStartDroneNum = int(droneNum) * clusterSize  # Get number of first wolf in cluster
+    
+    if (int(droneNum) == (overseerCount - 1)):
+        reminder = wolfCount % overseerCount
+        if reminder != 0:
+            clusterSize = clusterSize + reminder
+    debugPrint(str(clusterSize))
+    for num in range(clusterSize):
+        wolfNum = num + groupStartDroneNum
         wolfDroneService = WOLF_DRONE_SERVICE + str(wolfNum)
-        # sendWolfCommandClusterInfo(wolfDroneService)
         sendLinebehaviorRequest(wolfDroneService, droneName)
 
     # Overseer Drone search loop Start
@@ -196,7 +202,7 @@ def overseerDroneController(droneName, droneCount):
 
 
         # If all drones make it to the waypoint, more to next waypoint
-        allDronesAtWaypoint()
+        allDronesAtWaypoint(droneName)
 
         client.moveByVelocityZAsync(vector[1], vector[0], -35, duration = 1, vehicle_name=droneName)
 
@@ -218,7 +224,7 @@ def overseerDroneController(droneName, droneCount):
 # Theads Start ===========================================
 # Subscribes to (Command) topic
 def commandSub():
-    rospy.Subscriber(COMMAND_TOPIC, String, handleCommand, (droneCount, client))
+    rospy.Subscriber(COMMAND_TOPIC, String, handleCommand, (overseerCount, client))
     rospy.spin()
 
 # TODO: overseer communication listen
@@ -458,21 +464,23 @@ def readCoordFile(filename):
     WAYPOINT_COORDS = newList
 
 # Creates drone groups based on wolf number
-def wolfClusterCreation(droneName):
+def wolfClusterCreation(droneName, wolfCount, droneNum):
     global DM_Wolfs_Cluster
     global Cluster
     Cluster = droneName
+
+    # Call startup service on each wolf
     if (droneName == "Overseer_0"):
         DM_Wolfs_Cluster = [0, 1, 2]
     else:
         DM_Wolfs_Cluster = [3, 4, 5]
 
-def allDronesAtWaypoint():
+def allDronesAtWaypoint(overseerName):
     global WAYPOINT_INDEX
-    wolfInfoArray = overseerGetWolfData.getOverseerGetWolfState()
-    for droneNum in DM_Wolfs_Cluster:
-        xDifference = wolfInfoArray[droneNum].longitude - float(WAYPOINT_COORDS[WAYPOINT_INDEX][0])
-        yDifference = wolfInfoArray[droneNum].latitude - float(WAYPOINT_COORDS[WAYPOINT_INDEX][1])
+    wolfClusterInfo = overseerGetWolfData.getWolfDataOfCluster(overseerName)
+    for drone in wolfClusterInfo:
+        xDifference = drone.longitude - float(WAYPOINT_COORDS[WAYPOINT_INDEX][0])
+        yDifference = drone.latitude - float(WAYPOINT_COORDS[WAYPOINT_INDEX][1])
 
         # If any of the drones are out of bounds, return false
         if ((abs(xDifference) > 0.0003) or (abs(yDifference) > 0.0003)):

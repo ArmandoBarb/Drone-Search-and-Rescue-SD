@@ -23,7 +23,9 @@ def repulsion(client, curDroneIndex):
     finalVX = 0
     finalVY = 0
 
-    for nearbyDroneIndex in range(6):
+    wolfDroneCount = len(wolfInfoArray)
+
+    for nearbyDroneIndex in range(wolfDroneCount):
         # Get difference in location from drones
         xDifference = wolfInfoArray[curDroneIndex].longitude - wolfInfoArray[nearbyDroneIndex].longitude
         yDifference = wolfInfoArray[curDroneIndex].latitude - wolfInfoArray[nearbyDroneIndex].latitude
@@ -68,7 +70,7 @@ def waypointDirection(client, curDroneIndex, waypoint):
     return finalVelocity
 
 # Uses repulsion and waypoint direction to move between waypoints
-def lineBehavior(client, curDroneIndex, DM_Wolfs_Cluster, waypoint_coords):
+def lineBehavior(client, curDroneIndex, waypoint_coords):
     # Gets current wolf data
     wolfInfoArray = getWolfState()
 
