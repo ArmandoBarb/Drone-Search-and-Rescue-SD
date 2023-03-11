@@ -4,7 +4,7 @@ from std_msgs.msg import String
 from std_srvs.srv import Trigger, TriggerResponse
 from airsim_ros_pkgs.msg import droneData
 from ServiceRequestors.wolfGetWolfData import getWolfState
-from ServiceRequestors.overseerGetOverseerData import getOverseerState
+import ServiceRequestors.overseerGetOverseerData as overseerGetOverseerData
 from ServiceRequestors.overseerGetWolfData import getWolfDataOfCluster
 
 AVOID_FACTOR = 0.01
@@ -89,7 +89,7 @@ def lineBehavior(client, curDroneIndex, DM_Wolfs_Cluster, waypoint_coords):
 # Creates directional vector towards waypoint
 def overseerWaypoint(client, curDroneIndex, waypoint):
     # Gets data from all drones
-    overseerInfoArray = getOverseerState()
+    overseerInfoArray = overseerGetOverseerData.getOverseerState()
 
     # Gets x and y difference between drone and waypoint
     xDifference = float(waypoint[0]) - overseerInfoArray[curDroneIndex].longitude
@@ -128,6 +128,9 @@ def overseerWaypoint(client, curDroneIndex, waypoint):
         if (overseerToWaypointDistance > groupToWaypointDistance):
             directionFactor = OVERSEER_DIRECTION_SPEED_UP
             # print("OVERSEER", curDroneIndex, "Speeding up, wolfs average ahead")
+
+        elif (distance > OVERSEER_TO_WOLF_GROUP_RADIUS * 1.5):
+            directionFactor = 0
 
         # If too close to group, speed up the overseer
         elif (distance < OVERSEER_TO_WOLF_GROUP_RADIUS):

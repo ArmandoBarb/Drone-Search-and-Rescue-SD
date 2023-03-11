@@ -41,7 +41,7 @@ if __name__ == '__main__': # Only runs if this is main processes
     createWaypoints()
 
     # overseerCount = mp.cpu_count() - 5
-    overseerCount = 2
+    overseerCount = 1
     wolfCount = 6
 
     # apply infrared to overseers

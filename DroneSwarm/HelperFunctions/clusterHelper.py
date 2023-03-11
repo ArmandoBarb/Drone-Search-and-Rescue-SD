@@ -12,7 +12,7 @@ def distanceForm(centroid, avgCentroidsX, avgCentroidsY):
     return distance
 
 # Functions to help organize clusters
-def checkSiblingClusterExists(pixelRGB, currentCluster, sceneRGB):
+def checkSiblingClusterExists(pixelRGB, currentCluster, segRGB, clusters):
     if currentCluster==len(clusters):
         return False
 

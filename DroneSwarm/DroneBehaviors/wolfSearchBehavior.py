@@ -28,6 +28,8 @@ def calcSpeedVector(currentDroneData, targetGPS, radius, radiusM, wolfData, aver
     vectorAlignment = helper.setVectorMagnitude(vectorAlignmentNormal, alignmentSpeed);
 
     # Combine vectors for final vector direction
+
+    # TODO verify if vectors should be latitude then longitude
     vextorX = vectorOrbit[0]  + vectorAlignment[0] + vectorCentripetalVelocity[0] # Longitude
     vextorY = vectorOrbit[1] + vectorAlignment[1] + vectorCentripetalVelocity[1] # Latitude
     vector = [vextorX, vextorY] 

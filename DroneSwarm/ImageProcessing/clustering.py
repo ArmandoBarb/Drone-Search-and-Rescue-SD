@@ -93,14 +93,14 @@ def pixelClustering(height, width, segRGB):
                                 isMatch = True
 
                             # otherwise threshold and sort the coordinate
-                            if dist([i, j], [coord[0], coord[1]]) < 40:
+                            if clusterHelper.dist([i, j], [coord[0], coord[1]]) < 40:
                                 cluster.append(pixel[0])
                                 isClustered = True
                                 break
                             else:
                                 # used for same heat signature for two animals
                                 # but they are far apart
-                                sibilingExists = clusterHelper.checkSiblingClusterExists(clusterPixel, clusterCount, sceneRGB)
+                                sibilingExists = clusterHelper.checkSiblingClusterExists(clusterPixel, clusterCount, segRGB, clusters)
                                 if not sibilingExists:
                                     isClustered = True
                                     clusters.append(pixel)

@@ -4,6 +4,7 @@ import math
 from math import sqrt
 from std_srvs.srv import Trigger, TriggerResponse
 from airsim_ros_pkgs.msg import droneData
+from airsim_ros_pkgs.msg import GPS
 from airsim_ros_pkgs.srv import getDroneData
 # import constants
 import Constants.ros as ros
@@ -36,6 +37,33 @@ def getWolfDataOfCluster(clusterName):
             responseText.append(x)
 
     return responseText
+
+def getWolfClusterCenterGPS(clusterName):
+    # Get wolf data using a service
+    rospy.wait_for_service(PROXIMITY_WOLF_SERVICE)
+    
+     # Gets service response and droneDataArray from WolfData
+    response = rospy.ServiceProxy(PROXIMITY_WOLF_SERVICE, getDroneData)
+    resp = response()
+    
+    droneCount = 0
+    clusterCenterGPS = GPS()
+    clusterCenterGPS.longitude = 0
+    clusterCenterGPS.latitude = 0
+
+    for x in resp.droneDataArray:
+        if (x.cluster == clusterName):
+            droneCount += 1;
+            clusterCenterGPS.longitude += x.longitude
+            clusterCenterGPS.latitude += x.latitude
+
+    clusterCenterGPS.longitude = clusterCenterGPS.longitude / droneCount
+    clusterCenterGPS.latitude = clusterCenterGPS.latitude / droneCount
+
+    # print(clusterName, "Drone Count:", droneCount, clusterCenterGPS)
+
+    if (droneCount == 0): return True, None
+    return False, clusterCenterGPS
 
 # def getOptimalWolf(waypoint, clusterName):
 #     shortestDistance = 10000000

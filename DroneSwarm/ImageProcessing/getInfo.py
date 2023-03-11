@@ -22,7 +22,7 @@ def getSegInfo(responses):
 
     return height, width, segRGB
 
-def getCentroids(clusters, client, vehicleName):
+def getCentroids(clusters, client, vehicleName, height, width):
     heightArr = []
     widthArr = []
     centroids = []
@@ -69,6 +69,7 @@ def getCentroids(clusters, client, vehicleName):
         # calculate x and y of centroid
         xC = ((x1 - x0) / 2) + x0
         yC = ((y1 - y0) / 2) + y0
+        centroid = [xC, yC]
 
         # get bbox dimensions
         bbw = x1 - x0 # width
@@ -90,18 +91,22 @@ def getCentroids(clusters, client, vehicleName):
         # convert pixel distance to meter distance
         # Ratio: known_target_width/bounding_box_width
         # Meter_distance = pixel_distance*meter_known_target_width/pixel_bounding_box_width
-        ratio = target_width/bbw
+        if bbw != 0:
+            ratio = target_width/bbw
+        else:
+            ratio = target_width
         meters_x = dist_x*ratio
         meters_y = dist_y*ratio
 
         # new latitude and longitude
         lat = gps_lat + (meters_y / earth_rad) * (180/pi)
-        lon = gps_lon + (meters_x / earth_rad) * (180/pi) * (180 / pi) / math.cos(gps_lat * pi/180)
+        lon = gps_lon + (meters_x / earth_rad) * (180/pi)
+        #lon = gps_lon + (meters_x / earth_rad) * (180/pi) * (180 / pi) / math.cos(gps_lat * pi/180)
 
         # add centroid to list
         centroids.append((lon, lat))
 
-        return centroids
+    return centroids
 
 def getSearchCircles(intersectGroups, avgCentroids, r):
     searchRadii = []

@@ -150,6 +150,9 @@ def wolfDroneController(droneName, droneCount):
         if (End_Loop):
             debugPrint("Ending loop")
             return
+        # Checks if made it through all waypoints
+        if (WAYPOINT_INDEX == (len(WAYPOINT_COORDS) - 1)):
+            print(droneName, "Made it to end of waypoint spiral search")
 
         timeDiff = time.time() - runtime
         if (timeDiff > MAX_TIME):
