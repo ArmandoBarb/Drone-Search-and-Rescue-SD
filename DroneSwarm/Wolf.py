@@ -30,6 +30,7 @@ from airsim_ros_pkgs.msg import droneData
 from airsim_ros_pkgs.msg import requestLineBehavior
 from airsim_ros_pkgs.msg import requestWolfSearchBehavior
 from airsim_ros_pkgs.msg import requestConsensusDecisionBehavior
+from airsim_ros_pkgs.msg import wolfCommunication
 from airsim_ros_pkgs.srv import getDroneData
 from airsim_ros_pkgs.srv import sendCommand
 import ServiceRequestors.wolfGetWolfData as wolfService
@@ -47,6 +48,7 @@ SLAM_MERGE_TOPIC = ros.SLAM_MERGE_TOPIC # TODO
 WOLF_DATA_TOPIC = ros.WOLF_DATA_TOPIC
 COMMAND_RESULT_TOPIC = ros.COMMAND_RESULT_TOPIC # TODO
 COMMAND_TOPIC = ros.COMMAND_TOPIC # TODO
+WOLF_COMMUNICATION_TOPIC = ros.WOLF_COMMUNICATION_TOPIC
 # ros: services: service calls should be in the ServiceRequesteros folder
 PROXIMITY_WOLF_SERVICE = ros.PROXIMITY_WOLF_SERVICE
 # dynamic services:
@@ -120,14 +122,14 @@ def wolfDroneController(droneName, droneCount, overseerCount):
     # Start all threads here (if you have to make one somwhere else bring it up with the team)
     t = Thread(target = wolfServiceListeners, args=(droneName))
     t.start()
-    t2 = Thread(target = endListener)
+    t2 = Thread(target = wolfTopicListener)
     t2.start()
 
 
     # Create topic publishers
     # (TODO: ADD IN SLAM MERGE AND COMMAND RESULT PUBLISHERS)
     wolfDataPublish = rospy.Publisher(WOLF_DATA_TOPIC, droneData, latch=True, queue_size=1)
-
+    wolfCommPublish = rospy.Publisher(WOLF_COMMUNICATION_TOPIC, wolfCommunication, latch=True, queue_size=1)
 
     # Sets and connects to client and takes off drone
     client = takeOff(droneName)
@@ -214,6 +216,9 @@ def wolfDroneController(droneName, droneCount, overseerCount):
 
         # Publishes to (WolfData) topic
         wolfDataPublisher(wolfDataPublish, client, droneName)
+
+        # Testing (WolfCommunication) Topic
+        wolfCommPublisher(wolfCommPublish, client, str(Cluster), str(Task_Group), "Do something")
         
         # TEST OUT WOLF SERVICE, wolfGetWolfData
         # wolfInfoArray = getWolfState()        # Get droneWolfState state array from service
@@ -305,9 +310,24 @@ def wolfServiceListeners(droneName):
     #rospy.Subscriber(ros.END_LOOP_TOPIC, String, handleEnd) charlie, you got splaining to do!
     rospy.spin()
 
-def endListener():
+def wolfTopicListener():
     rospy.Subscriber(ros.END_LOOP_TOPIC, String, handleEnd)
+    rospy.Subscriber(ros.WOLF_COMMUNICATION_TOPIC, wolfCommunication, handleWolfCommunication)
     rospy.spin()
+
+def handleWolfCommunication(data):
+    # Grabs strings from data object
+    cluster = data.cluster
+    taskGroup = data.taskGroup
+    command = data.command
+
+    # Check if we are in the same cluster, or if cluster is empty
+    if ((cluster == Cluster) or (cluster == "")):
+
+    if ((taskGroup == Task_Group) or (Task_Group == "")):
+
+    testOfCommunication = "Got this message from wolf communication: Cluster: " + cluster + " Task Group: " + taskGroup + " Command: " + command
+    debugPrint(testOfCommunication)
 
 def handleEnd(data):
     global End_Loop
@@ -438,6 +458,18 @@ def commandResponse(request):
         return True
     
     return False
+
+
+# wolfCommunicationPublisher
+def wolfCommPublisher(pub, client, cluster, taskGroup, command):
+    # Creates droneMsg object and inserts values from AirSim apis
+    wolfCommMessage = wolfCommunication()
+    wolfCommMessage.cluster = cluster
+    wolfCommMessage.taskGroup = taskGroup
+    wolfCommMessage.command = command
+
+    # Publishes to topic
+    pub.publish(wolfCommMessage)
 
 # Publishes wolf data to (WolfData) topic
 def wolfDataPublisher(pub, client, droneName):
