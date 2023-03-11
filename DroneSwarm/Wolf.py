@@ -40,6 +40,8 @@ import HelperFunctions.calcHelper as helper
 LOOP_NUMBER = configDrones.LOOP_NUMBER
 MAX_TIME = configDrones.MAX_TIME
 LOCAL_IP = configDrones.LOCAL_IP
+MIN_CIRCLE_RADIUS_GPS = configDrones.MIN_CIRCLE_RADIUS_GPS 
+MIN_CIRCLE_RADIUS_METERS = configDrones.MIN_CIRCLE_RADIUS_METERS
 # ros: topics
 SLAM_MERGE_TOPIC = ros.SLAM_MERGE_TOPIC # TODO
 WOLF_DATA_TOPIC = ros.WOLF_DATA_TOPIC
@@ -49,6 +51,8 @@ COMMAND_TOPIC = ros.COMMAND_TOPIC # TODO
 PROXIMITY_WOLF_SERVICE = ros.PROXIMITY_WOLF_SERVICE
 # dynamic services:
 WOLF_DRONE_SERVICE = ros.WOLF_DRONE_SERVICE
+# task group name
+SEARCH_TASK_GROUP = ros.SEARCH_TASK_GROUP
 
 # Internal Wolf Drone Memory Start -------------------------------------------
 # Current pattern is ussing Global variable to allow access across threads (open to change)
@@ -68,8 +72,6 @@ Wolf_Search_Behavior = False
 Consensus_Decision_Behavior = False
 Circle_Center_GPS = [] # gps cordinate
 Circle_Radius_GPS = 0 # radius distance in gps
-MIN_CIRCLE_RADIUS_GPS = 0.00008983152373552244 # 10 in x direction converted to gps
-MIN_CIRCLE_RADIUS_METERS = 6.988048291572515 # 10 in x direction converted to Meters
 Circle_Radius_Meters = 0 # radius distance in meters
 Start_Time = 0 # time
 Spread_Time = 0 #  time in seconds # time to get in position 
@@ -161,6 +163,9 @@ def wolfDroneController(droneName, droneCount, overseerCount):
         if (End_Loop):
             debugPrint("Ending loop")
             return
+        # Checks if made it through all waypoints
+        if (WAYPOINT_INDEX == (len(WAYPOINT_COORDS) - 1)):
+            print(droneName, "Made it to end of waypoint spiral search")
 
         timeDiff = time.time() - runtime
         if (timeDiff > MAX_TIME):
@@ -297,6 +302,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
 def wolfServiceListeners(droneName):
     serviceName = WOLF_DRONE_SERVICE + droneName
     service = rospy.Service(serviceName, sendCommand, commandResponse)
+    #rospy.Subscriber(ros.END_LOOP_TOPIC, String, handleEnd) charlie, you got splaining to do!
     rospy.spin()
 
 def endListener():
@@ -312,13 +318,13 @@ def handleEnd(data):
 def wolfCameraDetection(droneName):
     threadClient = airsim.MultirotorClient(LOCAL_IP)
     debugPrint("Starting wolfCameraDetection loop")
-    i = 0;
-    timeSpent = 0;
+    i = 0
+    timeSpent = 0
     runtime = time.time()
     while (i < LOOP_NUMBER):
         timeDiff = time.time() - runtime
         if (timeDiff > MAX_TIME):
-            break;
+            break
         start=time.time() # gather time data
         # todo: marry add camera checkl nad yolo detector
 
@@ -403,7 +409,7 @@ def commandResponse(request):
         if (wolfSearchInfo.taskGroup == ""):
             # if so create task group with wolf name
             debugPrint("Got request wolf search from Overseer")
-            taskGroup = "Task_Group_Search_" + DM_Drone_Name
+            taskGroup = SEARCH_TASK_GROUP + DM_Drone_Name
 
             # Request nearby drones
             debugPrint("Requesting neaby wolfs")

@@ -4,6 +4,7 @@
 # Subscribes to (SlamMerge) topic
 # Publishes to (Command) topic
 
+import airsim
 import time
 import rospy
 from threading import Timer
@@ -20,9 +21,11 @@ from DroneBehaviors.spiralSearchCreator import createWaypoints
 # import constants
 import Constants.configDrones as configDrones
 import Constants.ros as ros
+from HelperFunctions import clusterHelper
 
 # Environmental Variables
 LOOP_NUMBER = configDrones.LOOP_NUMBER
+LOCAL_IP = configDrones.LOCAL_IP
 
 # ros topics
 COMMAND_TOPIC = ros.COMMAND_TOPIC
@@ -38,8 +41,13 @@ if __name__ == '__main__': # Only runs if this is main processes
     createWaypoints()
 
     # overseerCount = mp.cpu_count() - 5
-    overseerCount = 2
-    wolfCount = 7
+
+    overseerCount = 1
+    wolfCount = 6
+
+    # apply infrared to overseers
+    client = airsim.MultirotorClient(LOCAL_IP)
+    clusterHelper.applyInfrared(client)
 
     # TODO: start all procecess for ros Nodes here
     # Start wolf proximity subscriber and wolf nodes

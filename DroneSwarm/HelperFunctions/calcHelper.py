@@ -1,5 +1,15 @@
 import math
+from airsim_ros_pkgs.msg import GPS
 import numpy as np
+
+def fixDegenerateCoordinate(wrongCordinate):
+    longitude = float(wrongCordinate[0])
+    latitude = float(wrongCordinate[1])
+    wellFormatedCordinateGPS = GPS()
+    wellFormatedCordinateGPS.longitude = longitude;
+    wellFormatedCordinateGPS.latitude = latitude;
+
+    return wellFormatedCordinateGPS;
 
 def perpendicularVector( vector ) :
     perpendicularVector = np.empty_like(vector)
@@ -14,31 +24,34 @@ def normalizeVector(vector):
 
 def mapGPSPointOnLine(startLineGPS, endLineGPS, pointGPS):
     # vector goes from current to target
-    startLineLatitude = startLineGPS.latitude;
-    startLineLongitude = startLineGPS.longitude;
+    startLineLatitude = float( startLineGPS.latitude)
+    startLineLongitude = float(startLineGPS.longitude)
+    #print("startLineLatitude: " + startLineLatitude +  " startLineLongitude: " + startLineLongitude)
     
-    endLineLatitude = endLineGPS.latitude;
-    endLineLongitude = endLineGPS.longitude;
+    endLineLatitude = float(endLineGPS.latitude)
+    endLineLongitude = float(endLineGPS.longitude)
+    # print("endLineLatitude: " + endLineLatitude +  " endLineLongitude: " + endLineLongitude)
 
-    pointLatitude = pointGPS.latitude;
-    pointLongitude = pointGPS.longitude;
+    pointLatitude = float(pointGPS.latitude)
+    pointLongitude = float(pointGPS.longitude)
 
-    startEndLineLatitude = endLineLatitude - startLineLatitude;
-    startEndLineLongitude = endLineLongitude - startLineLongitude;
+    startEndLineLatitude = endLineLatitude - startLineLatitude
+    startEndLineLongitude = endLineLongitude - startLineLongitude
     
-    startEndSquared = lineLatitude ** 2 + lineLongitude ** 2
+    startEndSquared = startEndLineLatitude ** 2 + startEndLineLongitude ** 2
 
     if (startEndSquared == 0): # start and end gps cordinate are the same
         return startLineGPS;
     else:
-        pointStartLineLatitude = endLineLatitude - startLineLatitude;
-        pointStartLineLongitude = endLineLongitude - startLineLongitude;
-        t = (pointStartLineLatitude ** 2 + pointStartLineLongitude ** 2) / startEndSquared;
+        pointStartLineLatitude = pointLatitude - startLineLatitude;
+        pointStartLineLongitude = pointLongitude - startLineLongitude;
+        t = (pointStartLineLatitude * startEndLineLatitude + pointStartLineLongitude * startEndLineLongitude) / startEndSquared;
         if (t < 0):
             return startLineGPS;
         elif (t > 1):
             return startLineGPS;
         else:
+            NearestPointGPS = GPS()
             # NearestPointGPS = [startLineLatitude + (t * startEndLineLatitude), startLineLongitude + (t * startEndLineLongitude)];
             NearestPointGPS.latitude = startLineLatitude + (t * startEndLineLatitude);
             NearestPointGPS.longitude = startLineLongitude + (t * startEndLineLongitude);
@@ -46,15 +59,16 @@ def mapGPSPointOnLine(startLineGPS, endLineGPS, pointGPS):
 
 def calcVectorBetweenGPS(currentGPS, targetGPS):
     # vector goes from current to target
-    currentLatitude = currentGPS.latitude;
-    currentLongitude = currentGPS.longitude;
+    currentLatitude = float(currentGPS.latitude)
+    currentLongitude = float(currentGPS.longitude)
     
-    targetLatitude = targetGPS.latitude;
-    targetLongitude = targetGPS.longitude;
+    targetLatitude = float(targetGPS.latitude)
+    targetLongitude = float(targetGPS.longitude)
 
     latitudeDifference = (targetLatitude - currentLatitude);
     longitudeDifference = (targetLongitude - currentLongitude);
 
+    # toDOFIx
     return [latitudeDifference, longitudeDifference];
 
 def calcDistanceInMetersBetweenGPS(currentGPS, targetGPS):
@@ -110,6 +124,8 @@ def applyMaxSpeed(vector, maxSpeed):
 
 def setVectorMagnitude(vector, magnitude):
     oldMagnitude = calcVectorMagnitude(vector)
+    if (oldMagnitude == 0):
+        return vector
     multiplyXY = magnitude / oldMagnitude
 
     newVX = vector[0] * multiplyXY
