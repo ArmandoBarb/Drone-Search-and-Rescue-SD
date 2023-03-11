@@ -6,6 +6,7 @@ COMMAND_RESULT_TOPIC = "CommandResult" # TODO
 COMMAND_TOPIC = "Command" # TODO
 OVERSEER_COMMUNICATION_TOPIC = "OverseerCommunication"
 END_LOOP_TOPIC = "End"
+WOLF_COMMUNICATION_TOPIC = "WolfCommunication"
 # ros: services
 PROXIMITY_OVERSEER_SERVICE = "ProximityOverseerService"
 PROXIMITY_WOLF_SERVICE = "PromixityWolfService"
