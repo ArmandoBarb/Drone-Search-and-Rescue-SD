@@ -9,7 +9,7 @@ from ServiceRequestors.overseerGetWolfData import getWolfDataOfCluster
 
 AVOID_FACTOR = 0.01
 DIRECTION_FACTOR = 9
-OVERSEER_DIRECTION_SPEED_UP = 16
+OVERSEER_DIRECTION_SPEED_UP = 13
 OVERSEER_DIRECTION_SLOW_DOWN = 5
 OVERSEER_TO_WOLF_GROUP_RADIUS = 0.0003
 REPULSION_RADIUS = 0.0003
@@ -89,7 +89,7 @@ def lineBehavior(client, curDroneIndex, waypoint_coords):
     return vector
 
 # Creates directional vector towards waypoint
-def overseerWaypoint(client, curDroneIndex, waypoint):
+def overseerWaypoint(client, curDroneIndex, waypoint, nextSpiralWaypoint):
     # Gets data from all drones
     overseerInfoArray = overseerGetOverseerData.getOverseerState()
 
@@ -97,52 +97,24 @@ def overseerWaypoint(client, curDroneIndex, waypoint):
     xDifference = float(waypoint[0]) - overseerInfoArray[curDroneIndex].longitude
     yDifference = float(waypoint[1]) - overseerInfoArray[curDroneIndex].latitude
 
-    # If within certain distance of waypoint, don't move
-    if ((abs(xDifference) < 0.00005) and (abs(yDifference) < 0.00005)):
+    # Overseer to next waypoint distance
+    overseerToSpiralWaypointDistance = sqrt((overseerInfoArray[curDroneIndex].longitude - float(nextSpiralWaypoint[0]))**2 + (overseerInfoArray[curDroneIndex].latitude - float(nextSpiralWaypoint[1]))**2)
+
+    # If within certain distance of next waypoint in spiral
+    if (overseerToSpiralWaypointDistance < 0.00005):
+        # print("Overseer", curDroneIndex, "At current spiral waypoint")
         finalVelocity = [0, 0]
 
     # Else move to waypoint
     else:
-        directionFactor = DIRECTION_FACTOR
+        directionFactor = OVERSEER_DIRECTION_SPEED_UP
 
-        # Get wolf data of cluster
-        clusterName = "Overseer_" + str(curDroneIndex)
-        cluster = getWolfDataOfCluster(clusterName)
-
-        # Calculate average wolf drone cluster location
-        averageLongitude = 0
-        averageLatitude = 0
-        for drone in cluster:
-            averageLongitude += drone.longitude
-            averageLatitude += drone.latitude
-        averageLatitude = averageLatitude / len(cluster)
-        averageLongitude = averageLongitude / len(cluster)
-
-        # Calculate difference between overseer and cluster
-        curLongitude = overseerInfoArray[curDroneIndex].longitude
-        curLatitide = overseerInfoArray[curDroneIndex].latitude
-        distance = sqrt( (curLongitude - averageLongitude)**2 + (curLatitide - averageLatitude)**2 )
-        # print(clusterName, "distance from group", distance)
-
-        # If wolf cluster distance is closer to next waypoint, speed up overseer
-        overseerToWaypointDistance = sqrt( (xDifference)**2 + (yDifference)**2 )
-        groupToWaypointDistance = sqrt( (float(waypoint[0]) - averageLongitude)**2 + (float(waypoint[1]) - averageLatitude)**2 )
-        if (overseerToWaypointDistance > groupToWaypointDistance):
-            directionFactor = OVERSEER_DIRECTION_SPEED_UP
-            # print("OVERSEER", curDroneIndex, "Speeding up, wolfs average ahead")
-
-        elif (distance > OVERSEER_TO_WOLF_GROUP_RADIUS * 1.5):
-            directionFactor = 0
-
-        # If too close to group, speed up the overseer
-        elif (distance < OVERSEER_TO_WOLF_GROUP_RADIUS):
-            directionFactor = OVERSEER_DIRECTION_SPEED_UP
-            # print("OVERSEER", curDroneIndex, "Speeding up")
-
-        # If too far from group, slow down the overseer
-        elif (distance > OVERSEER_TO_WOLF_GROUP_RADIUS):
-            directionFactor = OVERSEER_DIRECTION_SLOW_DOWN
-            # print("OVERSEER", curDroneIndex, "Slowing down")
+        # Distance to waypoint on line to get in from of wolf group
+        distanceToCalculatedGroupWaypoint = sqrt((xDifference**2) + (yDifference**2))
+        # print("Distance to line waypoint:", distanceToCalculatedGroupWaypoint)
+        if (distanceToCalculatedGroupWaypoint < 0.00002):
+            directionFactor = 1
+            # print("At waypoint on line, slowing down")
 
         # Gets normalized difference values and adds in directional factor
         xNormalized = (xDifference / sqrt(xDifference**2 + yDifference**2))*directionFactor

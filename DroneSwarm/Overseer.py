@@ -142,13 +142,14 @@ def overseerDroneController(droneName, overseerCount, wolfCount):
     while (i < LOOP_NUMBER):
         if (End_Loop):
             print(droneName, "Ending loop")
-            return
+            break
         timeDiff = time.time() - runtime
         start=time.time() # gather time data
         if (timeDiff > MAX_TIME):
             break
         # Checks if made it through all waypoints
         if (WAYPOINT_INDEX == (len(WAYPOINT_COORDS) - 1)):
+            break
             print(droneName, "Made it to end of waypoint spiral search")
         # Get Airsim Data and procesess it here
         # TODO: add infared image detector code here (if runtime is to long Seprate into thread that runs on intervals)
@@ -198,7 +199,7 @@ def overseerDroneController(droneName, overseerCount, wolfCount):
 
         outputForWaypoint = "Waypoint to move to: " + str(waypoint) + " END GPS: " + str(endGPS)
         # debugPrint(outputForWaypoint)
-        vector = overseerWaypoint(client, int(droneNum), waypoint)
+        vector = overseerWaypoint(client, int(droneNum), waypoint, endWaypoint)
 
 
         # If all drones make it to the waypoint, more to next waypoint
@@ -213,10 +214,12 @@ def overseerDroneController(droneName, overseerCount, wolfCount):
         # TODO: Make Airsim call with desired action
 
         # Add in artifical loop delay (How fast the loop runs dictates the drones reaction speed)
-        time.sleep(0.5)
         i+=1
         end = time.time()
-        timeSpent += end-start
+        loopTime = end - start
+        if (loopTime < 0.1):
+            time.sleep(0.1 - loopTime)
+        timeSpent += loopTime
     debugPrint("Average Loop Time: " + str(timeSpent / i))
     # Overseer Drone search loop End
 # Main Process End ----------------------------------------------
@@ -477,16 +480,34 @@ def wolfClusterCreation(droneName, wolfCount, droneNum):
 
 def allDronesAtWaypoint(overseerName):
     global WAYPOINT_INDEX
-    wolfClusterInfo = overseerGetWolfData.getWolfDataOfCluster(overseerName)
-    for drone in wolfClusterInfo:
-        xDifference = drone.longitude - float(WAYPOINT_COORDS[WAYPOINT_INDEX][0])
-        yDifference = drone.latitude - float(WAYPOINT_COORDS[WAYPOINT_INDEX][1])
+    # wolfClusterInfo = overseerGetWolfData.getWolfDataOfCluster(overseerName)
 
-        # If any of the drones are out of bounds, return false
-        if ((abs(xDifference) > 0.0003) or (abs(yDifference) > 0.0003)):
-            # print(droneNum, "X difference:", xDifference, "Y Difference:", yDifference)
+    # Get distance between wolf drone cluster center and waypoint
+    isEmpty, clusterCenterGPS = overseerGetWolfData.getWolfClusterCenterGPS(overseerName)
+
+    if (not isEmpty):
+        # Get distance from center to next waypoint
+        distance = sqrt(((float(clusterCenterGPS.longitude) - float(WAYPOINT_COORDS[WAYPOINT_INDEX][0]))**2) + ((float(clusterCenterGPS.latitude) - float(WAYPOINT_COORDS[WAYPOINT_INDEX][1]))**2))
+
+        # Checks and increments waypoint index if cluster is near waypoint
+        if (distance < DISTANCE_LEAD_OVERSEER_GPS):
+            WAYPOINT_INDEX = WAYPOINT_INDEX + 1
+            print(overseerName, "Group made it to waypoint")
+            return 1
+
+        # Otherwise don't move to next waypoint, return 0
+        else:
             return 0
 
-    WAYPOINT_INDEX = WAYPOINT_INDEX + 1
+    # for drone in wolfClusterInfo:
+    #     xDifference = drone.longitude - float(WAYPOINT_COORDS[WAYPOINT_INDEX][0])
+    #     yDifference = drone.latitude - float(WAYPOINT_COORDS[WAYPOINT_INDEX][1])
+
+    #     # If any of the drones are out of bounds, return false
+    #     if ((abs(xDifference) > 0.0003) or (abs(yDifference) > 0.0003)):
+    #         # print(droneNum, "X difference:", xDifference, "Y Difference:", yDifference)
+    #         return 0
+
+    # WAYPOINT_INDEX = WAYPOINT_INDEX + 1
     # print("Drones:", DM_Wolfs_Cluster, "Made it to waypoint:", WAYPOINT_INDEX)
-    return 1
+    return 0

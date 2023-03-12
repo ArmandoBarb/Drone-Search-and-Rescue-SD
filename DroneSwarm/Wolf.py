@@ -164,10 +164,11 @@ def wolfDroneController(droneName, droneCount, overseerCount):
         # If we receive end command, end the loop
         if (End_Loop):
             debugPrint("Ending loop")
-            return
+            break
         # Checks if made it through all waypoints
         if (WAYPOINT_INDEX == (len(WAYPOINT_COORDS) - 1)):
             print(droneName, "Made it to end of waypoint spiral search")
+            break
 
         timeDiff = time.time() - runtime
         if (timeDiff > MAX_TIME):
@@ -323,11 +324,11 @@ def handleWolfCommunication(data):
 
     # Check if we are in the same cluster, or if cluster is empty
     if ((cluster == Cluster) or (cluster == "")):
-
+        x = 5
     if ((taskGroup == Task_Group) or (Task_Group == "")):
-
+        x = 5
     testOfCommunication = "Got this message from wolf communication: Cluster: " + cluster + " Task Group: " + taskGroup + " Command: " + command
-    debugPrint(testOfCommunication)
+    # debugPrint(testOfCommunication)
 
 def handleEnd(data):
     global End_Loop
