@@ -149,7 +149,8 @@ def overseerDroneController(droneName, overseerCount, wolfCount):
             break
         # Checks if made it through all waypoints
         if (WAYPOINT_INDEX == (len(WAYPOINT_COORDS) - 1)):
-            print(droneName, "Made it to end of waypoint spiral search")
+            return;
+            # print(droneName, "Made it to end of waypoint spiral search")
         # Get Airsim Data and procesess it here
         # TODO: add infared image detector code here (if runtime is to long Seprate into thread that runs on intervals)
             # getDataFromAirsim -> imageProcessing ->

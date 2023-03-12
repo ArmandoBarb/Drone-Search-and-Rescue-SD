@@ -97,17 +97,19 @@ def overseerWaypoint(client, curDroneIndex, waypoint):
     xDifference = float(waypoint[0]) - overseerInfoArray[curDroneIndex].longitude
     yDifference = float(waypoint[1]) - overseerInfoArray[curDroneIndex].latitude
 
+    # Get wolf data of cluster
+    clusterName = "Overseer_" + str(curDroneIndex)
+    cluster = getWolfDataOfCluster(clusterName)
+
+
     # If within certain distance of waypoint, don't move
-    if ((abs(xDifference) < 0.00005) and (abs(yDifference) < 0.00005)):
+    if ((abs(xDifference) < 0.00005) and (abs(yDifference) < 0.00005) or (0 == len(cluster))):
         finalVelocity = [0, 0]
 
     # Else move to waypoint
     else:
         directionFactor = DIRECTION_FACTOR
 
-        # Get wolf data of cluster
-        clusterName = "Overseer_" + str(curDroneIndex)
-        cluster = getWolfDataOfCluster(clusterName)
 
         # Calculate average wolf drone cluster location
         averageLongitude = 0

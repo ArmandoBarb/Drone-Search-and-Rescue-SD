@@ -65,14 +65,12 @@ def alignmentMagnitude(currentGPS, alignmentVector, speed, maxBonusSpeed, radius
     alignmentSpeed = 0;
 
     droneNumber = len(wolfData) + 1;
-    sideLength = 0
 
     if (droneNumber == 1):
         return (speed + maxBonusSpeed);
-    elif (droneNumber == 2):
-        sideLength = radius * 2;
-    else:
-        sideLength = helper.calcPolygonSideLength(radius, droneNumber);
+
+    sideLength = helper.calcDroneSeparationDistance(radius, droneNumber)
+
     # sideLength = sideLength * 1.2; # increasing side length may cause jerkiness when circling
 
     finalVX = 0;

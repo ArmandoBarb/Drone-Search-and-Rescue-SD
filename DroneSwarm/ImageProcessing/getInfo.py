@@ -5,7 +5,7 @@ import math
 from HelperFunctions import clusterHelper
 
 def getInfrared(client, vehicleName):
-    print(vehicleName)
+    # print(vehicleName)
     responses = client.simGetImages([
         airsim.ImageRequest("front-center", airsim.ImageType.Infrared, False, False), 
         airsim.ImageRequest("front-center", airsim.ImageType.Scene, False, False)], vehicle_name = vehicleName)
