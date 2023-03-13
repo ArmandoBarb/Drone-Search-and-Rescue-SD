@@ -58,6 +58,7 @@ WOLF_COMMUNICATION_TOPIC = ros.WOLF_COMMUNICATION_TOPIC
 # ros: topics: SIGNAL
 IN_POSITION_SIGNAL = ros.IN_POSITION_SIGNAL
 CONSENSUS_DECISION_SIGNAL = ros.CONSENSUS_DECISION_SIGNAL
+AT_SPIRAL_WAYPOINT_SIGNAL = ros.AT_SPIRAL_WAYPOINT_SIGNAL
 # ros: services: service calls should be in the ServiceRequesteros folder
 PROXIMITY_WOLF_SERVICE = ros.PROXIMITY_WOLF_SERVICE
 # dynamic services:
@@ -292,7 +293,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
         elif (Line_Behavior): # Line_Behavior
             # Gets drones waypoint and vector movement
             newWaypoint = getNewWaypoint(droneName)
-            vector = lineBehavior(client, int(droneName), newWaypoint)
+            vector, curDroneAtWaypoint = lineBehavior(client, int(droneName), newWaypoint)
             vectorTemp = 0
 
             vectorTemp = vector[0]
@@ -308,6 +309,9 @@ def wolfDroneController(droneName, droneCount, overseerCount):
                 degrees = 0
                 yaw_mode = airsim.YawMode(is_rate=False, yaw_or_rate=(degrees));
 
+            # Checks if all drones made it to waypoint if cur drone is at waypoint
+            if (curDroneAtWaypoint):
+                allDronesAtWaypoint(wolfCommPublish, client)
 
         # TODO: Apply turning to desired action
         # TODO: Overide other behaviors if collisionAvoidance is needed
@@ -317,7 +321,6 @@ def wolfDroneController(droneName, droneCount, overseerCount):
         client.moveByVelocityZAsync(vector[0], vector[1], -8, duration = 0.5, yaw_mode=yaw_mode, vehicle_name=droneName)
         
         # Add in artifical loop delay (How fast the loop runs dictates the drones reaction speed)
-
         
         end = time.time();
         loopTime = end-start 
@@ -325,8 +328,6 @@ def wolfDroneController(droneName, droneCount, overseerCount):
 
         if (loopTime < 0.5):
             time.sleep(0.5 - loopTime)
-        # Checks if drones have made iot to the next waypoint
-        allDronesAtWaypoint()
 
         i+=1
     # debugPrint("Ending Search and Rescue loop: ")
@@ -352,7 +353,18 @@ def handleWolfCommunication(data):
     cluster = data.cluster
     taskGroup = data.taskGroup
     command = data.command
-    global In_Position, Start_Time
+    spiralIndex = data.spiralWaypointIndex
+    global In_Position, Start_Time, WAYPOINT_INDEX
+
+    # Check if we got at spiral waypoint signal
+    if ((command == AT_SPIRAL_WAYPOINT_SIGNAL) and (cluster == Cluster)):
+        # If our current waypoint index is less than the one we received, use the most up to data spiral index
+        # text = "Recieved current waypoint: " + str(spiralIndex) +"Cluster: " + cluster
+        # debugPrint(text)
+        if(WAYPOINT_INDEX < spiralIndex):
+            # text = "Current index out of data, setting to recieved waypoint: " + str(spiralIndex)
+            # debugPrint("Current index out of data, setting to recieved waypoint")
+            WAYPOINT_INDEX = spiralIndex
 
     # Check if we are in the same cluster, or if cluster is empty
     if ((cluster != Cluster) and (cluster != "")):
@@ -519,6 +531,18 @@ def wolfCommPublisher(pub, client, cluster, taskGroup, command):
     # Publishes to topic
     pub.publish(wolfCommMessage)
 
+# wolfCommunicationPublisher
+def wolfCommWaypointPublisher(pub, client, cluster, taskGroup, command, waypointIndex):
+    # Creates droneMsg object and inserts values from AirSim apis
+    wolfCommMessage = wolfCommunication()
+    wolfCommMessage.cluster = cluster
+    wolfCommMessage.taskGroup = taskGroup
+    wolfCommMessage.command = command
+    wolfCommMessage.spiralWaypointIndex = waypointIndex
+
+    # Publishes to topic
+    pub.publish(wolfCommMessage)
+
 # Publishes wolf data to (WolfData) topic
 def wolfDataPublisher(pub, client, droneName):
     position = client.getMultirotorState(vehicle_name = droneName)
@@ -646,6 +670,7 @@ def getNewWaypoint(droneName):
 
     return currentWaypoint
 
+# Grabs subwaypoint based on waypoints and droneName
 def getLastWaypoint(droneName):
     # Created global waypoints
     global WAYPOINT_INDEX
@@ -718,35 +743,6 @@ def subWaypointCalculator(currentWaypoint, previousWaypoint, radius, droneName):
     return newWaypoint
 
 
-def evenClusterCountWaypointCalculator():
-    # 0 is longitude, 1 is latitude
-    # newWaypoint = []
-    print("Needs integration")
-
-    # # Finds vector between waypoints
-    # waypointDiffX = float(currentWaypoint[0]) - float(previousWaypoint[0])
-    # waypointDiffY = float(currentWaypoint[1]) - float(previousWaypoint[1])
-
-    # # Gets normalized difference vector
-    # vectorVal = sqrt(waypointDiffX**2 + waypointDiffY**2)
-    # xDirection = (waypointDiffX/vectorVal) * radius
-    # yDirection = (waypointDiffY/vectorVal) * radius
-
-    # if ((int(droneName) % 3) == 0):
-    #     newWaypointX = float(currentWaypoint[0]) - yDirection + xDirection
-    #     newWaypointY = float(currentWaypoint[1]) + xDirection + yDirection
-    #     newWaypoint = [float(newWaypointX), float(newWaypointY)]
-    # # Moves second drone directly to waypoint
-    # elif((int(droneName) % 3) == 1):
-    #     newWaypoint = currentWaypoint
-    # # Moves third drone right of the waypoint
-    # elif((int(droneName) % 3) == 2):
-    #     newWaypointX = float(currentWaypoint[0]) + yDirection - xDirection
-    #     newWaypointY = float(currentWaypoint[1]) - xDirection - yDirection
-    #     newWaypoint = [float(newWaypointX), float(newWaypointY)]
-
-    # return newWaypoint
-
 # Reads values in SpiralSearch.txt and sets it to global variable
 def readCoordFile(filename):
     file = open(filename, 'r')
@@ -817,13 +813,15 @@ def getSubwaypointList(currentWaypoint, previousWaypoint, radius):
     # debugPrint(subwaypointList)
     return subwaypointList
 
-def allDronesAtWaypoint():
+def allDronesAtWaypoint(wolfCommPublish, client):
     global WAYPOINT_INDEX
     global Cluster
+    global Task_Group
     wolfInfoArray = wolfService.getWolfState()
 
     currentWaypoint = WAYPOINT_COORDS[WAYPOINT_INDEX]
     newWaypoint = currentWaypoint
+    waypointIndexBeforeCheck = WAYPOINT_INDEX
 
     # Check if made it to spawn and drone has a cluster
     if ((WAYPOINT_INDEX >= 1) and (Cluster != "")):
@@ -861,14 +859,26 @@ def allDronesAtWaypoint():
             # If any of the drones are out of bounds, return false
             if ((abs(xDifference) > 0.0002) or (abs(yDifference) > 0.0002)):
                 return 0
-        WAYPOINT_INDEX = WAYPOINT_INDEX + 1
+
+        # Check if our global value has changed
+        if (waypointIndexBeforeCheck == WAYPOINT_INDEX):    
+            WAYPOINT_INDEX = WAYPOINT_INDEX + 1
+
+            # Communicate to other drones in cluster new waypoint 
+            wolfCommWaypointPublisher(wolfCommPublish, client, str(Cluster), str(Task_Group), AT_SPIRAL_WAYPOINT_SIGNAL, WAYPOINT_INDEX)
+
         return 1
         # debugPrint("Drone spawned")
 
     # If drone is in cluster and passed checks, increment waypoint
     if ((Cluster != "")):
-        WAYPOINT_INDEX = WAYPOINT_INDEX + 1
-        # debugPrint("Made it to waypoint")
+        # Check if our global value has changed
+        if (waypointIndexBeforeCheck == WAYPOINT_INDEX):    
+            WAYPOINT_INDEX = WAYPOINT_INDEX + 1
+
+            # Communicate to other drones in cluster new waypoint 
+            wolfCommWaypointPublisher(wolfCommPublish, client, str(Cluster), str(Task_Group), AT_SPIRAL_WAYPOINT_SIGNAL, WAYPOINT_INDEX)
+            # debugPrint("Made it to waypoint")
 
     return 1
 
