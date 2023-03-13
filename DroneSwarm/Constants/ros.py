@@ -9,6 +9,7 @@ END_LOOP_TOPIC = "End"
 WOLF_COMMUNICATION_TOPIC = "WolfCommunication"
 # ros: topics: SIGNAL
 IN_POSITION_SIGNAL = "In_Position"
+AT_SPIRAL_WAYPOINT_SIGNAL = "At_Spiral_Waypoint"
 # ros: services
 PROXIMITY_OVERSEER_SERVICE = "ProximityOverseerService"
 PROXIMITY_WOLF_SERVICE = "PromixityWolfService"

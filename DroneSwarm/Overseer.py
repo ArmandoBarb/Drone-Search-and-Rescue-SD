@@ -29,6 +29,7 @@ from ServiceRequestors.overseerGetOverseerData import getOverseerState
 from ServiceRequestors.overseerGetWolfData import getOverseerGetWolfState
 from DroneBehaviors.lineBehavior import overseerWaypoint
 from airsim_ros_pkgs.msg import droneData
+from airsim_ros_pkgs.msg import wolfCommunication
 from ServiceRequestors.wolfGetWolfData import getWolfState
 import ServiceRequestors.overseerGetWolfData as overseerGetWolfData 
 import ServiceRequestors.instructWolf as instructWolf
@@ -65,6 +66,7 @@ PROXIMITY_OVERSEER_SERVICE = ros.PROXIMITY_OVERSEER_SERVICE
 # Dynamic service append number
 WOLF_DRONE_SERVICE = ros.WOLF_DRONE_SERVICE
 SEARCH_TASK_GROUP = ros.SEARCH_TASK_GROUP
+AT_SPIRAL_WAYPOINT_SIGNAL = ros.AT_SPIRAL_WAYPOINT_SIGNAL
 
 # Internal Wolf Drone Memory Start -------------------------------------------
 # Current pattern is ussing Global variable to allow access across threads (open to change)
@@ -232,7 +234,27 @@ def commandSub():
 def overseerCommunicationSubscriber():
     rospy.Subscriber(OVERSEER_COMMUNICATION_TOPIC, String, handleOverseerCommunication, ())
     rospy.Subscriber(ros.END_LOOP_TOPIC, String, handleEnd)
+    rospy.Subscriber(ros.WOLF_COMMUNICATION_TOPIC, wolfCommunication, handleWolfCommunication)
     rospy.spin()
+
+def handleWolfCommunication(data):
+    # Grabs strings from data object
+    global DM_Drone_Name
+    cluster = data.cluster
+    taskGroup = data.taskGroup
+    command = data.command
+    spiralIndex = data.spiralWaypointIndex
+    global WAYPOINT_INDEX
+
+    # Check if we got at spiral waypoint signal
+    if ((command == AT_SPIRAL_WAYPOINT_SIGNAL) and (cluster == DM_Drone_Name)):
+        # If our current waypoint index is less than the one we received, use the most up to data spiral index
+        # text = "Overseer recieved current waypoint: " + str(spiralIndex) + "Cluster: " + DM_Drone_Name
+        # debugPrint(text)
+        if(WAYPOINT_INDEX < spiralIndex):
+            # text = "Current index out of data, setting to recieved waypoint: " + str(spiralIndex)
+            # debugPrint("Current index out of data, setting to recieved waypoint")
+            WAYPOINT_INDEX = spiralIndex
 
 def overseerInfraredDetection(droneName):
     global Cluster
