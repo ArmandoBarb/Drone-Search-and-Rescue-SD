@@ -82,3 +82,30 @@ def getWolfDataExC(wolfNameToExclude):
             responseText.append(x)
 
     return responseText
+
+def getWolfClusterCenterGPS(clusterName):
+    # Get wolf data using a service
+    rospy.wait_for_service(PROXIMITY_WOLF_SERVICE)
+    
+     # Gets service response and droneDataArray from WolfData
+    response = rospy.ServiceProxy(PROXIMITY_WOLF_SERVICE, getDroneData)
+    resp = response()
+    
+    droneCount = 0
+    clusterCenterGPS = GPS()
+    clusterCenterGPS.longitude = 0
+    clusterCenterGPS.latitude = 0
+
+    for x in resp.droneDataArray:
+        if (x.cluster == clusterName):
+            droneCount += 1;
+            clusterCenterGPS.longitude += x.longitude
+            clusterCenterGPS.latitude += x.latitude
+
+    if (droneCount == 0): return True, None
+    clusterCenterGPS.longitude = clusterCenterGPS.longitude / droneCount
+    clusterCenterGPS.latitude = clusterCenterGPS.latitude / droneCount
+
+    # print(clusterName, "Drone Count:", droneCount, clusterCenterGPS)
+
+    return False, clusterCenterGPS

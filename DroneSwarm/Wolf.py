@@ -45,6 +45,8 @@ MIN_CIRCLE_RADIUS_GPS = configDrones.MIN_CIRCLE_RADIUS_GPS
 MIN_CIRCLE_RADIUS_METERS = configDrones.MIN_CIRCLE_RADIUS_METERS
 MIN_DIFFRENCE_IN_RADIUS = configDrones.MIN_DIFFRENCE_IN_RADIUS
 REQUIRED_SEPERATION_PERCENT = configDrones.REQUIRED_SEPERATION_PERCENT
+WOLF_SEARCH_REQUEST_HELP_DISTANCE_MULTIPLE = configDrones.WOLF_SEARCH_REQUEST_HELP_DISTANCE_MULTIPLE
+CONSENSUS_DECISION_REQUEST_HELP_DISTANCE_MULTIPLE = configDrones.CONSENSUS_DECISION_REQUEST_HELP_DISTANCE_MULTIPLE
 # ros: topics
 SLAM_MERGE_TOPIC = ros.SLAM_MERGE_TOPIC # TODO
 WOLF_DATA_TOPIC = ros.WOLF_DATA_TOPIC
@@ -85,7 +87,6 @@ Spread_Time = 0 #  time in seconds # time to get in position
 Search_Time = 0 #  time in seconds # time to search
 In_Position = False
 End_Loop = False
-NEARBY_DRONE_RADIUS = 0.0003
 # TODO: add tunning variables for behaviors (would be cool if we can train them)
 
 # Main Process Start ----------------------------------------------
@@ -395,8 +396,7 @@ def wolfCameraDetection(droneName):
                 startConsensusDecision( circleCenterGPS=circleCenterGPS, circleRadiusGPS=circleRadiusGPS, circleRadiusMeters=circleRadiusMeters, searchTimeS=searchTimeS, taskGroup=taskGroup )
                 # ToDO addd function call to return list of availalbe drones
                 # THis is Hardcoded need to replace
-                instructWolf.sendConsensusDecisionBehaviorRequest(WOLF_DRONE_SERVICE + '2', circleCenterGPS, circleRadiusGPS, circleRadiusMeters, searchTimeS, taskGroup)
-                instructWolf.sendConsensusDecisionBehaviorRequest(WOLF_DRONE_SERVICE + '0', circleCenterGPS, circleRadiusGPS, circleRadiusMeters, searchTimeS, taskGroup)
+                requestNearbyDronesConsensusDecision(circleCenterGPS, circleRadiusGPS, circleRadiusMeters, searchTimeS,  taskGroup)
 
         time.sleep(1);
         end = time.time();
@@ -465,7 +465,8 @@ def commandResponse(request):
 
             # Request nearby drones
             debugPrint("Requesting neaby wolfs")
-            requestNearbyDrones(DM_Drone_Name, wolfSearchInfo.circleCenterGPS, wolfSearchInfo.circleRadiusGPS, wolfSearchInfo.circleRadiusMeters, wolfSearchInfo.spreadTimeS, wolfSearchInfo.searchTimeS,  taskGroup)
+            requestNearbyDronesWolfSearch(wolfSearchInfo.circleCenterGPS, wolfSearchInfo.circleRadiusGPS, wolfSearchInfo.circleRadiusMeters, wolfSearchInfo.spreadTimeS, wolfSearchInfo.searchTimeS, taskGroup)
+            
 
             # Start wolf search
             debugPrint("Doing search")
@@ -480,6 +481,8 @@ def commandResponse(request):
         return False
 
     elif (messageType == "RequestConsensusDecision"):
+        if(Consensus_Decision_Behavior):
+            return False # already doing consenus behavior
         # debugPrint("Do consensus decision")
         circleCenterGPS = consensusDecisionInfo.circleCenterGPS
         circleRadiusGPS = consensusDecisionInfo.circleRadiusGPS
@@ -534,21 +537,88 @@ def wolfDataPublisher(pub, client, droneName):
     pub.publish(droneMsg)
 
 # Requests nearby drones to do search
-def requestNearbyDrones(droneName, circleCenterGPS, circleRadiusGPS, circleRadiusMeters, spreadTimeS, searchTimeS,  taskGroup):
-    # Get drone info array and sender info
-    droneData = wolfService.getWolfState()
-    senderDrone = droneData[int(droneName)]
+# NEEds to be tested
+def requestNearbyDronesWolfSearch(circleCenterGPS, circleRadiusGPS, circleRadiusMeters, spreadTimeS, searchTimeS,  taskGroup):
+    endWaypoint = getNewWaypoint(DM_Drone_Name)
+    startWaypoint = getLastWaypoint(DM_Drone_Name)
+    startGPS = calcHelper.fixDegenerateCoordinate(startWaypoint)
+    endGPS = calcHelper.fixDegenerateCoordinate(endWaypoint)
+    clusterCenterGPS = wolfService.getWolfClusterCenterGPS(clusterName=Cluster)
+
+    AvgClusterGPSOnLine = calcHelper.mapGPSPointOnLine(startGPS, endGPS, clusterCenterGPS)
+    
+    
+    wolfDataArray = wolfService.getWolfDataOfCluster(wolfNameToExclude=DM_Drone_Name, clusterName=Cluster)
 
     # Go through each drones and request to nearby drones in cluster
-    for drone in droneData:
-        # Gets distance between waypoint and drone
-        distance = sqrt( (senderDrone.longitude - drone.longitude)**2 + (senderDrone.latitude - drone.latitude)**2 )
+    assignedDroneNum = 1
+    for drone in wolfDataArray:
+        # limit drone assignment number
+        assignedDroneNum
+        maxDroneAssignment = math.ceil(circleRadiusGPS / MIN_CIRCLE_RADIUS_GPS) # round up
+        if (assignedDroneNum >= maxDroneAssignment):
+            debugPrint("max number of drones assigned Wolf Search: " + maxDroneAssignment)
+            break;
 
+        droneGPSOnLine = calcHelper.mapGPSPointOnLine(startGPS, endGPS, drone)
+        droneDistanceFromStart = calcHelper.calcDistanceBetweenGPS(startGPS, droneGPSOnLine)
+        avgClusterDistanceFromStart = calcHelper.calcDistanceBetweenGPS(startGPS, AvgClusterGPSOnLine)
+
+        distanceFromAverage = calcHelper.calcDistanceBetweenGPS(droneGPSOnLine, AvgClusterGPSOnLine)
+        distance = calcHelper.calcDistanceBetweenGPS(circleCenterGPS, drone)
+
+        if (droneDistanceFromStart > avgClusterDistanceFromStart):
+            distance -= distanceFromAverage
+        else:
+            distance += distanceFromAverage
+        
+        minDistanceFromWaypoint = circleRadiusMeters * WOLF_SEARCH_REQUEST_HELP_DISTANCE_MULTIPLE
         # If a drone is within a certain radius of requestor 
-        if ((distance < NEARBY_DRONE_RADIUS) and (drone.droneName != senderDrone.droneName) and (drone.cluster == senderDrone.cluster) and (drone.taskGroup == "")):
+        if ((distance < minDistanceFromWaypoint) and (drone.taskGroup == "")):
             serviceName = WOLF_DRONE_SERVICE + drone.droneName
             requestStatus = instructWolf.sendWolfSearchBehaviorRequest(serviceName, circleCenterGPS, circleRadiusGPS, circleRadiusMeters, spreadTimeS, searchTimeS,  taskGroup)
+            if(requestStatus):
+                assignedDroneNum += 1
+
+def requestNearbyDronesConsensusDecision(circleCenterGPS, circleRadiusGPS, circleRadiusMeters, searchTimeS,  taskGroup):
+    endWaypoint = getNewWaypoint(DM_Drone_Name)
+    startWaypoint = getLastWaypoint(DM_Drone_Name)
+    startGPS = calcHelper.fixDegenerateCoordinate(startWaypoint)
+    endGPS = calcHelper.fixDegenerateCoordinate(endWaypoint)
+    clusterCenterGPS = wolfService.getWolfClusterCenterGPS(clusterName=Cluster)
+    
+    AvgClusterGPSOnLine = calcHelper.mapGPSPointOnLine(startGPS, endGPS, clusterCenterGPS)
+    
+    
+    wolfDataArray = wolfService.getWolfDataOfCluster(wolfNameToExclude=DM_Drone_Name, clusterName=Cluster)
+
+    # Go through each drones and request to nearby drones in cluster
+    
+    for drone in wolfDataArray:
+
+        droneGPSOnLine = calcHelper.mapGPSPointOnLine(startGPS, endGPS, drone)
+        droneDistanceFromStart = calcHelper.calcDistanceBetweenGPS(startGPS, droneGPSOnLine)
+        avgClusterDistanceFromStart = calcHelper.calcDistanceBetweenGPS(startGPS, AvgClusterGPSOnLine)
+
+        distanceFromAverage = calcHelper.calcDistanceBetweenGPS(droneGPSOnLine, AvgClusterGPSOnLine)
+        distance = calcHelper.calcDistanceBetweenGPS(circleCenterGPS, drone)
+
+        if (droneDistanceFromStart > avgClusterDistanceFromStart):
+            distance -= distanceFromAverage
+        else:
+            distance += distanceFromAverage
+        
+        minDistanceFromWaypoint = circleRadiusMeters * CONSENSUS_DECISION_REQUEST_HELP_DISTANCE_MULTIPLE
+        # If a drone is within a certain radius of requestor 
+        if ((distance < minDistanceFromWaypoint)):
+            serviceName = WOLF_DRONE_SERVICE + drone.droneName
+            requestStatus = instructWolf.sendConsensusDecisionBehaviorRequest(serviceName, circleCenterGPS, circleRadiusGPS, circleRadiusMeters, searchTimeS, taskGroup)
+            if(requestStatus):
+                assignedDroneNum += 1
+            
             print("Request bool:", requestStatus, "From drone", droneName)
+
+
 
 # Function get drones subwaypoint based on index
 def getNewWaypoint(droneName):
@@ -566,6 +636,22 @@ def getNewWaypoint(droneName):
     return currentWaypoint
 
 # Grabs subwaypoint based on waypoints and droneName
+def getLastWaypoint(droneName):
+    # Created global waypoints
+    global WAYPOINT_INDEX
+    # print("DroneName: ", droneName, "Current waypoint index", WAYPOINT_INDEX)
+    if (WAYPOINT_INDEX < 2):
+        currentWaypoint = WAYPOINT_COORDS[0]
+    else:
+        currentWaypoint = WAYPOINT_COORDS[WAYPOINT_INDEX - 1]
+
+        previousWaypoint = WAYPOINT_COORDS[WAYPOINT_INDEX - 2]
+        radius = 0.0001
+        currentWaypoint = subWaypointCalculator(currentWaypoint, previousWaypoint, radius, droneName)
+
+    return currentWaypoint
+
+
 def subWaypointCalculator(currentWaypoint, previousWaypoint, radius, droneName):
     global Cluster
     # 0 is longitude, 1 is latitude
