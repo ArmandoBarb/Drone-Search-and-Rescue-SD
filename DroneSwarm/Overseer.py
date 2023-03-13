@@ -84,8 +84,9 @@ Waypoint_History = []
 # Main function for the overseer drone
 def overseerDroneController(droneName, overseerCount, wolfCount):
     global DM_Drone_Name
+    global Cluster
     DM_Drone_Name = droneName
-
+    Cluster = droneName
     # use this code to make print calls allowing you to know what process made the print statemnt
     debugPrint("Process started")
     droneNum = ''.join(filter(lambda i: i.isdigit(), droneName)) # Get overseer number from droneName
@@ -95,7 +96,6 @@ def overseerDroneController(droneName, overseerCount, wolfCount):
     rospy.init_node(nodeName, anonymous = True)
 
     # Get wolf cluster
-    # wolfClusterCreation(droneName, wolfCount, droneNum)
 
     # Reads in coords for drone
     if (droneName == "Overseer_0"):
@@ -270,7 +270,6 @@ def overseerInfraredDetection(droneName):
 
         # cluster heat signatures from segmenation map
         clusters = clustering.pixelClustering(height, width, segRGB)
-
         # if no detections then avoid unecessary calculations
         if len(clusters) > 0:
             debugPrint("Got a detection!")
@@ -463,18 +462,6 @@ def readCoordFile(filename):
 
     global WAYPOINT_COORDS
     WAYPOINT_COORDS = newList
-
-# Creates drone groups based on wolf number
-def wolfClusterCreation(droneName, wolfCount, droneNum):
-    global DM_Wolfs_Cluster
-    global Cluster
-    Cluster = droneName
-
-    # Call startup service on each wolf
-    if (droneName == "Overseer_0"):
-        DM_Wolfs_Cluster = [0, 1, 2]
-    else:
-        DM_Wolfs_Cluster = [3, 4, 5]
 
 def allDronesAtWaypoint(overseerName):
     global WAYPOINT_INDEX

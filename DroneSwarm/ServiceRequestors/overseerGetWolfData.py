@@ -52,6 +52,7 @@ def getWolfClusterCenterGPS(clusterName):
     clusterCenterGPS.latitude = 0
 
     for x in resp.droneDataArray:
+        # print("clusterName: ", clusterName, " x: ", x.cluster)
         if (x.cluster == clusterName):
             droneCount += 1;
             clusterCenterGPS.longitude += x.longitude
