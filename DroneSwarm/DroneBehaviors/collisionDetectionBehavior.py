@@ -106,6 +106,20 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,DIRECTION_FAC
 
     if(imageContainer[0].__contains__('0')):
         velX = -velX
+        
+    if(imageContainer[0].__contains__('1')):
+       velocity = client.getGpsData(vehicle_name = vehicle_name)
+
+       # math to find the x and y values to find the vectors
+       theta = math.atan2(distanceFromObsitcal,meterConvertion)/math.pi*180
+       cs = math.cos(theta)
+       sn = math.sin(theta)
+
+       px = velocity.gnss.velocity.x_val * cs - velocity.gnss.velocity.y_val * sn
+       py = velocity.gnss.velocity.x_val * sn + velocity.gnss.velocity.y_val * cs
+    
+       pxNormalized = (px / math.sqrt(px**2 + py**2))*DIRECTION_FACTOR
+       pyNormalized = (py / math.sqrt(px**2 + py**2))*DIRECTION_FACTOR 
 
     # if(closestObjectDistance < 5):
     #     client.moveByVelocityZAsync(0,velX, 0, duration=DIRECTION_FACTOR,vehicle_name=vehicle_name)
