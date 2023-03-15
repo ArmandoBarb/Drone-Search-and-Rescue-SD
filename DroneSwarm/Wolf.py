@@ -220,17 +220,18 @@ def wolfDroneController(droneName, droneCount):
         collisionAvoidance = False # set to true if need to do collision avoidance (open to better integration method)
         isChangeVelocity = True
         threshold = getDroneSpeed(client, droneName) * 2
+        slightDeviation = getDroneSpeed(client, droneName) * 1.5
 
         # Check if threshold is under min
         if (threshold < 5):
             threshold = 5
             
-        collisionAvoidance, closestObjectDistance = collisionDetectionBehavior.collisionAvoidanceCheck(client, droneName, threshold)
+        collisionAvoidance, closestObjectDistance,slightDeviationDistance = collisionDetectionBehavior.collisionAvoidanceCheck(client, droneName, threshold,slightDeviation)
         timeDiff = time.time() - Collision_Mode_Time
         if(collisionAvoidance):
             # debugPrint("Doing collision")
             Collision_Mode_Time = time.time()
-            vector = collisionDetectionBehavior.collisionAlgo(client,imgDir,droneName,closestObjectDistance,COLLISION_DIRECTION_FACTOR)
+            vector = collisionDetectionBehavior.collisionAlgo(client,imgDir,droneName,closestObjectDistance,slightDeviationDistance,COLLISION_DIRECTION_FACTOR)
             # client.moveByVelocityZAsync(vector[0], vector[1], -4, duration = COLLISION_DIRECTION_FACTOR, yaw_mode=yaw_mode, vehicle_name=droneName)
 
         elif (timeDiff < COLLISION_MODE_TIME_LENGTH):
