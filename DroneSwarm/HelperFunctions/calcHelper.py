@@ -174,6 +174,29 @@ def calcUpdatedMagnitude(currentVector, desiredVector, maxIncreaseSpeed, maxDecr
 
     return calculatedMagnitude
 
+# Gets desired acceleration based on previous colllisions
+def accelCalculator(Current_Acceleration_Factor, Previously_Had_Collision, ACCELERATION_CHANGE, MIN_ACCELERATION_FACTOR):
+    # Previous acceleration
+    desiredAcceleration = 0
+    previousFactor = Current_Acceleration_Factor
+
+    # Decelerate if had previous collision and factor is greater than minumum
+    if (Previously_Had_Collision and previousFactor > MIN_ACCELERATION_FACTOR):
+        # print("No collision, speeding up")
+        desiredAcceleration = previousFactor - ACCELERATION_CHANGE
+
+    # Accelerate if we did not have a previous collision
+    elif (not Previously_Had_Collision and previousFactor <= (1 - ACCELERATION_CHANGE)):
+        # print("Previous collision, slowing down")
+        desiredAcceleration = previousFactor + ACCELERATION_CHANGE
+
+    # Else we use our previous acceleration
+    else:
+        desiredAcceleration = previousFactor
+
+    return desiredAcceleration
+
+
 
 def turningCalculation(currentVector, desiredVector, maxTurnAngle):
     # Set final vector to our desired one by default

@@ -43,6 +43,8 @@ MAX_TIME = configDrones.MAX_TIME
 LOCAL_IP = configDrones.LOCAL_IP
 COLLISION_MODE_TIME_LENGTH = configDrones.COLLISION_MODE_TIME_LENGTH
 MAX_TURN_ANGLE = configDrones.MAX_TURN_ANGLE
+ACCELERATION_CHANGE = configDrones.ACCELERATION_CHANGE
+MIN_ACCELERATION_FACTOR = configDrones.MIN_ACCELERATION_FACTOR
 # ros: topics
 SLAM_MERGE_TOPIC = ros.SLAM_MERGE_TOPIC # TODO
 WOLF_DATA_TOPIC = ros.WOLF_DATA_TOPIC
@@ -82,6 +84,8 @@ End_Loop = False
 NEARBY_DRONE_RADIUS = 0.0003
 THRESHOLD = 16  # TODO: Needs to be scalable
 COLLISION_DIRECTION_FACTOR = 10
+Acceleration_Factor = 1
+Previously_Had_Collision = False
 # TODO: add tunning variables for behaviors (would be cool if we can train them)
 
 # Main Process Start ----------------------------------------------
@@ -92,6 +96,8 @@ def wolfDroneController(droneName, droneCount):
     global WAYPOINT_INDEX
     global End_Loop
     global Collision_Mode_Time
+    global Acceleration_Factor
+    global Previously_Had_Collision
 
     # Sets global values for wolf cluster and coordinate
     wolfClusterCreation(droneName)
@@ -165,6 +171,7 @@ def wolfDroneController(droneName, droneCount):
 
         vector = [0, 0] # dont move if nothing to do
         yaw_mode = airsim.YawMode(is_rate=False, yaw_or_rate=(0)) # Set yaw to zero
+        Previously_Had_Collision = False
 
         # test consensus behavior
         if(Consensus_Decision_Behavior):
@@ -229,6 +236,7 @@ def wolfDroneController(droneName, droneCount):
         timeDiff = time.time() - Collision_Mode_Time
         if(collisionAvoidance):
             # debugPrint("Doing collision")
+            Previously_Had_Collision = True
             Collision_Mode_Time = time.time()
             vector = collisionDetectionBehavior.collisionAlgo(client,imgDir,droneName,closestObjectDistance,COLLISION_DIRECTION_FACTOR)
             # client.moveByVelocityZAsync(vector[0], vector[1], -4, duration = COLLISION_DIRECTION_FACTOR, yaw_mode=yaw_mode, vehicle_name=droneName)
@@ -289,6 +297,12 @@ def wolfDroneController(droneName, droneCount):
         # Grabs current drones velocity in x and y
         curDroneData = client.getGpsData(vehicle_name = droneName)
         curDroneVelocity = [curDroneData.gnss.velocity.x_val, curDroneData.gnss.velocity.y_val]
+
+        # Calculates acceleration based on previous collision detections
+        Acceleration_Factor = helper.accelCalculator(Acceleration_Factor, Previously_Had_Collision, ACCELERATION_CHANGE, MIN_ACCELERATION_FACTOR)
+
+        # Apply acceleration based on trees
+        vector = [vector[0] * Acceleration_Factor, vector[1] * Acceleration_Factor]
 
         # Calculates turning
         vector = helper.turningCalculation(curDroneVelocity, vector, MAX_TURN_ANGLE)
