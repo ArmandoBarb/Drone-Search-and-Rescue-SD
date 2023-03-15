@@ -45,3 +45,20 @@ def calcYaw(currentGPS, targetGPS):
     yaw = math.atan2(perpVector[0], perpVector[1]);
     degrees = 360 - math.degrees(yaw); # yaw to face circle center
     return degrees;
+
+def IsInPosition(currentGPS, targetGPS, radius, wolfData, minDiffrenceInRadius, requiredSeperationPercent): 
+    distanceToTarget = helper.calcDistanceBetweenGPS(currentGPS, targetGPS)
+    distanceFromDesiredPos = abs(radius - distanceToTarget)
+
+    if (distanceFromDesiredPos > minDiffrenceInRadius):
+        return False
+
+    droneNumber = len(wolfData) + 1;
+    sideLength = helper.calcDroneSeparationDistance(radius, droneNumber) * requiredSeperationPercent
+
+    for wolf in wolfData:
+        distanceToWolf = helper.calcDistanceBetweenGPS(currentGPS, wolf)
+        if (distanceToWolf < sideLength):
+            return False
+
+    return True

@@ -52,17 +52,18 @@ def getWolfClusterCenterGPS(clusterName):
     clusterCenterGPS.latitude = 0
 
     for x in resp.droneDataArray:
+        # print("clusterName: ", clusterName, " x: ", x.cluster)
         if (x.cluster == clusterName):
             droneCount += 1;
             clusterCenterGPS.longitude += x.longitude
             clusterCenterGPS.latitude += x.latitude
 
+    if (droneCount == 0): return True, None
     clusterCenterGPS.longitude = clusterCenterGPS.longitude / droneCount
     clusterCenterGPS.latitude = clusterCenterGPS.latitude / droneCount
 
     # print(clusterName, "Drone Count:", droneCount, clusterCenterGPS)
 
-    if (droneCount == 0): return True, None
     return False, clusterCenterGPS
 
 # def getOptimalWolf(waypoint, clusterName):
