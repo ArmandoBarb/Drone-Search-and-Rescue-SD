@@ -11,7 +11,7 @@ def spiralSearchCoordinateMaker(groupName, waypointDistance, spawnLocation, star
         f.write(currentWaypointText)
 
         # Used to change starting direction
-        direction = 2
+        direction = 4
 
         for generalWaypoints in range(int(amountOfWaypoints)):
             waypointCount = generalWaypoints + 1 # Gets number of needed waypoints for direction

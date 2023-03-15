@@ -123,6 +123,107 @@ def calcVectorAngle(vector1, vector2):
     angleDegrees =  (angleRadians * 180) / math.pi;
     return angleDegrees;
 
+def unit_vector(vector):
+    """ Returns the unit vector of the vector.  """
+    return vector / np.linalg.norm(vector)
+
+def angle_between(v1, v2):
+    """ Returns the angle in radians between vectors 'v1' and 'v2'::
+
+            >>> angle_between((1, 0, 0), (0, 1, 0))
+            1.5707963267948966
+            >>> angle_between((1, 0, 0), (1, 0, 0))
+            0.0
+            >>> angle_between((1, 0, 0), (-1, 0, 0))
+            3.141592653589793
+    """
+    v1_u = unit_vector(v1)
+    v2_u = unit_vector(v2)
+    return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
+
+def radianCalculatorWNegatives(v1, v2):
+    x1 = v1[0]
+    x2 = v2[0]
+    y1 = v2[1]
+    y2 = v2[1]
+    degrees = math.atan2(x1*y2-y1*x2,x1*x2+y1*y2);
+
+    return degrees
+
+# Checks updated magnitude based on speed change threshold and vectors
+def calcUpdatedMagnitude(currentVector, desiredVector, maxIncreaseSpeed, maxDecreaseSpeed):
+    # Get magnitude of current and desired vector
+    currentVectorMagnitude = calcVectorMagnitude(currentVector)
+    currentDesiredMagnitude = calcVectorMagnitude(desiredVector)
+
+    # Set our calculated magnitude to our desired one by default
+    calculatedMagnitude = currentDesiredMagnitude
+
+    # Get the difference between magnitudes
+    magnitudeDifference = currentDesiredMagnitude - currentVectorMagnitude
+
+    # Handle speed up
+    if (magnitudeDifference > 0 and magnitudeDifference > maxIncreaseSpeed):
+        # print("Speeding up")
+        calculatedMagnitude = currentVectorMagnitude + maxIncreaseSpeed
+
+    # Handle slow down
+    elif (magnitudeDifference < 0 and abs(magnitudeDifference) > maxDecreaseSpeed):
+        # print("Slowing down")
+        calculatedMagnitude = currentVectorMagnitude - maxDecreaseSpeed
+
+    return calculatedMagnitude
+
+
+def turningCalculation(currentVector, desiredVector, maxTurnAngle):
+    # Set final vector to our desired one by default
+    finalVector = desiredVector
+    currentMagnitude = calcVectorMagnitude(currentVector)
+    desiredMagnitude = calcVectorMagnitude(desiredVector)
+
+    # Calculates difference between vectors
+    calculatedRadianBetweenVectors = radianCalculatorWNegatives(desiredVector, currentVector)
+    calculatedVecDifDegrees = math.degrees(calculatedRadianBetweenVectors)
+
+    # print("Calculated turn:", calculatedVecDifDegrees)
+
+    # Handles turning current vector if dif is greater than max angle
+    if (abs(calculatedVecDifDegrees) > maxTurnAngle):
+        curXVector = currentVector[0]
+        curYVector = currentVector[1]
+
+        # If we have a negative degree, turn a negative angle
+        if (calculatedVecDifDegrees < 0):
+            maxTurnAngle = maxTurnAngle * -1
+
+        # Get rotate
+        cs = math.cos(maxTurnAngle)
+        sn = math.sin(maxTurnAngle)
+
+        # Rotates vector
+        rotatedXVector = curXVector * cs - curYVector * sn
+        rotatedYVector = curXVector * sn + curYVector * cs
+
+        # Rotate current vector a certain degree
+        rotatedCurrentVector = [rotatedXVector, rotatedYVector]
+
+        # Return rotated vector
+        finalVector = rotatedCurrentVector
+
+    # Calculate speed up and slowdown
+    speedChangeThreshold = 3
+    maxIncreaseSpeed = 3
+    maxDecreaseSpeed = 3
+    desiredMagnitude = calcUpdatedMagnitude(currentVector, desiredVector, maxIncreaseSpeed, maxDecreaseSpeed)
+    finalVectorMagnitude = calcVectorMagnitude(finalVector)
+    
+    # Set desired magnitude is greater than 0
+    if (desiredMagnitude > 0 and finalVectorMagnitude > 0):
+        finalVector = setVectorMagnitude(finalVector, desiredMagnitude)
+
+    # Turn is within max turn angle
+    return finalVector
+    
 
 # _a__
 # \  |

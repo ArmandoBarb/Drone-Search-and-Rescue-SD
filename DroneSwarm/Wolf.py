@@ -42,6 +42,7 @@ LOOP_NUMBER = configDrones.LOOP_NUMBER
 MAX_TIME = configDrones.MAX_TIME
 LOCAL_IP = configDrones.LOCAL_IP
 COLLISION_MODE_TIME_LENGTH = configDrones.COLLISION_MODE_TIME_LENGTH
+MAX_TURN_ANGLE = configDrones.MAX_TURN_ANGLE
 # ros: topics
 SLAM_MERGE_TOPIC = ros.SLAM_MERGE_TOPIC # TODO
 WOLF_DATA_TOPIC = ros.WOLF_DATA_TOPIC
@@ -218,7 +219,7 @@ def wolfDroneController(droneName, droneCount):
             # getNeededAirSimData -> checkForCollision -> update collision behavior
         collisionAvoidance = False # set to true if need to do collision avoidance (open to better integration method)
         isChangeVelocity = True
-        threshold = getDroneSpeed(client, droneName) * 3
+        threshold = getDroneSpeed(client, droneName) * 2
 
         # Check if threshold is under min
         if (threshold < 5):
@@ -227,13 +228,13 @@ def wolfDroneController(droneName, droneCount):
         collisionAvoidance, closestObjectDistance = collisionDetectionBehavior.collisionAvoidanceCheck(client, droneName, threshold)
         timeDiff = time.time() - Collision_Mode_Time
         if(collisionAvoidance):
-            debugPrint("Doing collision")
+            # debugPrint("Doing collision")
             Collision_Mode_Time = time.time()
             vector = collisionDetectionBehavior.collisionAlgo(client,imgDir,droneName,closestObjectDistance,COLLISION_DIRECTION_FACTOR)
             # client.moveByVelocityZAsync(vector[0], vector[1], -4, duration = COLLISION_DIRECTION_FACTOR, yaw_mode=yaw_mode, vehicle_name=droneName)
 
         elif (timeDiff < COLLISION_MODE_TIME_LENGTH):
-            debugPrint("Still doing collision, under time")
+            # debugPrint("Still doing collision, under time")
             isChangeVelocity = False
 
         # # TODO: Add in Drone behavior desion making
@@ -284,6 +285,13 @@ def wolfDroneController(droneName, droneCount):
 
         # TODO: Apply turning to desired action
         # TODO: Overide other behaviors if collisionAvoidance is needed
+
+        # Grabs current drones velocity in x and y
+        curDroneData = client.getGpsData(vehicle_name = droneName)
+        curDroneVelocity = [curDroneData.gnss.velocity.x_val, curDroneData.gnss.velocity.y_val]
+
+        # Calculates turning
+        vector = helper.turningCalculation(curDroneVelocity, vector, MAX_TURN_ANGLE)
 
         if (isChangeVelocity):
             client.moveByVelocityZAsync(vector[0], vector[1], -4, duration = 0.5, yaw_mode=yaw_mode, vehicle_name=droneName)
