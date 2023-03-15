@@ -151,8 +151,8 @@ def wolfDroneController(droneName, droneCount, overseerCount):
     client.moveToZAsync(z=-3, velocity=8, vehicle_name = droneName).join()
     
     # start camera thread here
-    t = Thread(target = wolfCameraDetection, args=(droneName))
-    t.start()
+    t3 = Thread(target = wolfCameraDetection, args=(droneName))
+    t3.start()
 
     # Test Code startWolfSearch
     targetP = client.getMultirotorState(vehicle_name = "target")
@@ -355,6 +355,7 @@ def handleWolfCommunication(data):
     command = data.command
     spiralIndex = data.spiralWaypointIndex
     global In_Position, Start_Time, WAYPOINT_INDEX
+    #debugPrint("Wolf listend to wolf comm: " +  str(command))
 
     # Check if we got at spiral waypoint signal
     if ((command == AT_SPIRAL_WAYPOINT_SIGNAL) and (cluster == Cluster)):
@@ -377,14 +378,14 @@ def handleWolfCommunication(data):
         # handle received is in position signal
         if(not In_Position):
             Start_Time = time.time();
-            debugPrint("IN_Position set to true")
+            #debugPrint("IN_Position set to true")
             In_Position = True
 
     if(command == CONSENSUS_DECISION_SIGNAL):
         # handle received consenus Decion signal signal
         if(not In_Position):
             Start_Time = time.time();
-            debugPrint("CONSENSUS_DECISION_SIGNAL set to true")
+            #debugPrint("CONSENSUS_DECISION_SIGNAL set to true")
             In_Position = False
 
 def handleEnd(data):
@@ -402,7 +403,13 @@ def wolfCameraDetection(droneName):
     while (i < LOOP_NUMBER):
         timeDiff = time.time() - runtime
         if (timeDiff > MAX_TIME):
-            break
+            return
+
+        # If we receive end command, end the loop
+        if (End_Loop):
+            debugPrint("Ending loop")
+            return
+            
         start=time.time() # gather time data
         # todo: marry add camera checkl nad yolo detector
 
@@ -485,21 +492,21 @@ def commandResponse(request):
         # Check if we got message from overseer
         if (wolfSearchInfo.taskGroup == ""):
             # if so create task group with wolf name
-            debugPrint("Got request wolf search from Overseer")
             taskGroup = SEARCH_TASK_GROUP + DM_Drone_Name
+            debugPrint("Got request wolf search from Overseer: " + str(taskGroup))
 
             # Request nearby drones
-            debugPrint("Requesting neaby wolfs")
+            #debugPrint("Requesting neaby wolfs")
             requestNearbyDronesWolfSearch(wolfSearchInfo.circleCenterGPS, wolfSearchInfo.circleRadiusGPS, wolfSearchInfo.circleRadiusMeters, wolfSearchInfo.spreadTimeS, wolfSearchInfo.searchTimeS, taskGroup)
             
 
             # Start wolf search
-            debugPrint("Doing search")
+            #debugPrint("Doing search")
             startWolfSearch(wolfSearchInfo.circleCenterGPS, wolfSearchInfo.circleRadiusGPS, wolfSearchInfo.circleRadiusMeters, wolfSearchInfo.spreadTimeS, wolfSearchInfo.searchTimeS,  taskGroup)
             return True      
         # Got message from wolf, no need to request from nearby
         else:
-            debugPrint("Got request for help at waypoint")
+            debugPrint("Got request wolf search from wolf: " + str(wolfSearchInfo.taskGroup))
             startWolfSearch(wolfSearchInfo.circleCenterGPS, wolfSearchInfo.circleRadiusGPS, wolfSearchInfo.circleRadiusMeters, wolfSearchInfo.spreadTimeS, wolfSearchInfo.searchTimeS,  wolfSearchInfo.taskGroup)
             return True
 
@@ -949,9 +956,9 @@ def wolfSearchBehaviorGetVector(wolfCommPublish, client, currentDroneData):
         radiusM = (radiusM - MIN_CIRCLE_RADIUS_METERS)*timeDiv + MIN_CIRCLE_RADIUS_METERS;
 
     # calcSpeedVector function variables
-    averageAlignmentSpeed = 12;
+    averageAlignmentSpeed = 5;
     bonusAlignmentSpeed = 0;
-    maxCohSepSpeed = 4;
+    maxCohSepSpeed = 3;
     maxSpeed = 13;
 
     vector = circleBehavior.calcSpeedVector(currentDroneData=currentDroneData, targetGPS=Circle_Center_GPS, \

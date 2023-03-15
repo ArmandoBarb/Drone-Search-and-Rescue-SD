@@ -52,8 +52,9 @@ LOCAL_IP = configDrones.LOCAL_IP
 MAX_TIME = configDrones.MAX_TIME
 MIN_CIRCLE_RADIUS_GPS = configDrones.MIN_CIRCLE_RADIUS_GPS 
 MIN_CIRCLE_RADIUS_METERS = configDrones.MIN_CIRCLE_RADIUS_METERS
-WAYPOINT_HISTORY_DISTANCE_MULT = configDrones.WAYPOINT_HISTORY_DISTANCE_MULT
 DISTANCE_LEAD_OVERSEER_GPS = configDrones.DISTANCE_LEAD_OVERSEER_GPS
+MIN_CIRCLE_PADDING_FOR_SEARCH_HISTORY = configDrones.MIN_CIRCLE_PADDING_FOR_SEARCH_HISTORY
+MAX_WAYPOINT_SAVE_TIME = configDrones.MAX_WAYPOINT_SAVE_TIME
 
 # ros: topics
 OVERSEER_DATA_TOPIC = ros.OVERSEER_DATA_TOPIC
@@ -144,14 +145,14 @@ def overseerDroneController(droneName, overseerCount, wolfCount):
     while (i < LOOP_NUMBER):
         if (End_Loop):
             print(droneName, "Ending loop")
-            return
+            break
         timeDiff = time.time() - runtime
         start=time.time() # gather time data
         if (timeDiff > MAX_TIME):
             break
         # Checks if made it through all waypoints
         if (WAYPOINT_INDEX == (len(WAYPOINT_COORDS) - 1)):
-            return;
+            break;
             # print(droneName, "Made it to end of waypoint spiral search")
         # Get Airsim Data and procesess it here
         # TODO: add infared image detector code here (if runtime is to long Seprate into thread that runs on intervals)
@@ -245,7 +246,7 @@ def handleWolfCommunication(data):
     command = data.command
     spiralIndex = data.spiralWaypointIndex
     global WAYPOINT_INDEX
-
+    #debugPrint("overseer listend to wolf comm")
     # Check if we got at spiral waypoint signal
     if ((command == AT_SPIRAL_WAYPOINT_SIGNAL) and (cluster == DM_Drone_Name)):
         # If our current waypoint index is less than the one we received, use the most up to data spiral index
@@ -266,7 +267,13 @@ def overseerInfraredDetection(droneName):
     while (i < LOOP_NUMBER):
         timeDiff = time.time() - runtime
         if (timeDiff > MAX_TIME):
-            break
+            return
+
+        # If we receive end command, end the loop
+        if (End_Loop):
+            debugPrint("Ending loop")
+            return;
+
         start=time.time() # gather time data
 
         #---Waypoint Detection---
@@ -274,24 +281,9 @@ def overseerInfraredDetection(droneName):
         responses = getInfo.getInfrared(threadClient, droneName)
         height, width, segRGB = getInfo.getSegInfo(responses)
 
-        dataDir='/home/testuser/AirSim/PythonClient/multirotor/Drone-Search-and-Rescue-SD/DroneSwarm/infraredDebug'
-        # isExist=os.path.exists(dataDir)
-
-        # if not isExist:
-        #     # make directory if not already there
-        #     os.makedirs(dataDir)
-        #     print('Created: ' + dataDir)
-
-        # j=0
-        # while os.path.exists(dataDir + "/" + ('%s' % j)+"test.jpg"):
-        #     print("Found "+('%s' % j))
-        #     j+=1
-
-        # # debug infrared
-        # airsim.write_png(dataDir + '/' + str(j)+'test.jpg', segRGB)
-
         # cluster heat signatures from segmenation map
         clusters = clustering.pixelClustering(height, width, segRGB)
+        
         # if no detections then avoid unecessary calculations
         if len(clusters) > 0:
             debugPrint("Got a detection!")
@@ -309,22 +301,16 @@ def overseerInfraredDetection(droneName):
             # contains [radius, avg circle center, list of circle centers]
             radius = MIN_CIRCLE_RADIUS_GPS
             circleList = []
+            centroidsGPS = filteredCentroidsGPS
             for centroid in centroidsGPS:
                 circle = clustering.circle(radius, centroid, [centroid])
                 circleList = clustering.addCircle(circle, circleList)
 
-            # calculate circle groups and get average centers per group
-            # since the centroids were already in gps form (lon, lat) the
-            # avgCentroids calculation are also in terms of (lon, lat) 
-            #intersectGroups, averageCentroidsGPS = clustering.circleGroups(filteredCentroidsGPS, MIN_CIRCLE_RADIUS_GPS)
-
-            # calculate search circle
-            # for search circles we have a list of radii measured in meters
-            # along with an associated tuple of the form (lon, lat)
-            #searchRadii = getInfo.getSearchCircles(intersectGroups, averageCentroidsGPS, MIN_CIRCLE_RADIUS_GPS)
-
             wolfDataList = overseerGetWolfData.getWolfDataOfCluster(Cluster)
             cleanWaypointHistory(wolfDataList)
+            for circle in circleList:
+                print(str(i) + ": " + "center, " + str(circle.avgCenter) + "radius, " + str(circle.radius))
+
 
             for x in range(len(circleList)):
                 waypoint = circleList[x].avgCenter
@@ -343,13 +329,16 @@ def overseerInfraredDetection(droneName):
                     gpsDataObject.longitude = waypoint[0]
                     gpsDataObject.latitude = waypoint[1]
 
+                    # check who gets assigned to what
+                    print("Wolf " + optimalDroneName + " assigned " + "(" + str(waypoint[0]) + ", " + str(waypoint[1]) + ")")
+
                     # SEND MESSAGE TO OPTIMAL DRONE
                     serviceName = WOLF_DRONE_SERVICE + str(optimalDroneName)
                     circleCenterGPS =  gpsDataObject
                     circleRadiusGPS = circleList[x].radius
                     circleRadiusMeters = (circleList[x].radius*MIN_CIRCLE_RADIUS_METERS)/MIN_CIRCLE_RADIUS_GPS
                     spreadTimeS = 30
-                    searchTimeS = (circleList[x].radius*20)/MIN_CIRCLE_RADIUS_GPS
+                    searchTimeS = (circleList[x].radius*15)/MIN_CIRCLE_RADIUS_GPS
                     taskGroup = ""  # Let's wolf know it comes from an overseer
 
                     # IF TASK GROUP IS EMPTY, THE REQUEST IS FROM THE OVERSEER
@@ -361,7 +350,7 @@ def overseerInfraredDetection(droneName):
                     requestStatus = instructWolf.sendWolfSearchBehaviorRequest(serviceName, circleCenterGPS, circleRadiusGPS, circleRadiusMeters, spreadTimeS, searchTimeS,  taskGroup)
                     print("Request bool:", requestStatus, "From Overseer:", droneName, "To:", optimalDroneName)
 
-        time.sleep(1)
+        time.sleep(0.5)
         end = time.time()
         timeSpent += end-start
         i+=1
@@ -372,22 +361,26 @@ def overseerInfraredDetection(droneName):
 # DON'T SPLIT THE NEXT THREE FUNCTIONS UP!!! :(
 def updateWayPointHistory(waypoint, taskGroup, radius):
     global Waypoint_History
-    Waypoint_History.append([waypoint, taskGroup, radius])
+    Waypoint_History.append([waypoint, taskGroup, radius, time.time()])
 
 def cleanWaypointHistory(wolfDroneDataList):
     global Waypoint_History
     filteredWaypointHistory = []
     for waypoint in Waypoint_History:
-        for wolf in wolfDroneDataList:
-            if wolf.taskGroup == waypoint[1]:
-                filteredWaypointHistory.append(waypoint)
+        timeDiff = time.time() - waypoint[3]
+        if (timeDiff < MAX_WAYPOINT_SAVE_TIME):
+            filteredWaypointHistory.append(waypoint)
+        # for wolf in wolfDroneDataList:
+        #     if wolf.taskGroup == waypoint[1]:
+        #         filteredWaypointHistory.append(waypoint)
     Waypoint_History = filteredWaypointHistory
 
 def isValidCentroid(centroid):
     global Waypoint_History
     for waypoint in Waypoint_History:
         distance = sqrt((float(waypoint[0][0]) - float(centroid[0]))**2 + (float(waypoint[0][1]) - float(centroid[1]))**2)
-        if (distance < WAYPOINT_HISTORY_DISTANCE_MULT*waypoint[2]):             
+        radius = MIN_CIRCLE_PADDING_FOR_SEARCH_HISTORY + waypoint[2]
+        if (distance < radius):             
             return False
     return True
 
