@@ -12,6 +12,8 @@ import json
 import ast
 import math
 import math
+import os
+import time
 from math import sqrt
 # import constants
 import Constants.configDrones as configDrones
@@ -36,6 +38,10 @@ from airsim_ros_pkgs.srv import sendCommand
 from airsim_ros_pkgs.msg import GPS
 import ServiceRequestors.wolfGetWolfData as wolfService
 import ServiceRequestors.instructWolf as instructWolf
+import HelperFunctions.calcHelper as helper
+from ImageProcessing import getInfo
+from ImageProcessing import yolov5
+import torch
 import HelperFunctions.calcHelper as calcHelper
 
 # Environmental Variables
@@ -150,6 +156,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
     client = takeOff(droneName)
     client.moveToZAsync(z=-3, velocity=8, vehicle_name = droneName).join()
     
+    debugPrint("At wolf camera thread setup")
     # start camera thread here
     t3 = Thread(target = wolfCameraDetection, args=(droneName))
     t3.start()
@@ -196,38 +203,38 @@ def wolfDroneController(droneName, droneCount, overseerCount):
         yaw_mode = airsim.YawMode(is_rate=False, yaw_or_rate=(0)) # Set yaw to zero
 
         # test consensus behavior
-        if(Consensus_Decision_Behavior):
-            timeDiff = time.time() - Start_Time;
-            stageLength = Search_Time / 5
-            newP = None
-            if (timeDiff < stageLength):
-                newP = client.getMultirotorState(vehicle_name = "target")
-                # if (droneName == "0"):
-                    # print('target');
-            elif (timeDiff < stageLength*2):
-                newP = client.getMultirotorState(vehicle_name = "targetR")
-                # if (droneName == "0"):
-                    # print('targetR');
-            elif (timeDiff < stageLength*3):
-                newP = client.getMultirotorState(vehicle_name = "circle")
-                # if (droneName == "0"):
-                    # print('circle');
-            elif (timeDiff < stageLength*4):
-                newP = client.getMultirotorState(vehicle_name = "circle2")
-                # if (droneName == "0"):
-                    # print('circle2');
-            elif (timeDiff < stageLength*5):
-                newP = client.getMultirotorState(vehicle_name = "circle3")
-                # if (droneName == "0"):
-                    # print('circle3');
-            else:
-                newP = client.getMultirotorState(vehicle_name = "target")
-                # if (droneName == "0"):
-                    # print('circle3');
-            if (newP != None):
-                # if (droneName == "0"):
-                    # print("Gps: " + str(newP.gps_location));
-                updateConsensusDecisionCenter(circleCenterGPS=newP.gps_location);
+        # if(Consensus_Decision_Behavior):
+        #     timeDiff = time.time() - Start_Time;
+        #     stageLength = Search_Time / 5
+        #     newP = None
+        #     if (timeDiff < stageLength):
+        #         newP = client.getMultirotorState(vehicle_name = "target")
+        #         # if (droneName == "0"):
+        #             # print('target');
+        #     elif (timeDiff < stageLength*2):
+        #         newP = client.getMultirotorState(vehicle_name = "targetR")
+        #         # if (droneName == "0"):
+        #             # print('targetR');
+        #     elif (timeDiff < stageLength*3):
+        #         newP = client.getMultirotorState(vehicle_name = "circle")
+        #         # if (droneName == "0"):
+        #             # print('circle');
+        #     elif (timeDiff < stageLength*4):
+        #         newP = client.getMultirotorState(vehicle_name = "circle2")
+        #         # if (droneName == "0"):
+        #             # print('circle2');
+        #     elif (timeDiff < stageLength*5):
+        #         newP = client.getMultirotorState(vehicle_name = "circle3")
+        #         # if (droneName == "0"):
+        #             # print('circle3');
+        #     else:
+        #         newP = client.getMultirotorState(vehicle_name = "target")
+        #         # if (droneName == "0"):
+        #             # print('circle3');
+        #     if (newP != None):
+        #         # if (droneName == "0"):
+        #             # print("Gps: " + str(newP.gps_location));
+        #         updateConsensusDecisionCenter(circleCenterGPS=newP.gps_location);
 
         
         start=time.time() # gather time data
@@ -236,6 +243,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
         wolfDataPublisher(wolfDataPublish, client, droneName)
 
         # Testing (WolfCommunication) Topic
+        # wolfCommPublisher(wolfCommPublish, client, str(Cluster), str(Task_Group), "Do something")
         
         # TEST OUT WOLF SERVICE, wolfGetWolfData
         # wolfInfoArray = getWolfState()        # Get droneWolfState state array from service
@@ -390,7 +398,8 @@ def handleWolfCommunication(data):
 
 def handleEnd(data):
     global End_Loop
-    if (data.data == "End"):
+    if (data.data == "e"):
+        debugPrint("Triggered end")
         End_Loop = True
 
 # checks drone camera with yolo detection
@@ -400,6 +409,11 @@ def wolfCameraDetection(droneName):
     i = 0
     timeSpent = 0
     runtime = time.time()
+    cwd = os.getcwd()
+    yoloPT = os.path.join(str(cwd), 'best.pt')
+    model = torch.hub.load('ultralytics/yolov5', 'custom', path=yoloPT, trust_repo=True)
+    time.sleep(1)
+
     while (i < LOOP_NUMBER):
         timeDiff = time.time() - runtime
         if (timeDiff > MAX_TIME):
@@ -409,9 +423,22 @@ def wolfCameraDetection(droneName):
         if (End_Loop):
             debugPrint("Ending loop")
             return
-            
+       
         start=time.time() # gather time data
-        # todo: marry add camera checkl nad yolo detector
+        # todo: mary add camera checkl nad yolo detector
+        responses = getInfo.getScene(threadClient, droneName)
+        wolfEstimate = yolov5.runYolov5(threadClient, responses, model, droneName)
+        if(wolfEstimate[0]!=None and wolfEstimate[1]!=None):
+            formattedWolfEstimateGPS = helper.fixDegenerateCoordinate(wolfEstimate)
+            debugPrint("\nGot a detection! : \n"+str(formattedWolfEstimateGPS))
+            print("\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n")
+
+            if(not Consensus_Decision_Behavior):
+                circleRadiusGPS = MIN_CIRCLE_RADIUS_GPS*2
+                circleRadiusMeters = MIN_CIRCLE_RADIUS_METERS*2
+                searchTimeS = 300
+                taskGroup = droneName + "Con"
+                startConsensusDecision( circleCenterGPS=formattedWolfEstimateGPS, circleRadiusGPS=circleRadiusGPS, circleRadiusMeters=circleRadiusMeters, searchTimeS=searchTimeS, taskGroup=taskGroup )
 
         # mock detection
         timeDiff = time.time() - runtime
