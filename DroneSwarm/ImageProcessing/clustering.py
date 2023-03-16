@@ -3,6 +3,7 @@ import Constants.configDrones as configDrones
 
 # global config
 MIN_CIRCLE_RADIUS_GPS = configDrones.MIN_CIRCLE_RADIUS_GPS 
+CIRCLE_SPACING = configDrones.CIRCLE_SPACING
 
 class circle:
   def __init__(self, radius, avgCenter, gpsPointList):
@@ -34,13 +35,16 @@ def isMergeNeeded(circle1, circle2):
     d = ((circle1.avgCenter[0] - circle2.avgCenter[0])**2 + \
          (circle1.avgCenter[1] - circle2.avgCenter[1])**2)**0.5
 
-    r = MIN_CIRCLE_RADIUS_GPS
+    r = (circle1.radius + circle2.radius) + CIRCLE_SPACING
+
+    if (r > d):
+        return True
 
     # check for touching, intersecting circles, and when
     # the center of one lies on the center of another
-    if d == 2*r or d == r - r or (d < 2*r and d > r - r) \
-        or d == r:
-        return True
+    #if d == 2*r or d == r - r or (d < 2*r and d > r - r) \
+    #    or d == r:
+    #    return True
     return False
 
 def addCircle(circleToAdd, circleList):
