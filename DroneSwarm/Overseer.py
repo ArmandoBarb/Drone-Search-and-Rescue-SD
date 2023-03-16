@@ -244,6 +244,8 @@ def overseerInfraredDetection(droneName):
         timeDiff = time.time() - runtime
         if (timeDiff > MAX_TIME):
             break
+        if (End_Loop):
+            break
         start=time.time() # gather time data
 
         #---Waypoint Detection---
@@ -343,8 +345,8 @@ def overseerInfraredDetection(droneName):
         end = time.time()
         timeSpent += end-start
         i+=1
-    return
     debugPrint(" CameraDetection: Average Loop Time: " + str(timeSpent / i))
+    return
 # Theads END ===========================================
 
 # DON'T SPLIT THE NEXT THREE FUNCTIONS UP!!! :(
@@ -371,7 +373,7 @@ def isValidCentroid(centroid):
 
 def handleEnd(data):
     global End_Loop
-    if (data.data == "End"):
+    if (data.data == "e"):
         End_Loop = True
 
 # Takes in strings from the (Command) topic for processing
