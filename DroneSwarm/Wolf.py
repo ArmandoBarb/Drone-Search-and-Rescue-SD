@@ -104,7 +104,7 @@ Avg_Consensus_Decion_GPS = GPS()# gps data type
 # TODO: add tunning variables for behaviors (would be cool if we can train them)
 
 # Main Process Start ----------------------------------------------
-def wolfDroneController(droneName, droneCount, overseerCount):
+def wolfDroneController(droneName, droneCount, overseerCount, model):
     # set global vairable
     global DM_Drone_Name
     DM_Drone_Name = droneName
@@ -158,7 +158,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
     
     debugPrint("At wolf camera thread setup")
     # start camera thread here
-    t3 = Thread(target = wolfCameraDetection, args=(droneName))
+    t3 = Thread(target = wolfCameraDetection, args=(droneName, model))
     t3.start()
 
     # Test Code startWolfSearch
@@ -403,24 +403,22 @@ def handleEnd(data):
         End_Loop = True
 
 # checks drone camera with yolo detection
-def wolfCameraDetection(droneName):
+def wolfCameraDetection(droneName, model):
     threadClient = airsim.MultirotorClient(LOCAL_IP)
     debugPrint("Starting wolfCameraDetection loop")
     i = 0
     timeSpent = 0
     runtime = time.time()
-    cwd = os.getcwd()
-    yoloPT = os.path.join(str(cwd), 'best.pt')
-    model = torch.hub.load('ultralytics/yolov5', 'custom', path=yoloPT, trust_repo=True)
-    time.sleep(1)
 
     while (i < LOOP_NUMBER):
         timeDiff = time.time() - runtime
         if (timeDiff > MAX_TIME):
+            debugPrint(" Images taken: " + str(i))
             return
 
         # If we receive end command, end the loop
         if (End_Loop):
+            debugPrint(" Images taken: " + str(i))
             debugPrint("Ending loop")
             return
        
@@ -428,6 +426,7 @@ def wolfCameraDetection(droneName):
         # todo: mary add camera checkl nad yolo detector
         responses = getInfo.getScene(threadClient, droneName)
         wolfEstimate = yolov5.runYolov5(threadClient, responses, model, droneName)
+
         if(wolfEstimate[0]!=None and wolfEstimate[1]!=None):
             formattedWolfEstimateGPS = helper.fixDegenerateCoordinate(wolfEstimate)
             debugPrint("\nGot a detection! : \n"+str(formattedWolfEstimateGPS))

@@ -10,7 +10,7 @@ def runYolov5(client, responses, model, vehicleName):
     # get response object with input image
     height, width, sceneRGB2 = getInfo.getSegInfo(responses)
 
-    print("RESULTS yolov5:")
+    #print("RESULTS yolov5:")
     model.classes = [0]
     results=model(sceneRGB2)
     results.print()
@@ -37,6 +37,8 @@ def runYolov5(client, responses, model, vehicleName):
         # make directory if not already there
         os.makedirs(dataDir)
 
+    #ToDo: just pass loop index adn drone name
+    # or in final build just overwite
     j=0
     while os.path.exists(dataDir + "/" + ('%s' % j)+"yoloDetect.jpg"):
         j+=1
@@ -53,13 +55,13 @@ def runYolov5(client, responses, model, vehicleName):
             # save new image only with highest confidence detection
             cv2.imwrite(dataDir + "/" + ('%s' % j)+"newImg.jpg", newImag)
 
-            print("------------------------------------------------------------------------------------------------------------------")
+            #print("------------------------------------------------------------------------------------------------------------------")
             # use bb dimensions/location for GPS estimation
             alt, lat, lon = getInfoWolf.getWolfGPSEstimate(client, responses, vehicleName, xmin, ymin, xmax, ymax)
-            print("\tWOLF ESTIMATE: "+str(alt)+" alt, " + str(lat) + " lat, " + str(lon) + " lon")
+            #print("\tWOLF ESTIMATE: "+str(alt)+" alt, " + str(lat) + " lat, " + str(lon) + " lon")
             maxConfidenceGPS[1]=lat
             maxConfidenceGPS[0]=lon
-            print("------------------------------------------------------------------------------------------------------------------")
+            #print("------------------------------------------------------------------------------------------------------------------")
 
             # write corresponding text file
             with open(dataDir + "/" + ('%s' % j)+"GPSEstimate.txt", 'w') as f:
@@ -74,13 +76,13 @@ def runYolov5(client, responses, model, vehicleName):
 
             cwd = os.getcwd()
             dataDir=os.path.join(str(cwd),'yolov5Images')
-            print('CWD: '+dataDir)
+            #print('CWD: '+dataDir)
             isExist=os.path.exists(dataDir)
 
             if not isExist:
                 # make directory if not already there
                 os.makedirs(dataDir)
-                print('Created: ' + dataDir)
+                #print('Created: ' + dataDir)
                 
             for im in results.ims:
                 pil_image = Image.fromarray(im).convert('RGB') 
@@ -93,9 +95,9 @@ def runYolov5(client, responses, model, vehicleName):
                 cv2.waitKey(1)
 
 
-    print("GPS estimation cycle complete.")
-    print("MAX CONFIDENCE ESTIMATE:"+ str(maxConfidenceGPS[1]) + " lat, " + str(maxConfidenceGPS[0]) + " lon")
-    print("\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n")
+    # print("GPS estimation cycle complete.")
+    # print("MAX CONFIDENCE ESTIMATE:"+ str(maxConfidenceGPS[1]) + " lat, " + str(maxConfidenceGPS[0]) + " lon")
+    # print("\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n")
  
 
     return maxConfidenceGPS
