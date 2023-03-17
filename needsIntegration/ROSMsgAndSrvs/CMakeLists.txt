@@ -60,6 +60,7 @@ add_message_files(
   requestLineBehavior.msg
   requestWolfSearchBehavior.msg
   requestConsensusDecisionBehavior.msg
+  wolfCommunication.msg
 )
 
 add_service_files(

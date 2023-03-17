@@ -7,6 +7,7 @@ from airsim_ros_pkgs.msg import requestConsensusDecisionBehavior
 from airsim_ros_pkgs.msg import GPS
 from airsim_ros_pkgs.srv import getDroneData
 from airsim_ros_pkgs.srv import sendCommand
+from HelperFunctions import calcHelper
 
 # Send service to start live behavior with given waypoints
 def sendLinebehaviorRequest(serviceName, clusterName):

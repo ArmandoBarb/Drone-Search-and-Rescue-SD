@@ -5,10 +5,16 @@ import math
 from HelperFunctions import clusterHelper
 
 def getInfrared(client, vehicleName):
-    print(vehicleName)
+    # print(vehicleName)
     responses = client.simGetImages([
         airsim.ImageRequest("front-center", airsim.ImageType.Infrared, False, False), 
         airsim.ImageRequest("front-center", airsim.ImageType.Scene, False, False)], vehicle_name = vehicleName)
+    return responses
+
+def getScene(client, vehicleName):
+    # print(vehicleName)
+    responses = client.simGetImages([
+        airsim.ImageRequest("front", airsim.ImageType.Scene, False, False)], vehicle_name = vehicleName)
     return responses
 
 def getSegInfo(responses):
@@ -21,6 +27,13 @@ def getSegInfo(responses):
     segRGB = segArr.reshape(height, width, 3)
 
     return height, width, segRGB
+
+def getDroneGPS(vehicleName, client):
+    gps_data = client.getGpsData(gps_name = "", vehicle_name = vehicleName)
+    gps_al = gps_data.gnss.geo_point.altitude
+    gps_lat = gps_data.gnss.geo_point.latitude
+    gps_lon = gps_data.gnss.geo_point.longitude
+    return gps_al, gps_lat, gps_lon
 
 def getCentroids(clusters, client, vehicleName, height, width):
     heightArr = []
@@ -43,10 +56,7 @@ def getCentroids(clusters, client, vehicleName, height, width):
     target_height = 1.3
 
     # get drone gps info for geospatial conversion
-    gps_data = client.getGpsData(gps_name = "", vehicle_name = vehicleName)
-    gps_al = gps_data.gnss.geo_point.altitude
-    gps_lat = gps_data.gnss.geo_point.latitude
-    gps_lon = gps_data.gnss.geo_point.longitude
+    gps_al, gps_lat, gps_lon = getDroneGPS(vehicleName, client)
 
     for cluster in clusters:
         for coord in cluster:

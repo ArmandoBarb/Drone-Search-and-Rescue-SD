@@ -112,6 +112,17 @@ def calcCircleChord(radius, angle):
     chord = 2 * radius * math.sin((angle * math.pi) / 360)
     return chord;
 
+def calcDroneSeparationDistance(radius, droneNumber):
+    sideLength = 0
+    if (droneNumber == 1):
+        return sideLength;
+    elif (droneNumber == 2):
+        sideLength = radius * 2;
+    else:
+        sideLength = calcPolygonSideLength(radius, droneNumber);
+    
+    return sideLength;
+
 def calcPolygonSideLength(radius, sideNumber):
     sideLength = 2 * radius * math.sin(math.radians(180 / sideNumber))
     return sideLength;

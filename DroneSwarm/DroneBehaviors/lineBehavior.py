@@ -59,7 +59,9 @@ def waypointDirection(client, curDroneIndex, waypoint):
 
     # If within certain distance of waypoint, don't move
     if ((abs(xDifference) < 0.00005) and (abs(yDifference) < 0.00005)):
+
         finalVelocity = [0, 0]
+        return finalVelocity, True
 
     # Slow down when close
     elif (distance < 0.0001):
@@ -79,26 +81,28 @@ def waypointDirection(client, curDroneIndex, waypoint):
         # Saves final weighted vector to final velocity
         finalVelocity = [xNormalized, yNormalized]
 
-    return finalVelocity
+    # return false for not being at waypoint
+    return finalVelocity, False
 
 # Uses repulsion and waypoint direction to move between waypoints
 def lineBehavior(client, curDroneIndex, waypoint_coords):
     # Gets current wolf data
     wolfInfoArray = getWolfState()
 
-    # If there currently is not droneData, return 0
+    # If there currently is not droneData
     if (wolfInfoArray[0].droneName == ""):
         print("No drone data")
         return [0, 0]
 
     # Gets repulsion and direction vectors and adds them up
     velocityR = repulsion(client, curDroneIndex)
-    velocityD = waypointDirection(client, curDroneIndex, waypoint_coords)
+    velocityD, atCurrentWaypoint = waypointDirection(client, curDroneIndex, waypoint_coords)
     finalVelocityX = velocityD[0] + velocityR[0]
     finalVelocityY = velocityD[1] + velocityR[1]
     vector = [finalVelocityX, finalVelocityY]
 
-    return vector
+    # Returns false because drone has not made it to waypoint
+    return vector, atCurrentWaypoint
 
 # Creates directional vector towards waypoint
 def overseerWaypoint(client, curDroneIndex, waypoint):
@@ -109,17 +113,19 @@ def overseerWaypoint(client, curDroneIndex, waypoint):
     xDifference = float(waypoint[0]) - overseerInfoArray[curDroneIndex].longitude
     yDifference = float(waypoint[1]) - overseerInfoArray[curDroneIndex].latitude
 
+    # Get wolf data of cluster
+    clusterName = "Overseer_" + str(curDroneIndex)
+    cluster = getWolfDataOfCluster(clusterName)
+
+
     # If within certain distance of waypoint, don't move
-    if ((abs(xDifference) < 0.00005) and (abs(yDifference) < 0.00005)):
+    if ((abs(xDifference) < 0.00005) and (abs(yDifference) < 0.00005) or (0 == len(cluster))):
         finalVelocity = [0, 0]
 
     # Else move to waypoint
     else:
         directionFactor = DIRECTION_FACTOR
 
-        # Get wolf data of cluster
-        clusterName = "Overseer_" + str(curDroneIndex)
-        cluster = getWolfDataOfCluster(clusterName)
 
         # Calculate average wolf drone cluster location
         averageLongitude = 0

@@ -6,3 +6,6 @@ float64 velocityX
 float64 velocityY
 string cluster
 string taskGroup
+int32 successDetCount
+int32 failDetCount
+GPS avgConsensusDecionGPS
