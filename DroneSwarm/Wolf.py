@@ -98,6 +98,7 @@ def wolfDroneController(droneName, droneCount):
     global Collision_Mode_Time
     global Acceleration_Factor
     global Previously_Had_Collision
+    global COLLISION_MODE_TIME_LENGTH
 
     # Sets global values for wolf cluster and coordinate
     wolfClusterCreation(droneName)
@@ -226,7 +227,8 @@ def wolfDroneController(droneName, droneCount):
             # getNeededAirSimData -> checkForCollision -> update collision behavior
         collisionAvoidance = False # set to true if need to do collision avoidance (open to better integration method)
         isChangeVelocity = True
-        threshold = getDroneSpeed(client, droneName) * 2
+        droneSpeed = getDroneSpeed(client, droneName)
+        threshold = droneSpeed * 2
         slightDeviation = getDroneSpeed(client, droneName) * 1.5
 
         # Check if threshold is under min
@@ -239,6 +241,12 @@ def wolfDroneController(droneName, droneCount):
             # debugPrint("Doing collision")
             Previously_Had_Collision = True
             Collision_Mode_Time = time.time()
+            
+            totalTime = slightDeviationDistance / droneSpeed
+            text = "Collision avoidance time: " + str(totalTime)
+
+            debugPrint(text)
+
             vector = collisionDetectionBehavior.collisionAlgo(client,imgDir,droneName,closestObjectDistance,slightDeviationDistance,COLLISION_DIRECTION_FACTOR)
             # client.moveByVelocityZAsync(vector[0], vector[1], -4, duration = COLLISION_DIRECTION_FACTOR, yaw_mode=yaw_mode, vehicle_name=droneName)
 
@@ -309,7 +317,7 @@ def wolfDroneController(droneName, droneCount):
         vector = helper.turningCalculation(curDroneVelocity, vector, MAX_TURN_ANGLE)
 
         if (isChangeVelocity):
-            client.moveByVelocityZAsync(vector[0], vector[1], -4, duration = 0.5, yaw_mode=yaw_mode, vehicle_name=droneName)
+            client.moveByVelocityZAsync(vector[0], vector[1], -4, duration = 10, yaw_mode=yaw_mode, vehicle_name=droneName)
         
         # Add in artifical loop delay (How fast the loop runs dictates the drones reaction speed)
 
