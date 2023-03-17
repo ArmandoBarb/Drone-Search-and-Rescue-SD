@@ -173,35 +173,35 @@ def overseerDroneController(droneName, overseerCount, wolfCount):
 
         #     waypointData = [overseer0Data.longitude, overseer0Data.latitude]
 
-        if (waypointData != None):
-            waypointCheck = isValidWaypoint(waypointData)
-            print("Checking if example waypoint is valid: ", waypointCheck, "On: ", droneName)
+        # if (waypointData != None):
+        #     waypointCheck = isValidWaypoint(waypointData)
+        #     print("Checking if example waypoint is valid: ", waypointCheck, "On: ", droneName)
 
-            # GETS OPTIMAL DRONE, NEEDS INCORPORATION TO IF STATEMENT
-            nextWaypoint = getNewWaypoint(droneName)
-            optimalDrone = overseerGetWolfData.getOptimalWolf(nextWaypoint, droneName)
-            print("Send command to drone:", optimalDrone, "For cluster:", droneName)
+        #     # GETS OPTIMAL DRONE, NEEDS INCORPORATION TO IF STATEMENT
+        #     nextWaypoint = getNewWaypoint(droneName)
+        #     optimalDrone = overseerGetWolfData.getOptimalWolf(nextWaypoint, droneName)
+        #     print("Send command to drone:", optimalDrone, "For cluster:", droneName)
 
-            # Sends if we have a valid waypoint and have an optimal drone
-            if (waypointCheck and (optimalDrone != "")):
+        #     # Sends if we have a valid waypoint and have an optimal drone
+        #     if (waypointCheck and (optimalDrone != "")):
 
-                gpsDataObject = GPS()
-                gpsDataObject.longitude = waypointData[0]
-                gpsDataObject.latitude = waypointData[1]
+        #         gpsDataObject = GPS()
+        #         gpsDataObject.longitude = waypointData[0]
+        #         gpsDataObject.latitude = waypointData[1]
 
-                # SEND MESSAGE TO OPTIMAL DRONE
-                serviceName = WOLF_DRONE_SERVICE + str(optimalDrone)
-                circleCenterGPS =  gpsDataObject
-                circleRadiusGPS = 0.00008983152373552244
-                circleRadiusMeters = 6.988048291572515
-                spreadTimeS = 15
-                searchTimeS = 50
-                taskGroup = ""
+        #         # SEND MESSAGE TO OPTIMAL DRONE
+        #         serviceName = WOLF_DRONE_SERVICE + str(optimalDrone)
+        #         circleCenterGPS =  gpsDataObject
+        #         circleRadiusGPS = 0.00008983152373552244
+        #         circleRadiusMeters = 6.988048291572515
+        #         spreadTimeS = 15
+        #         searchTimeS = 50
+        #         taskGroup = ""
 
-                # IF TASK GROUP IS EMPTY, THE REQUEST IS FROM THE OVERSEER
-                # IF HAS NAME, IS FROM WOLF
-                requestStatus = instructWolf.sendWolfSearchBehaviorRequest(serviceName, circleCenterGPS, circleRadiusGPS, circleRadiusMeters, spreadTimeS, searchTimeS,  taskGroup)
-                print("Request bool:", requestStatus, "From Overseer:", droneName, "To:", optimalDrone)
+        #         # IF TASK GROUP IS EMPTY, THE REQUEST IS FROM THE OVERSEER
+        #         # IF HAS NAME, IS FROM WOLF
+        #         requestStatus = instructWolf.sendWolfSearchBehaviorRequest(serviceName, circleCenterGPS, circleRadiusGPS, circleRadiusMeters, spreadTimeS, searchTimeS,  taskGroup)
+        #         print("Request bool:", requestStatus, "From Overseer:", droneName, "To:", optimalDrone)
         # END OF CHARLIES CHANGES
         
         #print("Calling waypoint function")

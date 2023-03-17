@@ -42,6 +42,7 @@ from ImageProcessing import getInfo
 from ImageProcessing import yolov5
 import torch
 import HelperFunctions.calcHelper as calcHelper
+import HelperFunctions.calcHelper as helper
 import DroneBehaviors.collisionDetectionBehavior as collisionDetectionBehavior
 
 # Environmental Variables
@@ -176,8 +177,8 @@ def wolfDroneController(droneName, droneCount, overseerCount, model):
     
     debugPrint("At wolf camera thread setup")
     # start camera thread here
-    t3 = Thread(target = wolfCameraDetection, args=(droneName, model))
-    t3.start()
+    # t3 = Thread(target = wolfCameraDetection, args=(droneName, model))
+    # t3.start()
 
     # Test Code startWolfSearch
     targetP = client.getMultirotorState(vehicle_name = "target")
