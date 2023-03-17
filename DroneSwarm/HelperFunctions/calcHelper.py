@@ -162,3 +162,45 @@ def calcRTriangleOpposite(hypothenus, angleD):
 
 def calcRTriangleAdjacent(hypothenus, angleD):
     return math.cos(math.radians(angleD)) * hypothenus;
+
+def calcNewConsenusGPS(wolfDataArray, gpsCenter, threshold):
+    newConsenuGPS = GPS()
+    newConsenuGPS.longitude = gpsCenter.longitude
+    newConsenuGPS.latitude = gpsCenter.latitude
+    gpsNumberAdded = 1
+
+    droneFail = 0
+    droneSucc = 0
+    print("----------------------------------------")
+    for wolf in wolfDataArray:
+        totalDet = wolf.successDetCount + wolf.failDetCount
+        if(totalDet <= 0):
+            droneFail += 1
+            continue; # wtf
+
+        successRate = wolf.successDetCount / totalDet
+        
+        print("failDetCount: " + str(wolf.failDetCount) + " successDetCount: " + str(wolf.successDetCount))
+        print("threshold: " + str(successRate) + " successRate: " + str(successRate))
+        if(threshold <= successRate):
+            droneSucc += 1
+        else:
+            droneFail += 1
+
+        if(wolf.successDetCount > 0):
+            newConsenuGPS.longitude += wolf.avgConsensusDecionGPS.longitude * wolf.successDetCount
+            newConsenuGPS.latitude += wolf.avgConsensusDecionGPS.latitude * wolf.successDetCount
+            gpsNumberAdded += wolf.successDetCount
+
+        newConsenuGPS.longitude = newConsenuGPS.longitude / gpsNumberAdded
+        newConsenuGPS.latitude = newConsenuGPS.latitude / gpsNumberAdded
+        
+
+
+    print("new Gps Consensus" + str(newConsenuGPS.longitude) + " , " + str(newConsenuGPS.latitude))
+    print("droneFail: " + str(droneFail) + " droneSucc: " + str(droneSucc))
+    print("----------------------------------------")
+    if (droneFail > droneSucc):
+        return False, newConsenuGPS
+    else:
+        return True, newConsenuGPS

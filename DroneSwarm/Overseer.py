@@ -244,7 +244,7 @@ def handleWolfCommunication(data):
     cluster = data.cluster
     taskGroup = data.taskGroup
     command = data.command
-    spiralIndex = data.spiralWaypointIndex
+    spiralIndex = data.genericInt
     global WAYPOINT_INDEX
     #debugPrint("overseer listend to wolf comm")
     # Check if we got at spiral waypoint signal
@@ -286,7 +286,7 @@ def overseerInfraredDetection(droneName):
         
         # if no detections then avoid unecessary calculations
         if len(clusters) > 0:
-            debugPrint("Got a detection!")
+            # debugPrint("Got a detection!")
             # get centroids of each pixel cluster
             # this info will be in longitude and latitude form
             centroidsGPS = getInfo.getCentroids(clusters, threadClient, droneName, height, width)

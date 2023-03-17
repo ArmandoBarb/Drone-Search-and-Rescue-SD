@@ -6,14 +6,14 @@ from ImageProcessing import getInfo
 from ImageProcessing import getInfoWolf
 import os
 
-def runYolov5(client, responses, model, vehicleName):
+def runYolov5(client, responses, model, vehicleName, confidanceMin):
     # get response object with input image
     height, width, sceneRGB2 = getInfo.getSegInfo(responses)
 
     #print("RESULTS yolov5:")
     model.classes = [0]
     results=model(sceneRGB2)
-    results.print()
+    #results.print()
 
     # get the bounding boxes and confidence scores for single image
     validDetection = False
@@ -46,7 +46,8 @@ def runYolov5(client, responses, model, vehicleName):
     if(len(resultsPandas) > 0):
         confidence = confidenceArr[0]
         # if confidence is high enough use for GPS estimation
-        if(confidence > 0.3):
+        if(confidence > confidanceMin):
+            #print("Found a target!!!")
             validDetection=True
             xmin, ymin, xmax, ymax = int(xminArr[0]), int(yminArr[0]), int(xmaxArr[0]), int(ymaxArr[0])
             start_point = (xmin, ymin)

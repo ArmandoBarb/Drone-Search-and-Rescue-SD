@@ -2,4 +2,6 @@ Header header
 string cluster
 string taskGroup
 string command
-int32 spiralWaypointIndex
+bool result
+int32 genericInt
+GPS signalGPS
