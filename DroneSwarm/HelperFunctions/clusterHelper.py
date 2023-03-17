@@ -44,3 +44,4 @@ def applyInfrared(client):
     client.simSetSegmentationObjectID('.*?StagMasterAi.*?', 230, True); # stag
     client.simSetSegmentationObjectID('.*?DoeMasterAi.*?', 200, True);  # doe
     client.simSetSegmentationObjectID('.*?BrianMasterAi.*?', 255, True);# brian
+    client.simSetSegmentationObjectID('.*?BP_MovedChar.*?', 255, True); # moving brian mesh
