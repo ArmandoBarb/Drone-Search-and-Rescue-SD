@@ -4,6 +4,7 @@
 # Subscribes to (SlamMerge) topic
 # Publishes to (Command) topic
 
+import airsim
 import time
 import rospy
 from threading import Timer
@@ -20,9 +21,11 @@ from DroneBehaviors.spiralSearchCreator import createWaypoints
 # import constants
 import Constants.configDrones as configDrones
 import Constants.ros as ros
+from HelperFunctions import clusterHelper
 
 # Environmental Variables
 LOOP_NUMBER = configDrones.LOOP_NUMBER
+LOCAL_IP = configDrones.LOCAL_IP
 
 # ros topics
 COMMAND_TOPIC = ros.COMMAND_TOPIC
@@ -38,8 +41,13 @@ if __name__ == '__main__': # Only runs if this is main processes
     createWaypoints()
 
     # overseerCount = mp.cpu_count() - 5
-    overseerCount = 2
+
+    overseerCount = 1
     wolfCount = 6
+
+    # apply infrared to overseers
+    client = airsim.MultirotorClient(LOCAL_IP)
+    clusterHelper.applyInfrared(client)
 
     # TODO: start all procecess for ros Nodes here
     # Start wolf proximity subscriber and wolf nodes
@@ -47,7 +55,7 @@ if __name__ == '__main__': # Only runs if this is main processes
     time.sleep(1);
     for wolf in range(wolfCount): # str(x) = the vechical_name of the drone
         droneName = str(wolf)
-        mp.Process(target=wolfDroneController, args=(droneName,wolfCount)).start()
+        mp.Process(target=wolfDroneController, args=(droneName,wolfCount,overseerCount)).start()
 
     # Start overseer proximity subscriber and overseer nodes
 
@@ -55,7 +63,7 @@ if __name__ == '__main__': # Only runs if this is main processes
     for overseer in range(overseerCount):
         droneNum = str(overseer)
         droneName = "Overseer_" + droneNum
-        mp.Process(target=overseerDroneController, args=(droneName,overseerCount)).start()
+        mp.Process(target=overseerDroneController, args=(droneName,overseerCount, wolfCount)).start()
 
 
     # One node for "MissionControl"
