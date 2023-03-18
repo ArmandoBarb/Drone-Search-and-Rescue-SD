@@ -10,8 +10,13 @@ def runYolov5(client, responses, model, vehicleName, confidanceMin):
     # get response object with input image
     height, width, sceneRGB2 = getInfo.getSegInfo(responses)
 
+    # original image unedited
+    responseSeg = responses[0]
+    segArr = np.fromstring(responseSeg.image_data_uint8, dtype=np.uint8)
+    sceneRGB1 = segArr.reshape(height, width, 3)
+
     #print("RESULTS yolov5:")
-    model.classes = [0]
+    model.classes = [0] # detect only for person class (0)
     results=model(sceneRGB2)
     #results.print()
 
@@ -54,6 +59,7 @@ def runYolov5(client, responses, model, vehicleName, confidanceMin):
             end_point = (xmax, ymax)
             newImag = cv2.rectangle(sceneRGB2, start_point, end_point, (0, 255, 0), 2)
             # save new image only with highest confidence detection
+            cv2.imwrite(dataDir + "/" + ('%s' % j)+"origImg.jpg", sceneRGB1)
             cv2.imwrite(dataDir + "/" + ('%s' % j)+"newImg.jpg", newImag)
 
             #print("------------------------------------------------------------------------------------------------------------------")
