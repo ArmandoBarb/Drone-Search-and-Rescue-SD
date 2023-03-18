@@ -53,8 +53,8 @@ MIN_CIRCLE_RADIUS_GPS = configDrones.MIN_CIRCLE_RADIUS_GPS
 MIN_CIRCLE_RADIUS_METERS = configDrones.MIN_CIRCLE_RADIUS_METERS
 COLLISION_MODE_TIME_LENGTH = configDrones.COLLISION_MODE_TIME_LENGTH
 MAX_TURN_ANGLE = configDrones.MAX_TURN_ANGLE
-ACCELERATION_CHANGE = configDrones.ACCELERATION_CHANGE
-MIN_ACCELERATION_FACTOR = configDrones.MIN_ACCELERATION_FACTOR
+SPEED_CHANGE = configDrones.SPEED_CHANGE
+MIN_SPEED_FACTOR = configDrones.MIN_SPEED_FACTOR
 MIN_DIFFRENCE_IN_RADIUS = configDrones.MIN_DIFFRENCE_IN_RADIUS
 REQUIRED_SEPERATION_PERCENT = configDrones.REQUIRED_SEPERATION_PERCENT
 WOLF_SEARCH_REQUEST_HELP_DISTANCE_MULTIPLE = configDrones.WOLF_SEARCH_REQUEST_HELP_DISTANCE_MULTIPLE
@@ -78,6 +78,8 @@ PROXIMITY_WOLF_SERVICE = ros.PROXIMITY_WOLF_SERVICE
 WOLF_DRONE_SERVICE = ros.WOLF_DRONE_SERVICE
 # task group name
 SEARCH_TASK_GROUP = ros.SEARCH_TASK_GROUP
+EMPTY_TASK_GROUP = ros.EMPTY_TASK_GROUP
+EMPTY_CLUSTER = ros.EMPTY_CLUSTER
 
 # Internal Wolf Drone Memory Start -------------------------------------------
 # Current pattern is ussing Global variable to allow access across threads (open to change)
@@ -90,8 +92,8 @@ GROUP_0_SEARCH = 'Constants/Group0Spiral.txt'
 GROUP_1_SEARCH = 'Constants/Group1Spiral.txt'
 # Internal Wolf Drone Memory End -------------------------------------------
 Line_Behavior = False
-Cluster = ""
-Task_Group = ""
+Cluster = EMPTY_CLUSTER
+Task_Group = EMPTY_TASK_GROUP
 Collision_Mode_Time = 0
 # Memory for circle behavior
 Wolf_Search_Behavior = False
@@ -112,21 +114,26 @@ Fail_Det_Count = 0
 Avg_Consensus_Decion_GPS = GPS() # gps data type
 THRESHOLD = 16  # TODO: Needs to be scalable
 COLLISION_DIRECTION_FACTOR = 10
-Acceleration_Factor = 1
+Speed_Factor = 1
 Previously_Had_Collision = False
 # TODO: add tunning variables for behaviors (would be cool if we can train them)
 
 # Main Process Start ----------------------------------------------
-def wolfDroneController(droneName, droneCount, overseerCount, model):
+def wolfDroneController(droneName, droneCount, overseerCount):
     # set global vairable
     global DM_Drone_Name
     DM_Drone_Name = droneName
     global WAYPOINT_INDEX
     global End_Loop
     global Collision_Mode_Time
-    global Acceleration_Factor
+    global Speed_Factor
     global Previously_Had_Collision
     global COLLISION_MODE_TIME_LENGTH
+
+    # loading yolov5
+    # cwd = os.getcwd()
+    # yoloPT = os.path.join(str(cwd), 'best.pt')
+    # model = torch.hub.load('ultralytics/yolov5', 'custom', path=yoloPT, trust_repo=True)
 
     # Sets global values for wolf cluster and coordinate
     # wolfClusterCreation(droneName, droneCount)
@@ -298,9 +305,12 @@ def wolfDroneController(droneName, droneCount, overseerCount, model):
             totalTime = slightDeviationDistance / droneSpeed
             text = "Collision avoidance time: " + str(totalTime)
 
+            if (totalTime > MAX_COLLISION_TIME):
+                totalTime = MAX_COLLISION_TIME
+
             debugPrint(text)
 
-            vector = collisionDetectionBehavior.collisionAlgo(client,imgDir,droneName,closestObjectDistance,slightDeviationDistance,COLLISION_DIRECTION_FACTOR)
+            vector = collisionDetectionBehavior.collisionAlgo(client,imgDir,droneName,closestObjectDistance,slightDeviationDistance,droneSpeed)
             # client.moveByVelocityZAsync(vector[0], vector[1], -4, duration = COLLISION_DIRECTION_FACTOR, yaw_mode=yaw_mode, vehicle_name=droneName)
 
         elif (timeDiff < COLLISION_MODE_TIME_LENGTH):
@@ -314,6 +324,7 @@ def wolfDroneController(droneName, droneCount, overseerCount, model):
             vector = consensusDecisionBehaviorGetVector(currentDroneData);
 
             yawDegrees = circleBehavior.calcYaw(currentGPS=currentDroneData.gps_location, targetGPS=Circle_Center_GPS);
+            yawDegrees = yawDegrees + 90
             yaw_mode  = airsim.YawMode(is_rate=False, yaw_or_rate=(yawDegrees));
 
             # check if time to end consensus Desension
@@ -377,6 +388,7 @@ def wolfDroneController(droneName, droneCount, overseerCount, model):
             vector = wolfSearchBehaviorGetVector(wolfCommPublish, client, currentDroneData);
             
             yawDegrees = circleBehavior.calcYaw(currentGPS=currentDroneData.gps_location, targetGPS=Circle_Center_GPS);
+            yawDegrees = yawDegrees + 90
             yaw_mode  = airsim.YawMode(is_rate=False, yaw_or_rate=(yawDegrees));
 
             if (In_Position_WS):
@@ -391,9 +403,14 @@ def wolfDroneController(droneName, droneCount, overseerCount, model):
             vector, curDroneAtWaypoint = lineBehavior.lineBehavior(client, int(droneName), newWaypoint)
             vectorTemp = 0
 
+            # Changes to necessary values
             vectorTemp = vector[0]
             vector[0] = vector[1]
             vector[1] = vectorTemp
+            
+            # Updates speed based on factor
+            vector[0] = vector[0] * Speed_Factor
+            vector[1] = vector[1] * Speed_Factor
 
             # Calculates camera direction based on velocity      
             if (vector[1] != 0):
@@ -416,10 +433,10 @@ def wolfDroneController(droneName, droneCount, overseerCount, model):
         curDroneVelocity = [curDroneData.gnss.velocity.x_val, curDroneData.gnss.velocity.y_val]
 
         # Calculates acceleration based on previous collision detections
-        Acceleration_Factor = helper.accelCalculator(Acceleration_Factor, Previously_Had_Collision, ACCELERATION_CHANGE, MIN_ACCELERATION_FACTOR)
+        Speed_Factor = helper.accelCalculator(Speed_Factor, Previously_Had_Collision, SPEED_CHANGE, MIN_SPEED_FACTOR)
 
         # Apply acceleration based on trees
-        vector = [vector[0] * Acceleration_Factor, vector[1] * Acceleration_Factor]
+        # vector = [vector[0] * Speed_Factor, vector[1] * Speed_Factor]
 
         # Calculates turning
         vector = helper.turningCalculation(curDroneVelocity, vector, MAX_TURN_ANGLE)
@@ -467,10 +484,10 @@ def handleWolfSignal(data):
     #debugPrint("Wolf listend to wolf comm: " +  str(command))
 
     # Check if we are in the same cluster, or if cluster is empty
-    if ((cluster != Cluster) and (cluster != "")):
+    if ((cluster != Cluster) and (cluster != EMPTY_CLUSTER)):
         return;
 
-    if ((taskGroup != Task_Group) and (Task_Group != "")):
+    if ((taskGroup != Task_Group) and (Task_Group != EMPTY_TASK_GROUP)):
         return;
 
     if(command == IN_POSITION_SIGNAL):
@@ -491,7 +508,7 @@ def handleWolfSignal(data):
 
         updateConsensusDecisionCenter(signalGPS, iterationNum, result);
 
-        # Check if we got at spiral waypoint signal
+    # Check if we got at spiral waypoint signal
     if ((command == AT_SPIRAL_WAYPOINT_SIGNAL)):
         # If our current waypoint index is less than the one we received, use the most up to data spiral index
         # text = "Recieved current waypoint: " + str(spiralIndex) +"Cluster: " + cluster
@@ -531,15 +548,16 @@ def wolfCameraDetection(droneName, model):
         start=time.time() # gather time data
         # todo: mary add camera checkl nad yolo detector
         # TODO: remove
-        if (droneName != '0' and droneName != '1'):
-            time.sleep(1);
-            end = time.time();
-            timeSpent += end-start;
-            i+=1
-            continue;
+        # if (droneName != '0' and droneName != '1'):
+        #     time.sleep(1);
+        #     end = time.time();
+        #     timeSpent += end-start;
+        #     i+=1
+        #     continue;
 
         responses = getInfo.getScene(threadClient, droneName)
         wolfEstimate = yolov5.runYolov5(threadClient, responses, model, droneName, YOLO_CONFIDENCE)
+        # wolfEstimate = [None, None]
 
         if(wolfEstimate[0]!=None and wolfEstimate[1]!=None):
             # detection
@@ -646,12 +664,12 @@ def commandResponse(request):
         # debugPrint("Do wolf search")
 
         # Return false is wolf is already in a task group
-        if (Task_Group != ""):
+        if (Task_Group != EMPTY_TASK_GROUP):
             debugPrint("Unable to complete wolf search request")
             return False
 
         # Check if we got message from overseer
-        if (wolfSearchInfo.taskGroup == ""):
+        if (wolfSearchInfo.taskGroup == EMPTY_TASK_GROUP):
             # if so create task group with wolf name
             taskGroup = SEARCH_TASK_GROUP + DM_Drone_Name
             debugPrint("Got request wolf search from Overseer: " + str(taskGroup))
@@ -798,7 +816,7 @@ def requestNearbyDronesWolfSearch(circleCenterGPS, circleRadiusGPS, circleRadius
         
         minDistanceFromWaypoint = circleRadiusMeters * WOLF_SEARCH_REQUEST_HELP_DISTANCE_MULTIPLE
         # If a drone is within a certain radius of requestor 
-        if ((distance < minDistanceFromWaypoint) and (drone.taskGroup == "")):
+        if ((distance < minDistanceFromWaypoint) and (drone.taskGroup == EMPTY_TASK_GROUP)):
             serviceName = WOLF_DRONE_SERVICE + drone.droneName
             requestStatus = instructWolf.sendWolfSearchBehaviorRequest(serviceName, circleCenterGPS, circleRadiusGPS, circleRadiusMeters, spreadTimeS, searchTimeS,  taskGroup)
             if(requestStatus):
@@ -1016,7 +1034,7 @@ def allDronesAtWaypoint(wolfCommPublish, client):
     waypointIndexBeforeCheck = WAYPOINT_INDEX
 
     # Check if made it to spawn and drone has a cluster
-    if ((WAYPOINT_INDEX >= 1) and (Cluster != "")):
+    if ((WAYPOINT_INDEX >= 1) and (Cluster != EMPTY_CLUSTER)):
         radius = 0.0001
         previousWaypoint = WAYPOINT_COORDS[WAYPOINT_INDEX-1]
 
@@ -1041,7 +1059,7 @@ def allDronesAtWaypoint(wolfCommPublish, client):
             if (distance > 0.00015):
                 return 0
     # Check that drones are spawned in an contain a cluster before moving on
-    elif((Cluster != "") and (WAYPOINT_INDEX == 0)):
+    elif((Cluster != EMPTY_CLUSTER) and (WAYPOINT_INDEX == 0)):
         wolfCluster = wolfService.getWolfDataOfClusterWCurWolf(Cluster)
 
         for wolf in wolfCluster:
@@ -1057,19 +1075,19 @@ def allDronesAtWaypoint(wolfCommPublish, client):
             WAYPOINT_INDEX = WAYPOINT_INDEX + 1
 
             # Communicate to other drones in cluster new waypoint 
-            wolfSignalWaypointPublisher(wolfCommPublish, client, str(Cluster), '', AT_SPIRAL_WAYPOINT_SIGNAL, WAYPOINT_INDEX)
+            wolfSignalWaypointPublisher(wolfCommPublish, client, str(Cluster), EMPTY_TASK_GROUP, AT_SPIRAL_WAYPOINT_SIGNAL, WAYPOINT_INDEX)
 
         return 1
         # debugPrint("Drone spawned")
 
     # If drone is in cluster and passed checks, increment waypoint
-    if ((Cluster != "")):
+    if ((Cluster != EMPTY_CLUSTER)):
         # Check if our global value has changed
         if (waypointIndexBeforeCheck == WAYPOINT_INDEX):    
             WAYPOINT_INDEX = WAYPOINT_INDEX + 1
 
             # Communicate to other drones in cluster new waypoint 
-            wolfSignalWaypointPublisher(wolfCommPublish, client, str(Cluster), '', AT_SPIRAL_WAYPOINT_SIGNAL, WAYPOINT_INDEX)
+            wolfSignalWaypointPublisher(wolfCommPublish, client, str(Cluster), EMPTY_TASK_GROUP, AT_SPIRAL_WAYPOINT_SIGNAL, WAYPOINT_INDEX)
             # debugPrint("Made it to waypoint")
 
     return 1
@@ -1097,7 +1115,7 @@ def startLineBehavior(clusterName):
 def endLineBehavior():
     global Cluster
     global Line_Behavior
-    Cluster = ""
+    Cluster = EMPTY_CLUSTER
     Line_Behavior = False
 
 def startWolfSearch( circleCenterGPS, circleRadiusGPS, circleRadiusMeters, spreadTimeS, searchTimeS, taskGroup):
@@ -1150,19 +1168,19 @@ def wolfSearchBehaviorGetVector(wolfCommPublish, client, currentDroneData):
         radiusM = (radiusM - MIN_CIRCLE_RADIUS_METERS)*timeDiv + MIN_CIRCLE_RADIUS_METERS;
 
     # calcSpeedVector function variables
-    averageAlignmentSpeed = 5;
-    bonusAlignmentSpeed = 0;
-    maxCohSepSpeed = 3;
-    maxSpeed = 13;
+    averageAlignmentSpeed = 10 * Speed_Factor
+    bonusAlignmentSpeed = 0 * Speed_Factor
+    maxCohSepSpeed = 3 * Speed_Factor
+    maxSpeed = 13 * Speed_Factor
 
-    vectorR = lineBehavior.repulsion(client, int(DM_Drone_Name));
+    # vectorR = lineBehavior.repulsion(client, int(DM_Drone_Name));
 
     vector = circleBehavior.calcSpeedVector(currentDroneData=currentDroneData, targetGPS=Circle_Center_GPS, \
                 radius=radius, radiusM=radiusM, wolfData=wolfDataArray, \
                 averageAlignmentSpeed=averageAlignmentSpeed, bonusAlignmentSpeed=bonusAlignmentSpeed, \
                 maxCohSepSpeed=maxCohSepSpeed, maxSpeed=maxSpeed);
 
-    vector = [vector[0] + vectorR[0], vector[1] + vectorR[1]]
+    # vector = [vector[0] + vectorR[0], vector[1] + vectorR[1]]
 
     return calcHelper.applyMaxSpeed(vector, maxSpeed);
 
@@ -1178,7 +1196,7 @@ def endWolfSearch():
     Circle_Center_GPS = None;
     Circle_Radius_GPS, Circle_Radius_Meters = None, None;
     Start_Time, Spread_Time, Search_Time = None, None, None;
-    Task_Group = "";
+    Task_Group = EMPTY_TASK_GROUP;
 
 def startConsensusDecision( circleCenterGPS, circleRadiusGPS, circleRadiusMeters, searchTimeS, taskGroup):
     global Consensus_Decision_Behavior;
@@ -1199,6 +1217,7 @@ def startConsensusDecision( circleCenterGPS, circleRadiusGPS, circleRadiusMeters
     Wolf_Search_Behavior = False; 
 
 def consensusDecisionBehaviorGetVector(currentDroneData):
+    global Speed_Factor
     radius = Circle_Radius_GPS
     radiusM = Circle_Radius_Meters
     targetGPS = Circle_Center_GPS
@@ -1209,10 +1228,10 @@ def consensusDecisionBehaviorGetVector(currentDroneData):
     # if(not In_Position_WS):
 
     # calcSpeedVector function variables
-    averageAlignmentSpeed = 12;
-    bonusAlignmentSpeed = 0;
-    maxCohSepSpeed = 4;
-    maxSpeed = 13
+    averageAlignmentSpeed = 12 * Speed_Factor
+    bonusAlignmentSpeed = 0 * Speed_Factor
+    maxCohSepSpeed = 4 * Speed_Factor
+    maxSpeed = 13 * Speed_Factor
     
     vector = circleBehavior.calcSpeedVector(currentDroneData=currentDroneData, targetGPS=targetGPS, \
                 radius=radius, radiusM=radiusM, wolfData=wolfDataArray, \
@@ -1248,7 +1267,7 @@ def endConsensusDecision():
     Circle_Center_GPS = None;
     Circle_Radius_GPS, Circle_Radius_Meters = None, None;
     Start_Time, Search_Time = None, None;
-    Task_Group = "";
+    Task_Group = EMPTY_TASK_GROUP;
     
 
 

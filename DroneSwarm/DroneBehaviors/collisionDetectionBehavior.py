@@ -7,6 +7,18 @@ import time
 from split_image import split_image
 # import Constants.configDrones as configDrones
 import math
+from contextlib import contextmanager
+import sys, os
+
+@contextmanager
+def suppress_stdout():
+    with open(os.devnull, "w") as devnull:
+        old_stdout = sys.stdout
+        sys.stdout = devnull
+        try:  
+            yield
+        finally:
+            sys.stdout = old_stdout
 
 # drone size 1m x 1m
 def getDistanceXConeArray(client,vehicle_name):
@@ -116,7 +128,9 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
     cv2.imwrite('DepthImage.png', depthCloce16)
 
     # we split the image into multiple parts(3 col 1 row)
-    split_image('DepthImage.png',1,3,False,False)                   
+    with suppress_stdout():
+        split_image('DepthImage.png',1,3,False,False)     
+               
     files = os.listdir(imgDir)
 
     # we find the average pixels in the image and we store it in the imageContainer

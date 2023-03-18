@@ -18,3 +18,5 @@ PROXIMITY_WOLF_SERVICE = "PromixityWolfService"
 WOLF_DRONE_SERVICE = "wolf_service_"
 # task group name beginning
 SEARCH_TASK_GROUP = "Task_Group_Search_"
+EMPTY_TASK_GROUP = ""
+EMPTY_CLUSTER = ""
