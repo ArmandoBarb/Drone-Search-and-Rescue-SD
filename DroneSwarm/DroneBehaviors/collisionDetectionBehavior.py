@@ -11,17 +11,17 @@ import math
 # drone size 1m x 1m
 def getDistanceXConeArray(client,vehicle_name):
 
-    distanceXConeArray = [client.getDistanceSensorData(distance_sensor_name="Up(2.5)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Left(-5)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Right(5)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Left(-4)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Right(4)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Left(-3)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Right(3)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Left(-2)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Right(2)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Left(-1)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Right(1)",vehicle_name=vehicle_name).distance,]
+    distanceXConeArray = [{"name": "Up(2.5)",'distance':client.getDistanceSensorData(distance_sensor_name="Up(2.5)",vehicle_name=vehicle_name).distance},
+                    {"name": "Left(-5)",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-5)",vehicle_name=vehicle_name).distance},
+                   {"name": "Right(5)",'distance':client.getDistanceSensorData(distance_sensor_name="Right(5)",vehicle_name=vehicle_name).distance},
+                   {"name": "Left(-4)",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-4)",vehicle_name=vehicle_name).distance},
+                    {"name": "Left(4)",'distance':client.getDistanceSensorData(distance_sensor_name="Right(4)",vehicle_name=vehicle_name).distance},
+                    {"name": "Front(-3)",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-3)",vehicle_name=vehicle_name).distance},
+                    {"name": "Front(3)",'distance':client.getDistanceSensorData(distance_sensor_name="Right(3)",vehicle_name=vehicle_name).distance},
+                    {"name": "Front(-2)",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-2)",vehicle_name=vehicle_name).distance},
+                    {"name": "Front(2)",'distance':client.getDistanceSensorData(distance_sensor_name="Right(2)",vehicle_name=vehicle_name).distance},
+                    {"name": "Front(-1)",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-1)",vehicle_name=vehicle_name).distance},
+                    {"name": "Front(1)",'distance':client.getDistanceSensorData(distance_sensor_name="Right(1)",vehicle_name=vehicle_name).distance},]
     # for distance in distanceXConeArray:
     #     print(distance)
 
@@ -29,50 +29,52 @@ def getDistanceXConeArray(client,vehicle_name):
 
 def getSlightDeviation(client,vehicle_name):
 
-    deviationArray = [client.getDistanceSensorData(distance_sensor_name="Left(-7)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Right(7)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Left(-6)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Right(6)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Left(-8)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Right(8)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Left(-9)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Right(9)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Left(-10)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Right(10)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Left(-11)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Right(11)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Left(-12)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Right(12)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Left(-13)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Right(13)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Left(-44)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Right(44)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Left(-43)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Right(43)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Left(-42)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Right(42)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Left(-41)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Right(41)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Left(-40)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Right(40)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Left(-39)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Right(39)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Left(-38)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Right(38)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Left(-37)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Right(37)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Left(-36)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Right(36)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Left(-35)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Right(35)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Left(-34)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Right(33)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Left(-32)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Right(32)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Left(-31)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Right(31)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Left(-30)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Right(30)",vehicle_name=vehicle_name).distance,]
+    deviationArray = [{"name": "Left_7",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-7)",vehicle_name=vehicle_name).distance},
+                    {"name": "Right_7",'distance':client.getDistanceSensorData(distance_sensor_name="Right(7)",vehicle_name=vehicle_name).distance},
+                    {"name": "Left_6",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-6)",vehicle_name=vehicle_name).distance},
+                    {"name": "Right_6",'distance':client.getDistanceSensorData(distance_sensor_name="Right(6)",vehicle_name=vehicle_name).distance},
+                    {"name": "Left_8",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-8)",vehicle_name=vehicle_name).distance},
+                    {"name": "Right_8",'distance':client.getDistanceSensorData(distance_sensor_name="Right(8)",vehicle_name=vehicle_name).distance},
+                    {"name": "Left_9",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-9)",vehicle_name=vehicle_name).distance},
+                    {"name": "Right_9",'distance':client.getDistanceSensorData(distance_sensor_name="Right(9)",vehicle_name=vehicle_name).distance},
+                    {"name": "Left_10",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-10)",vehicle_name=vehicle_name).distance},
+                    {"name": "Right_10",'distance':client.getDistanceSensorData(distance_sensor_name="Right(10)",vehicle_name=vehicle_name).distance},
+                    {"name": "Left_11",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-11)",vehicle_name=vehicle_name).distance},
+                    {"name": "Right_11",'distance':client.getDistanceSensorData(distance_sensor_name="Right(11)",vehicle_name=vehicle_name).distance},
+                    {"name": "Left_12",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-11)",vehicle_name=vehicle_name).distance},
+                    {"name": "Right_12",'distance':client.getDistanceSensorData(distance_sensor_name="Right(11)",vehicle_name=vehicle_name).distance},
+                    {"name": "Left_13",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-13)",vehicle_name=vehicle_name).distance},
+                    {"name": "Right_13",'distance':client.getDistanceSensorData(distance_sensor_name="Right(13)",vehicle_name=vehicle_name).distance},
+                    {"name": "Left_44",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-44)",vehicle_name=vehicle_name).distance},
+                    {"name": "Right_44",'distance':client.getDistanceSensorData(distance_sensor_name="Right(44)",vehicle_name=vehicle_name).distance},
+                    {"name": "Left_43",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-43)",vehicle_name=vehicle_name).distance},
+                    {"name": "Right_43",'distance':client.getDistanceSensorData(distance_sensor_name="Right(43)",vehicle_name=vehicle_name).distance},
+                    {"name": "Left_42",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-43)",vehicle_name=vehicle_name).distance},
+                    {"name": "Right_42",'distance':client.getDistanceSensorData(distance_sensor_name="Right(43)",vehicle_name=vehicle_name).distance},
+                    {"name": "Left_41",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-41)",vehicle_name=vehicle_name).distance},
+                    {"name": "Right_41",'distance':client.getDistanceSensorData(distance_sensor_name="Right(41)",vehicle_name=vehicle_name).distance},
+                    {"name": "Left_40",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-40)",vehicle_name=vehicle_name).distance},
+                    {"name": "Right_40",'distance':client.getDistanceSensorData(distance_sensor_name="Right(39)",vehicle_name=vehicle_name).distance},
+                    {"name": "Left_39",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-39)",vehicle_name=vehicle_name).distance},
+                    {"name": "Right_39",'distance':client.getDistanceSensorData(distance_sensor_name="Right(39)",vehicle_name=vehicle_name).distance},
+                    {"name": "Left_38",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-38)",vehicle_name=vehicle_name).distance},
+                    {"name": "Right_38",'distance':client.getDistanceSensorData(distance_sensor_name="Right(38)",vehicle_name=vehicle_name).distance},
+                    {"name": "Left_37",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-37)",vehicle_name=vehicle_name).distance},
+                    {"name": "Right_37",'distance':client.getDistanceSensorData(distance_sensor_name="Right(37)",vehicle_name=vehicle_name).distance},
+                    {"name": "Left_36",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-36)",vehicle_name=vehicle_name).distance},
+                    {"name": "Right_36",'distance':client.getDistanceSensorData(distance_sensor_name="Right(36)",vehicle_name=vehicle_name).distance},
+                    {"name": "Left_35",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-35)",vehicle_name=vehicle_name).distance},
+                    {"name": "Right_35",'distance':client.getDistanceSensorData(distance_sensor_name="Right(35)",vehicle_name=vehicle_name).distance},
+                    {"name": "Left_34",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-34)",vehicle_name=vehicle_name).distance},
+                    {"name": "Right_34",'distance':client.getDistanceSensorData(distance_sensor_name="Right(34)",vehicle_name=vehicle_name).distance},
+                    {"name": "Left_33",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-33)",vehicle_name=vehicle_name).distance},
+                    {"name": "Right_33",'distance':client.getDistanceSensorData(distance_sensor_name="Right(33)",vehicle_name=vehicle_name).distance},
+                    {"name": "Left_32",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-32)",vehicle_name=vehicle_name).distance},
+                    {"name": "Right_32",'distance':client.getDistanceSensorData(distance_sensor_name="Right(32)",vehicle_name=vehicle_name).distance},
+                    {"name": "Left_31",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-31)",vehicle_name=vehicle_name).distance},
+                    {"name": "Right_31",'distance':client.getDistanceSensorData(distance_sensor_name="Right(31)",vehicle_name=vehicle_name).distance},
+                    {"name": "Left_30",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-31)",vehicle_name=vehicle_name).distance},
+                    {"name": "Right_30",'distance':client.getDistanceSensorData(distance_sensor_name="Right(31)",vehicle_name=vehicle_name).distance},]
 
     return deviationArray
 
@@ -95,7 +97,7 @@ def getVelo(x,y,DIRECTION_FACTOR):
 
     return velX,velY
 
-def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviation,DIRECTION_FACTOR):
+def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviation,DIRECTION_FACTOR,sensorName):
     i=0
     lowDepth = 0
     imageContainer = []
@@ -135,7 +137,7 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
 
     if (len(imageContainer) == 0):  
         print("No images")
-    elif(imageContainer[0].__contains__('0')):
+    elif(imageContainer[0].__contains__('0') and ( not sensorName.__contains__('Left'))):
         if (vehicle_name == '0'):
             print("Got a detection, picking left image: ", vehicle_name)
         velocity = client.getGpsData(vehicle_name = vehicle_name)
@@ -167,7 +169,7 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
             velY = 0
 
         
-    elif(imageContainer[0].__contains__('1')):
+    elif(imageContainer[0].__contains__('1') and ( not sensorName.__contains__('Front'))):
         if (vehicle_name == '0'):
             print("Got a detection, picking center image: ", vehicle_name)
         velocity = client.getGpsData(vehicle_name = vehicle_name)
@@ -198,7 +200,7 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
             velY = 0
 
     
-    elif(imageContainer[0].__contains__('2')):
+    elif(imageContainer[0].__contains__('2') and ( not sensorName.__contains__('Right'))):
         if (vehicle_name == '0'):
             print("Got a detection, picking right image: ", vehicle_name)
         velocity = client.getGpsData(vehicle_name = vehicle_name)
@@ -257,17 +259,19 @@ def collisionAvoidanceCheck(client, vehicle_name, threshhold,slightThresh):
     tempSlightDeviation = 50
 
     for distance in distanceXConeArray:
-        if(closestObjectDistance > distance):
-                closestObjectDistance = distance
+        if(closestObjectDistance > distance['distance']):
+                sensorName = distance['name']
+                closestObjectDistance = distance['distance']
 
     for distance in slightDeviation:
-        if(tempSlightDeviation > distance):
-                tempSlightDeviation = distance 
+        if(tempSlightDeviation > distance['distance']):
+                sensorName = distance['name']
+                tempSlightDeviation = distance['distance']
 
     if ((closestObjectDistance < threshhold) or (tempSlightDeviation < slightThresh)):
-        return True, closestObjectDistance , tempSlightDeviation
+        return True, closestObjectDistance , tempSlightDeviation , sensorName
     else:
-        return False, None , None
+        return False, None , None , None
 
 def setupCollisionDirectory(vehicle_name):
     # directory to store pictures
