@@ -226,17 +226,20 @@ def wolfDroneController(droneName, droneCount, overseerCount):
         # If we receive end command, end the loop
         if (End_Loop):
             debugPrint("Ending loop")
+            debugPrint("RunTime: " + str(time.time() - runtime))
             break;
         # Checks if made it through all waypoints
     
         if (WAYPOINT_INDEX == (len(WAYPOINT_COORDS) - 1)):
             debugPrint("WAYPOINT_COORDS end")
+            debugPrint("RunTime: " + str(time.time() - runtime))
             break;
             #print(droneName, "Made it to end of waypoint spiral search")
 
         timeDiff = time.time() - runtime
         if (timeDiff > MAX_TIME):
             debugPrint("max time")
+            debugPrint("RunTime: " + str(time.time() - runtime))
             endLineBehavior()
             break;
 
@@ -493,6 +496,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
 
         i+=1
     # debugPrint("Ending Search and Rescue loop: ")
+    debugPrint("RunTime: " + str(time.time() - runtime))
     debugPrint("Average Loop Time in seconds: " + str(timeSpent / i))
     # Wolf Drone search loop End
 
@@ -574,11 +578,15 @@ def wolfCameraDetection(droneName):
     while (i < LOOP_NUMBER):
         timeDiff = time.time() - runtime
         if (timeDiff > MAX_TIME):
+            debugPrint("RunTime in minutes: " + str((time.time() - runtime) / 60))
+            debugPrint(" CameraDetection: Average Loop Time: " + str(timeSpent / i))
             debugPrint(" Images taken: " + str(i))
             return
 
         # If we receive end command, end the loop
         if (End_Loop):
+            debugPrint("RunTime in minutes: " + str((time.time() - runtime) / 60))
+            debugPrint(" CameraDetection: Average Loop Time: " + str(timeSpent / i))
             debugPrint(" Images taken: " + str(i))
             debugPrint("Ending loop")
             return
@@ -655,11 +663,12 @@ def wolfCameraDetection(droneName):
         #         # THis is Hardcoded need to replace
         #         requestNearbyDronesConsensusDecision(circleCenterGPS, circleRadiusGPS, circleRadiusMeters, searchTimeS,  taskGroup)
 
-        # time.sleep(.5);
+        time.sleep(0.5);
         end = time.time();
         timeSpent += end-start;
         i+=1
 # startConsensusDecision( circleCenterGPS=targetP.gps_location, circleRadiusGPS=MIN_CIRCLE_RADIUS_GPS*2, circleRadiusMeters=MIN_CIRCLE_RADIUS_METERS*2, searchTimeS=100 );
+    debugPrint("RunTime : " + str(time.time() - runtime))
     debugPrint(" CameraDetection: Average Loop Time: " + str(timeSpent / i))
     return;
 

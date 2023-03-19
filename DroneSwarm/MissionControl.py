@@ -50,6 +50,14 @@ if __name__ == '__main__': # Only runs if this is main processes
 
     # apply infrared to overseers
     client = airsim.MultirotorClient(LOCAL_IP)
+    setBlack = client.simSetSegmentationObjectID("[\w]*", 0, True); # set all other objects to black
+    success = client.simSetSegmentationObjectID('.*?Brian_Dummy.*?', 255, True) # set Brian white
+    
+    client.simSetSegmentationObjectID('.*?FoxMasterAi.*?', 220, True);  # fox
+    client.simSetSegmentationObjectID('.*?StagMasterAi.*?', 230, True); # stag
+    client.simSetSegmentationObjectID('.*?DoeMasterAi.*?', 200, True);  # doe
+    client.simSetSegmentationObjectID('.*?BrianMasterAi.*?', 255, True);# brian
+    client.simSetSegmentationObjectID('.*?BP_MovedChar.*?', 255, True); # moving brian mesh
     # clusterHelper.applyInfrared(client)
 
     # # loading yolov5
