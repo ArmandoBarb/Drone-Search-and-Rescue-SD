@@ -32,8 +32,8 @@ def getDistanceXConeArray(client,vehicle_name):
                     {"name": "Up(2.5)",'distance':client.getDistanceSensorData(distance_sensor_name="Up(2.5)",vehicle_name=vehicle_name).distance},
                     {"name": "Front",'distance':client.getDistanceSensorData(distance_sensor_name="Front",vehicle_name=vehicle_name).distance},
                     {"name": "Left(-5)",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-5)",vehicle_name=vehicle_name).distance},
-                   {"name": "Right(5)",'distance':client.getDistanceSensorData(distance_sensor_name="Right(5)",vehicle_name=vehicle_name).distance},
-                   {"name": "Left(-4)",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-4)",vehicle_name=vehicle_name).distance},
+                    {"name": "Right(5)",'distance':client.getDistanceSensorData(distance_sensor_name="Right(5)",vehicle_name=vehicle_name).distance},
+                    {"name": "Left(-4)",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-4)",vehicle_name=vehicle_name).distance},
                     {"name": "Left(4)",'distance':client.getDistanceSensorData(distance_sensor_name="Right(4)",vehicle_name=vehicle_name).distance},]
     # for distance in distanceXConeArray:
     #     print(distance)
@@ -146,7 +146,7 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
             lowDepth = temp
             imageContainer.append(images)
     treeWidth = (242.7/100) + 2
-    halOfDrone = 1.75
+    treeWidth = treeWidth + 1.75
     treeWidth = treeWidth + halOfDrone
 
     velX,velY = getVelo(treeWidth, closestObjectDistance,DIRECTION_FACTOR)
@@ -292,7 +292,7 @@ def collisionAvoidanceCheck(client, vehicle_name, threshhold,slightThresh):
     # tweakDronePath(client, vehicle_name)
     # repulsion(client, vehicle_name, DIRECTION_FACTOR)
     distanceXConeArray = getDistanceXConeArray(client, vehicle_name)
-    slightDeviation = getSlightDeviation(client, vehicle_name)
+    extremeSensors = getSlightDeviation(client, vehicle_name)
     closestObjectDistance = 50
     tempSlightDeviation = 50
 
@@ -301,12 +301,15 @@ def collisionAvoidanceCheck(client, vehicle_name, threshhold,slightThresh):
                 sensorName = distance['name']
                 closestObjectDistance = distance['distance']
 
-    for distance in slightDeviation:
+    for distance in extremeSensors:
         if(tempSlightDeviation > distance['distance']):
                 sensorName = distance['name']
                 tempSlightDeviation = distance['distance']
 
-    if ((closestObjectDistance < threshhold) or (tempSlightDeviation < slightThresh)):
+    if(closestObjectDistance > tempSlightDeviation):
+        closestObjectDistance = tempSlightDeviation
+
+    if ((closestObjectDistance < threshhold)):
         return True, closestObjectDistance , tempSlightDeviation , sensorName
     else:
         return False, None , None , None
