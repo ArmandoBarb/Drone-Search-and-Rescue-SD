@@ -317,7 +317,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
             text = "Collision avoidance time: " + str(Collision_Mode_Time_Length)
             debugPrint(text)
 
-            yaw_mode = airsim.YawMode(is_rate=True, yaw_or_rate=(5));
+            yaw_mode = airsim.YawMode(is_rate=True, yaw_or_rate=(10));
             vector = collisionDetectionBehavior.collisionAlgo(client,imgDir,droneName,closestObjectDistance,slightDeviationDistance,droneSpeed,sensorName)
 
             # client.moveByVelocityZAsync(vector[0], vector[1], -4, duration = COLLISION_DIRECTION_FACTOR, yaw_mode=yaw_mode, vehicle_name=droneName)

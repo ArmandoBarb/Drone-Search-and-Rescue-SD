@@ -147,6 +147,7 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
             imageContainer.append(images)
     treeWidth = (242.7/100) + 2
     halOfDrone = 1.75
+    treeWidth = treeWidth + halOfDrone
 
     velX,velY = getVelo(treeWidth, closestObjectDistance,DIRECTION_FACTOR)
 
@@ -157,13 +158,13 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
             print("Got a detection, picking left image: ", vehicle_name)
         velocity = client.getGpsData(vehicle_name = vehicle_name)
 
-        if(closestObjectDistance > slightDeviation):
-            print("Slight Deviation")
-            theta = math.atan2(slightDeviation,halOfDrone)/math.pi*180
-        else:
-            print("Collision")
-            theta = math.atan2(closestObjectDistance,treeWidth)/math.pi*180
-            print(sensorName)
+        # if(closestObjectDistance > slightDeviation):
+        #     print("Slight Deviation")
+        #     theta = math.atan2(slightDeviation,halOfDrone)/math.pi*180
+        # else:
+        print("Collision")
+        theta = math.atan2(closestObjectDistance,treeWidth)/math.pi*180
+        print(sensorName)
         # math to find the x and y values to find the vectors
 
         # Adds five percent increase 
@@ -233,13 +234,13 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
         velocity = client.getGpsData(vehicle_name = vehicle_name)
 
         # math to find the x and y values to find the vectors
-        if(closestObjectDistance > slightDeviation):
-            print("Slight Deviation")
-            theta = math.atan2(slightDeviation,halOfDrone)/math.pi*180
-        else:
-            print("Collision")
-            theta = math.atan2(closestObjectDistance,treeWidth)/math.pi*180
-            print(sensorName)
+        # if(closestObjectDistance > slightDeviation):
+        #     print("Slight Deviation")
+        #     theta = math.atan2(slightDeviation,halOfDrone)/math.pi*180
+        # else:
+        print("Collision")
+        theta = math.atan2(closestObjectDistance,treeWidth)/math.pi*180
+        print(sensorName)
 
         # Adds five percent increase 
         if(closestObjectDistance < 5):
