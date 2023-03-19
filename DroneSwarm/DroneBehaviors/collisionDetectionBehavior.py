@@ -157,13 +157,13 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
             print("Got a detection, picking left image: ", vehicle_name)
         velocity = client.getGpsData(vehicle_name = vehicle_name)
 
-        # if(closestObjectDistance > slightDeviation):
-        #     print("Slight Deviation")
-        #     theta = math.atan2(slightDeviation,treeWidth)/math.pi*180
-        # else:
-        print("Collision")
-        theta = math.atan2(closestObjectDistance,treeWidth)/math.pi*180
-        print(sensorName)
+        if(closestObjectDistance > slightDeviation):
+            print("Slight Deviation")
+            theta = math.atan2(slightDeviation,halOfDrone)/math.pi*180
+        else:
+            print("Collision")
+            theta = math.atan2(closestObjectDistance,treeWidth)/math.pi*180
+            print(sensorName)
         # math to find the x and y values to find the vectors
 
         # Adds five percent increase 
@@ -200,13 +200,13 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
         velocity = client.getGpsData(vehicle_name = vehicle_name)
 
         # math to find the x and y values to find the vectors
-        # if(closestObjectDistance > slightDeviation):
-        #     print("Slight Deviation")
-        #     theta = math.atan2(slightDeviation,treeWidth)/math.pi*180
-        # else:
-        print("Collision")
-        theta = math.atan2(closestObjectDistance,treeWidth)/math.pi*180
-        print(sensorName)
+        if(closestObjectDistance > slightDeviation):
+            print("Slight Deviation")
+            theta = math.atan2(slightDeviation,halOfDrone)/math.pi*180
+        else:
+            print("Collision")
+            theta = math.atan2(closestObjectDistance,treeWidth)/math.pi*180
+            print(sensorName)
 
         # Adds five percent increase 
         if(closestObjectDistance < 5):
@@ -237,13 +237,13 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
         velocity = client.getGpsData(vehicle_name = vehicle_name)
 
         # math to find the x and y values to find the vectors
-        # if(closestObjectDistance > slightDeviation):
-        #     print("Slight Deviation")
-        #     theta = math.atan2(slightDeviation,treeWidth)/math.pi*180
-        # else:
-        print("Collision")
-        theta = math.atan2(closestObjectDistance,treeWidth)/math.pi*180
-        print(sensorName)
+        if(closestObjectDistance > slightDeviation):
+            print("Slight Deviation")
+            theta = math.atan2(slightDeviation,halOfDrone)/math.pi*180
+        else:
+            print("Collision")
+            theta = math.atan2(closestObjectDistance,treeWidth)/math.pi*180
+            print(sensorName)
 
         # Adds five percent increase 
         if(closestObjectDistance < 5):
@@ -295,7 +295,7 @@ def collisionAvoidanceCheck(client, vehicle_name, threshhold,slightThresh):
     # tweakDronePath(client, vehicle_name)
     # repulsion(client, vehicle_name, DIRECTION_FACTOR)
     distanceXConeArray = getDistanceXConeArray(client, vehicle_name)
-    # slightDeviation = getSlightDeviation(client, vehicle_name)
+    slightDeviation = getSlightDeviation(client, vehicle_name)
     closestObjectDistance = 50
     tempSlightDeviation = 50
 
@@ -304,12 +304,12 @@ def collisionAvoidanceCheck(client, vehicle_name, threshhold,slightThresh):
                 sensorName = distance['name']
                 closestObjectDistance = distance['distance']
 
-    # for distance in slightDeviation:
-    #     if(tempSlightDeviation > distance['distance']):
-    #             sensorName = distance['name']
-    #             tempSlightDeviation = distance['distance']
+    for distance in slightDeviation:
+        if(tempSlightDeviation > distance['distance']):
+                sensorName = distance['name']
+                tempSlightDeviation = distance['distance']
 
-    if ((closestObjectDistance < threshhold)):
+    if ((closestObjectDistance < threshhold) or (tempSlightDeviation < slightThresh)):
         return True, closestObjectDistance , tempSlightDeviation , sensorName
     else:
         return False, None , None , None
