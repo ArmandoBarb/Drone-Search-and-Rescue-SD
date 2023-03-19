@@ -304,7 +304,7 @@ def collisionAvoidanceCheck(client, vehicle_name, threshhold,slightThresh):
                 sensorName = distance['name']
                 tempSlightDeviation = distance['distance']
 
-    if(tempSlightDeviation > 8):
+    if(tempSlightDeviation > 7):
         if(closestObjectDistance > tempSlightDeviation):
             closestObjectDistance = tempSlightDeviation
     
