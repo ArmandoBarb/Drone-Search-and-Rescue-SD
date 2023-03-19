@@ -146,8 +146,6 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
             lowDepth = temp
             imageContainer.append(images)
     treeWidth = (242.7/100) + 2
-    treeWidth = treeWidth + 1.75
-    treeWidth = treeWidth + halOfDrone
 
     velX,velY = getVelo(treeWidth, closestObjectDistance,DIRECTION_FACTOR)
 
