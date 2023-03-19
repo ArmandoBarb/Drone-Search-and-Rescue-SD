@@ -24,6 +24,7 @@ from DroneBehaviors.spiralSearchCreator import createWaypoints
 import Constants.configDrones as configDrones
 import Constants.ros as ros
 from HelperFunctions import clusterHelper
+from ImageProcessing import data_collect_final as collect
 
 # Environmental Variables
 LOOP_NUMBER = configDrones.LOOP_NUMBER
@@ -49,12 +50,13 @@ if __name__ == '__main__': # Only runs if this is main processes
 
     # apply infrared to overseers
     client = airsim.MultirotorClient(LOCAL_IP)
-    clusterHelper.applyInfrared(client)
+    # clusterHelper.applyInfrared(client)
 
     # loading yolov5
     cwd = os.getcwd()
     yoloPT = os.path.join(str(cwd), 'best.pt')
     model = torch.hub.load('ultralytics/yolov5', 'custom', path=yoloPT, trust_repo=True)
+    collect.setupDirectories()
 
     # TODO: start all procecess for ros Nodes here
     # Start wolf proximity subscriber and wolf nodes

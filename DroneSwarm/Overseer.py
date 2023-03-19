@@ -138,7 +138,7 @@ def overseerDroneController(droneName, overseerCount, wolfCount):
         sendLinebehaviorRequest(wolfDroneService, droneName)
 
     # Overseer Drone search loop Start
-    i = 0
+    i = 1
     debugPrint("Starting Search and Rescue loop")
     timeSpent = 0
     runtime = time.time() # USED FOR TESTING
