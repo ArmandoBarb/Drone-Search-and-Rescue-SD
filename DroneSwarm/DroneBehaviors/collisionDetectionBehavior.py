@@ -110,7 +110,7 @@ def getVelo(x,y,DIRECTION_FACTOR):
 
     return velX,velY
 
-def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviation,DIRECTION_FACTOR,sensorName):
+def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviation,DIRECTION_FACTOR,slightFlag,sensorName):
     i=0
     lowDepth = 0
     imageContainer = []
@@ -145,8 +145,8 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
                 imageContainer.clear()
             lowDepth = temp
             imageContainer.append(images)
-    treeWidth = (242.7/100) + 2
-
+    treeWidth = (242.7/100) + 2.5
+    # halOfDrone = 2
     velX,velY = getVelo(treeWidth, closestObjectDistance,DIRECTION_FACTOR)
 
     if (len(imageContainer) == 0):  
@@ -156,20 +156,23 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
         #     print("Got a detection, picking left image: ", vehicle_name)
         velocity = client.getGpsData(vehicle_name = vehicle_name)
 
-        # if(closestObjectDistance > slightDeviation):
-        #     print("Slight Deviation")
-        #     theta = math.atan2(slightDeviation,halOfDrone)/math.pi*180
-        # else:
-        print("Collision")
-        theta = math.atan2(treeWidth,closestObjectDistance)/math.pi*180
-        print(imageContainer)
-        print(sensorName)
-        print(theta)
-        print(closestObjectDistance)
+        if(slightFlag):
+            print("Slight Deviation")
+            theta = math.atan2(treeWidth,slightDeviation)/math.pi*180
+        else:
+            print("Collision")
+            theta = math.atan2(treeWidth,closestObjectDistance)/math.pi*180
+
+        if(closestObjectDistance < 5 or slightDeviation < 5):
+            print(imageContainer)
+            print(sensorName)
+            print(theta)
+            print(slightDeviation)
+            print(closestObjectDistance)
         # math to find the x and y values to find the vectors
 
         # Adds five percent increase 
-        if(closestObjectDistance < 5):
+        if(closestObjectDistance < 5 or slightDeviation < 5):
             if (theta < 0):
                 theta = theta - 5
             else:
@@ -200,7 +203,6 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
         # if (vehicle_name == '0'):
         #     print("Got a detection, picking center image: ", vehicle_name)
         velocity = client.getGpsData(vehicle_name = vehicle_name)
-
         # math to find the x and y values to find the vectors
         # print("Collision")
         theta = math.atan2(treeWidth,closestObjectDistance)/math.pi*180
@@ -208,17 +210,18 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
         # print(imageContainer)
 
         # Adds five percent increase 
-        if(closestObjectDistance < 5):
+        if(closestObjectDistance < 5 ):
             if (theta < 0):
                 theta = theta - 5
             else:
                 theta = theta + 5
         
-        print(imageContainer)
-        print(sensorName)
-        print(theta)
-        print(closestObjectDistance)
-
+        if(closestObjectDistance < 5 or slightDeviation < 5):
+            print(imageContainer)
+            print(sensorName)
+            print(theta)
+            print(slightDeviation)
+            print(closestObjectDistance)
         cs = math.cos(theta)
         sn = math.sin(theta)
 
@@ -240,21 +243,25 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
         velocity = client.getGpsData(vehicle_name = vehicle_name)
 
         # math to find the x and y values to find the vectors
-        # if(closestObjectDistance > slightDeviation):
-        #     print("Slight Deviation")
-        #     theta = math.atan2(slightDeviation,halOfDrone)/math.pi*180
-        # else:
+        if(slightFlag):
+            print("Slight Deviation")
+            theta = math.atan2(treeWidth,slightDeviation)/math.pi*180
+        else:
         # print("Collision")
-        theta = math.atan2(treeWidth,closestObjectDistance)/math.pi*180
+            theta = math.atan2(treeWidth,closestObjectDistance)/math.pi*180
         # theta = theta * -1
         # print(sensorName)
         # print(imageContainer)
-        print(imageContainer)
-        print(sensorName)
-        print(theta)
-        print(closestObjectDistance)
+       
+        if(closestObjectDistance < 5 or slightDeviation < 5):
+            print(imageContainer)
+            print(sensorName)
+            print(theta)
+            print(slightDeviation)
+            print(closestObjectDistance)
+            
         # Adds five percent increase 
-        if(closestObjectDistance < 5):
+        if(closestObjectDistance < 5 or slightDeviation < 5):
             if (theta < 0):
                 theta = theta - 5
             else:
@@ -306,6 +313,7 @@ def collisionAvoidanceCheck(client, vehicle_name, threshhold,slightThresh):
     extremeSensors = getSlightDeviation(client, vehicle_name)
     closestObjectDistance = 50
     tempSlightDeviation = 50
+    slightFlag = False
 
     for distance in distanceXConeArray:
         if(closestObjectDistance > distance['distance']):
@@ -314,17 +322,14 @@ def collisionAvoidanceCheck(client, vehicle_name, threshhold,slightThresh):
 
     for distance in extremeSensors:
         if(tempSlightDeviation > distance['distance']):
+                slightFlag = True
                 sensorName = distance['name']
                 tempSlightDeviation = distance['distance']
-
-    if(tempSlightDeviation > 7):
-        if(closestObjectDistance > tempSlightDeviation):
-            closestObjectDistance = tempSlightDeviation
     
-    if ((closestObjectDistance < threshhold)):
-        return True, closestObjectDistance , tempSlightDeviation , sensorName
+    if ((closestObjectDistance < threshhold) or ((slightThresh > tempSlightDeviation) and (tempSlightDeviation > closestObjectDistance))):
+        return True, closestObjectDistance , tempSlightDeviation , slightFlag , sensorName
     else:
-        return False, None , None , None
+        return False, None , None , None ,None
 
 def setupCollisionDirectory(vehicle_name):
     # directory to store pictures

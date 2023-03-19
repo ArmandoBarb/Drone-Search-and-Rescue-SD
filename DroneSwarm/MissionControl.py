@@ -45,7 +45,7 @@ if __name__ == '__main__': # Only runs if this is main processes
     # overseerCount = mp.cpu_count() - 5
 
     overseerCount = 1
-    wolfCount = 1
+    wolfCount = 3
 
     # apply infrared to overseers
     client = airsim.MultirotorClient(LOCAL_IP)
