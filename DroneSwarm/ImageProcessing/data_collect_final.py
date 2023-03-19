@@ -57,9 +57,9 @@ def pixelClustering(height, width, segRGB, sceneRGB):
             if segRGB[i][j][0] <= 255 and \
                segRGB[i][j][1] <= 255 and \
                segRGB[i][j][2] <= 255 and \
-               segRGB[i][j][0] >= 200 and \
-               segRGB[i][j][1] >= 200 and \
-               segRGB[i][j][2] >= 200:
+               segRGB[i][j][0] >= 254 and \
+               segRGB[i][j][1] >= 254 and \
+               segRGB[i][j][2] >= 254:
                 pixCount = pixCount + 1
 
                 isMatch = False
@@ -276,8 +276,8 @@ def runDataCollect(client, vehicle_name):
     global droneName 
     droneName = str(vehicle_name)
     # set target color in segmentation
-    setBlack = client.simSetSegmentationObjectID("[\w]*", 0, True); # set all other objects to black
-    success = client.simSetSegmentationObjectID('.*?Brian_Dummy.*?', 255, True) # set Brian white
+    # setBlack = client.simSetSegmentationObjectID("[\w]*", 0, True); # set all other objects to black
+    # success = client.simSetSegmentationObjectID('.*?Brian_Dummy.*?', 255, True) # set Brian white
 
     # take images
     # ImageRequest(name, image_type, pixel_as_float, compress)
