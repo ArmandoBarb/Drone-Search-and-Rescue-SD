@@ -200,13 +200,9 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
         velocity = client.getGpsData(vehicle_name = vehicle_name)
 
         # math to find the x and y values to find the vectors
-        if(closestObjectDistance > slightDeviation):
-            print("Slight Deviation")
-            theta = math.atan2(slightDeviation,halOfDrone)/math.pi*180
-        else:
-            print("Collision")
-            theta = math.atan2(closestObjectDistance,treeWidth)/math.pi*180
-            print(sensorName)
+        print("Collision")
+        theta = math.atan2(closestObjectDistance,treeWidth)/math.pi*180
+        print(sensorName)
 
         # Adds five percent increase 
         if(closestObjectDistance < 5):
