@@ -152,8 +152,8 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
     if (len(imageContainer) == 0):  
         print("No images")
     elif(imageContainer[0].__contains__('0') and ( not sensorName.__contains__('Left'))):
-        if (vehicle_name == '0'):
-            print("Got a detection, picking left image: ", vehicle_name)
+        # if (vehicle_name == '0'):
+        #     print("Got a detection, picking left image: ", vehicle_name)
         velocity = client.getGpsData(vehicle_name = vehicle_name)
 
         # if(closestObjectDistance > slightDeviation):
@@ -161,8 +161,11 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
         #     theta = math.atan2(slightDeviation,halOfDrone)/math.pi*180
         # else:
         print("Collision")
-        theta = math.atan2(closestObjectDistance,treeWidth)/math.pi*180
+        theta = math.atan2(treeWidth,closestObjectDistance)/math.pi*180
+        print(imageContainer)
         print(sensorName)
+        print(theta)
+        print(closestObjectDistance)
         # math to find the x and y values to find the vectors
 
         # Adds five percent increase 
@@ -190,18 +193,19 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
         # elif(closestObjectDistance < 3):
         #     velY = 0
 
-        print("Degree turn: ", theta)
+        # print("Degree turn: ", theta)
 
         
     elif(imageContainer[0].__contains__('1') and ( not sensorName.__contains__('Front'))):
-        if (vehicle_name == '0'):
-            print("Got a detection, picking center image: ", vehicle_name)
+        # if (vehicle_name == '0'):
+        #     print("Got a detection, picking center image: ", vehicle_name)
         velocity = client.getGpsData(vehicle_name = vehicle_name)
 
         # math to find the x and y values to find the vectors
-        print("Collision")
-        theta = math.atan2(closestObjectDistance,treeWidth)/math.pi*180
-        print(sensorName)
+        # print("Collision")
+        theta = math.atan2(treeWidth,closestObjectDistance)/math.pi*180
+        # print(sensorName)
+        # print(imageContainer)
 
         # Adds five percent increase 
         if(closestObjectDistance < 5):
@@ -210,6 +214,10 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
             else:
                 theta = theta + 5
         
+        print(imageContainer)
+        print(sensorName)
+        print(theta)
+        print(closestObjectDistance)
 
         cs = math.cos(theta)
         sn = math.sin(theta)
@@ -223,12 +231,12 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
         velX = pxNormalized
         velY = pyNormalized
 
-        print("Degree turn: ", theta)
+        # print("Degree turn: ", theta)
 
     
     elif(imageContainer[0].__contains__('2') and ( not sensorName.__contains__('Right'))):
-        if (vehicle_name == '0'):
-            print("Got a detection, picking right image: ", vehicle_name)
+        # if (vehicle_name == '0'):
+        #     print("Got a detection, picking right image: ", vehicle_name)
         velocity = client.getGpsData(vehicle_name = vehicle_name)
 
         # math to find the x and y values to find the vectors
@@ -236,10 +244,15 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
         #     print("Slight Deviation")
         #     theta = math.atan2(slightDeviation,halOfDrone)/math.pi*180
         # else:
-        print("Collision")
-        theta = math.atan2(closestObjectDistance,treeWidth)/math.pi*180
+        # print("Collision")
+        theta = math.atan2(treeWidth,closestObjectDistance)/math.pi*180
+        # theta = theta * -1
+        # print(sensorName)
+        # print(imageContainer)
+        print(imageContainer)
         print(sensorName)
-
+        print(theta)
+        print(closestObjectDistance)
         # Adds five percent increase 
         if(closestObjectDistance < 5):
             if (theta < 0):
@@ -265,7 +278,7 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
         # elif(closestObjectDistance < 3):
         #     velY = 0
 
-        print("Degree turn: ", theta)
+        # print("Degree turn: ", theta)
 
     return [velY, velX]
 

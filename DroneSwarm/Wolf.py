@@ -62,6 +62,7 @@ MAX_CONSENSUS_ITERATION_NUMBER = configDrones.MAX_CONSENSUS_ITERATION_NUMBER
 CONSENSUS_THRESHOLD = configDrones.CONSENSUS_THRESHOLD
 YOLO_CONFIDENCE = configDrones.YOLO_CONFIDENCE
 MAX_COLLISION_TIME =configDrones.MAX_COLLISION_TIME
+MIN_COLLISION_TIME = configDrones.MIN_COLLISION_TIME
 # ros: topics
 SLAM_MERGE_TOPIC = ros.SLAM_MERGE_TOPIC # TODO
 WOLF_DATA_TOPIC = ros.WOLF_DATA_TOPIC
@@ -303,15 +304,17 @@ def wolfDroneController(droneName, droneCount, overseerCount):
             Previously_Had_Collision = True
             Collision_Mode_Time = time.time()
             
-            distanceForTimeCalc = 0
-            if (closestObjectDistance < slightDeviationDistance):
-                distanceForTimeCalc = closestObjectDistance
-            else:
-                distanceForTimeCalc = slightDeviationDistance
+            # distanceForTimeCalc = 0
+            # if (closestObjectDistance < slightDeviationDistance):
+            distanceForTimeCalc = closestObjectDistance
+            # else:
+            #     distanceForTimeCalc = slightDeviationDistance
 
             totalTime = distanceForTimeCalc / droneSpeed
             if (totalTime > MAX_COLLISION_TIME):
                 totalTime = MAX_COLLISION_TIME
+            elif (totalTime < MIN_COLLISION_TIME):
+                totalTime = MIN_COLLISION_TIME
 
             Collision_Mode_Time_Length = totalTime
             text = "Collision avoidance time: " + str(Collision_Mode_Time_Length)
