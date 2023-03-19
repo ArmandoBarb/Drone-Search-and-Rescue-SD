@@ -121,8 +121,8 @@ def overseerDroneController(droneName, overseerCount, wolfCount):
     client.moveToZAsync(z=-35, velocity=8, vehicle_name = droneName).join()
 
     # thread for infared waypoint detection
-    t1 = Thread(target = overseerInfraredDetection, args=({droneName}))
-    t1.start()
+    # t1 = Thread(target = overseerInfraredDetection, args=({droneName}))
+    # t1.start()
 
     # Call startup service on each wolf
     clusterSize = math.floor(wolfCount / overseerCount)

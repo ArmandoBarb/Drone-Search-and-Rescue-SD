@@ -51,7 +51,6 @@ MAX_TIME = configDrones.MAX_TIME
 LOCAL_IP = configDrones.LOCAL_IP
 MIN_CIRCLE_RADIUS_GPS = configDrones.MIN_CIRCLE_RADIUS_GPS 
 MIN_CIRCLE_RADIUS_METERS = configDrones.MIN_CIRCLE_RADIUS_METERS
-COLLISION_MODE_TIME_LENGTH = configDrones.COLLISION_MODE_TIME_LENGTH
 MAX_TURN_ANGLE = configDrones.MAX_TURN_ANGLE
 SPEED_CHANGE = configDrones.SPEED_CHANGE
 MIN_SPEED_FACTOR = configDrones.MIN_SPEED_FACTOR
@@ -62,6 +61,7 @@ CONSENSUS_DECISION_REQUEST_HELP_DISTANCE_MULTIPLE = configDrones.CONSENSUS_DECIS
 MAX_CONSENSUS_ITERATION_NUMBER = configDrones.MAX_CONSENSUS_ITERATION_NUMBER
 CONSENSUS_THRESHOLD = configDrones.CONSENSUS_THRESHOLD
 YOLO_CONFIDENCE = configDrones.YOLO_CONFIDENCE
+MAX_COLLISION_TIME =configDrones.MAX_COLLISION_TIME
 # ros: topics
 SLAM_MERGE_TOPIC = ros.SLAM_MERGE_TOPIC # TODO
 WOLF_DATA_TOPIC = ros.WOLF_DATA_TOPIC
@@ -113,9 +113,10 @@ Success_Det_Count = 0
 Fail_Det_Count = 0
 Avg_Consensus_Decion_GPS = GPS() # gps data type
 THRESHOLD = 16  # TODO: Needs to be scalable
-COLLISION_DIRECTION_FACTOR = 10
+COLLISION_DIRECTION_FACTOR = 5
 Speed_Factor = 1
 Previously_Had_Collision = False
+Collision_Mode_Time_Length = 1
 # TODO: add tunning variables for behaviors (would be cool if we can train them)
 
 # Main Process Start ----------------------------------------------
@@ -128,7 +129,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
     global Collision_Mode_Time
     global Speed_Factor
     global Previously_Had_Collision
-    global COLLISION_MODE_TIME_LENGTH
+    global Collision_Mode_Time_Length
 
     # loading yolov5
     # cwd = os.getcwd()
@@ -288,17 +289,17 @@ def wolfDroneController(droneName, droneCount, overseerCount):
         collisionAvoidance = False # set to true if need to do collision avoidance (open to better integration method)
         isChangeVelocity = True
         droneSpeed = getDroneSpeed(client, droneName)
-        threshold = droneSpeed * 2
-        slightDeviation = getDroneSpeed(client, droneName) * 1.5
+        threshold = droneSpeed * 1
+        slightDeviation = getDroneSpeed(client, droneName) * 0.75
 
-        # Check if threshold is under min
-        if (threshold < 5):
-            threshold = 5
+        # # Check if threshold is under min
+        # if (threshold < 5):
+        #     threshold = 5
             
         collisionAvoidance, closestObjectDistance,slightDeviationDistance, sensorName = collisionDetectionBehavior.collisionAvoidanceCheck(client, droneName, threshold,slightDeviation)
         timeDiff = time.time() - Collision_Mode_Time
         if(collisionAvoidance):
-            # debugPrint("Doing collision")
+            debugPrint("Doing collision")
             Previously_Had_Collision = True
             Collision_Mode_Time = time.time()
             
@@ -308,14 +309,14 @@ def wolfDroneController(droneName, droneCount, overseerCount):
             if (totalTime > MAX_COLLISION_TIME):
                 totalTime = MAX_COLLISION_TIME
 
-            debugPrint(text)
+            Collision_Mode_Time_Length = totalTime
 
 
-            vector = collisionDetectionBehavior.collisionAlgo(client,imgDir,droneName,closestObjectDistance,slightDeviationDistance,COLLISION_DIRECTION_FACTOR,sensorName)
+            vector = collisionDetectionBehavior.collisionAlgo(client,imgDir,droneName,closestObjectDistance,slightDeviationDistance,droneSpeed,sensorName)
 
             # client.moveByVelocityZAsync(vector[0], vector[1], -4, duration = COLLISION_DIRECTION_FACTOR, yaw_mode=yaw_mode, vehicle_name=droneName)
 
-        elif (timeDiff < COLLISION_MODE_TIME_LENGTH):
+        elif (timeDiff < Collision_Mode_Time_Length):
             # debugPrint("Still doing collision, under time")
             isChangeVelocity = False
 
@@ -452,8 +453,8 @@ def wolfDroneController(droneName, droneCount, overseerCount):
         loopTime = end-start 
         timeSpent += loopTime;
 
-        if (loopTime < 0.5):
-            time.sleep(0.5 - loopTime)
+        if (loopTime < 0.25):
+            time.sleep(0.25 - loopTime)
 
         i+=1
     # debugPrint("Ending Search and Rescue loop: ")
@@ -1170,9 +1171,9 @@ def wolfSearchBehaviorGetVector(wolfCommPublish, client, currentDroneData):
         radiusM = (radiusM - MIN_CIRCLE_RADIUS_METERS)*timeDiv + MIN_CIRCLE_RADIUS_METERS;
 
     # calcSpeedVector function variables
-    averageAlignmentSpeed = 10 * Speed_Factor
+    averageAlignmentSpeed = 5 * Speed_Factor
     bonusAlignmentSpeed = 0 * Speed_Factor
-    maxCohSepSpeed = 3 * Speed_Factor
+    maxCohSepSpeed = 2 * Speed_Factor
     maxSpeed = 13 * Speed_Factor
 
     # vectorR = lineBehavior.repulsion(client, int(DM_Drone_Name));

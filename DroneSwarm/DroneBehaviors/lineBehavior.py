@@ -8,7 +8,7 @@ import ServiceRequestors.overseerGetOverseerData as overseerGetOverseerData
 from ServiceRequestors.overseerGetWolfData import getWolfDataOfCluster
 
 AVOID_FACTOR = 0.01
-DIRECTION_FACTOR = 9
+DIRECTION_FACTOR = 5
 WOLF_SLOW_DOWN = 3
 OVERSEER_DIRECTION_SPEED_UP = 16
 OVERSEER_DIRECTION_SLOW_DOWN = 5
