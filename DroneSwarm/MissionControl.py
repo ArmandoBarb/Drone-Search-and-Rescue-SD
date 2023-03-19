@@ -45,8 +45,8 @@ if __name__ == '__main__': # Only runs if this is main processes
 
     # overseerCount = mp.cpu_count() - 5
 
-    overseerCount = 1
-    wolfCount = 1
+    overseerCount = 2
+    wolfCount = 8
 
     # apply infrared to overseers
     client = airsim.MultirotorClient(LOCAL_IP)
@@ -56,6 +56,7 @@ if __name__ == '__main__': # Only runs if this is main processes
     # cwd = os.getcwd()
     # yoloPT = os.path.join(str(cwd), 'best.pt')
     # model = torch.hub.load('ultralytics/yolov5', 'custom', path=yoloPT, trust_repo=True)
+    collect.setupDirectories()
 
     # TODO: start all procecess for ros Nodes here
     # Start wolf proximity subscriber and wolf nodes

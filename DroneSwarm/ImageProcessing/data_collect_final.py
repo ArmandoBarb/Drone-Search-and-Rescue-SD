@@ -9,6 +9,8 @@ import shutil
 import math
 import torch
 import warnings
+import Constants.configDrones as configDrones
+BATCH_NAME = configDrones.BATCH_NAME
 
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
 
@@ -82,7 +84,7 @@ def pixelClustering(height, width, segRGB, sceneRGB):
                                 isMatch = True
 
                             # otherwise threshold and sort the coordinate
-                            if dist([i, j], [coord[0], coord[1]]) < 70:
+                            if dist([i, j], [coord[0], coord[1]]) < 100:
                                 # print("in dist([i, j], [coord[0], coord[1]]) < 40")
                                 # print("After dist([i, j], [coord[0], coord[1]]) < 40")
                                 # print("Cluster size: ", len(cluster))
@@ -160,11 +162,10 @@ def drawBB(sceneRGB):
     return sceneRGB
 
 def saveData(sceneRGB2, heightArr, widthArr):
-    cwd = os.getcwd()
-    dataDir=os.path.join(str(cwd),'DataCollection')
+    dataDir='/home/testuser/AirSim/PythonClient/multirotor/Drone-Search-and-Rescue-SD-1/DroneSwarm/DataCollection'
 
-    imgDir = os.path.join(str(dataDir), 'images')
-    labelDir = os.path.join(str(dataDir), 'labels')
+    imgDir = dataDir + '/images'
+    labelDir = dataDir + '/labels'
 
     if ((len(heightArr) != 0) and (pixCount >= 200)):
         # calculate y centroids
@@ -193,7 +194,7 @@ def saveData(sceneRGB2, heightArr, widthArr):
         # print(os.path.exists(imgTrainDir+"\\" + str(j) + "imgScene.png"))
 
         j=0
-        while os.path.exists(os.path.join(str(imgDir), droneName + "wolf" +str(j) + "imgScene.png")):
+        while os.path.exists(os.path.join(str(imgDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.png")):
             j+=1
 
         # normalize bbox dimensions and centroids
@@ -201,20 +202,26 @@ def saveData(sceneRGB2, heightArr, widthArr):
         print ("0" + str(props))
 
         # write yolo gt to text file
-        with open(os.path.join(str(labelDir), droneName + "wolf" +str(j) + "imgScene.txt"), 'w') as f:
+        with open(os.path.join(str(labelDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.txt"), 'w') as f:
             f.write("0 " + str(props[0][0]) + " " + str(props[0][1]) + " " + str(props[0][2]) + " " + str(props[0][3]))
 
-        sceneSavePath2 = os.path.join(str(imgDir), droneName + "wolf" +str(j) + "imgScene.png")
+        sceneSavePath2 = os.path.join(str(imgDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.png")
         
         airsim.write_png(os.path.normpath(sceneSavePath2), sceneRGB2)
 
 def setupDirectories():
-    cwd = os.getcwd()
-    dataDir=os.path.join(str(cwd),'DataCollection')
+    # cwd = os.getcwd()
+    # dataDir=os.path.join(str(cwd),'DataCollection')
+    # isExist=os.path.exists(dataDir)
+
+    # imgDir = os.path.join(str(dataDir), 'images')
+    # labelDir = os.path.join(str(dataDir), 'labels')
+
+    dataDir='/home/testuser/AirSim/PythonClient/multirotor/Drone-Search-and-Rescue-SD-1/DroneSwarm/DataCollection'
     isExist=os.path.exists(dataDir)
 
-    imgDir = os.path.join(str(dataDir), 'images')
-    labelDir = os.path.join(str(dataDir), 'labels')
+    imgDir = dataDir + '/images'
+    labelDir = dataDir + '/labels'
 
     if not isExist:
         # make directory if not already there
@@ -270,7 +277,7 @@ def runDataCollect(client, vehicle_name):
     droneName = str(vehicle_name)
     # set target color in segmentation
     setBlack = client.simSetSegmentationObjectID("[\w]*", 0, True); # set all other objects to black
-    success = client.simSetSegmentationObjectID('.*?BrianMasterAi.*?', 255, True) # set Brian white
+    success = client.simSetSegmentationObjectID('.*?Brian_Dummy.*?', 255, True) # set Brian white
 
     # take images
     # ImageRequest(name, image_type, pixel_as_float, compress)

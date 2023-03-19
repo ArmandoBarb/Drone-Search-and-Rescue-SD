@@ -192,19 +192,19 @@ def wolfDroneController(droneName, droneCount, overseerCount):
 
     # Sets and connects to client and takes off drone
     client = takeOff(droneName)
-    client.moveToZAsync(z=-3, velocity=8, vehicle_name = droneName).join()
+    client.moveToZAsync(z=-3.5, velocity=8, vehicle_name = droneName).join()
     
     debugPrint("At wolf camera thread setup")
     # start camera thread here
-    # t3 = Thread(target = wolfCameraDetection, args=(droneName, model))
-    # t3.start()
+    t3 = Thread(target = wolfCameraDetection, args=(droneName))
+    t3.start()
 
     # Test Code startWolfSearch
     targetP = client.getMultirotorState(vehicle_name = "target")
     targetC = client.getMultirotorState(vehicle_name = "circle")
     # calc radius
-    radiusC = abs(targetP.gps_location.longitude - targetC.gps_location.longitude);
-    radiusM = calcHelper.calcDistanceInMetersBetweenGPS(targetP.gps_location, targetC.gps_location);
+    #radiusC = abs(targetP.gps_location.longitude - targetC.gps_location.longitude);
+    #radiusM = calcHelper.calcDistanceInMetersBetweenGPS(targetP.gps_location, targetC.gps_location);
 
     # test Wolf Search
     # startWolfSearch( circleCenterGPS=targetP.gps_location, circleRadiusGPS=radiusC*7, circleRadiusMeters=radiusM*7, spreadTimeS=40, searchTimeS=70 );
@@ -480,7 +480,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
         vector = helper.turningCalculation(curDroneVelocity, vector, MAX_TURN_ANGLE)
 
         if (isChangeVelocity):
-            client.moveByVelocityZAsync(vector[0], vector[1], -3, duration = 10, yaw_mode=yaw_mode, vehicle_name=droneName)
+            client.moveByVelocityZAsync(vector[0], vector[1], z=-3.5, duration = 10, yaw_mode=yaw_mode, vehicle_name=droneName)
         
         # Add in artifical loop delay (How fast the loop runs dictates the drones reaction speed)
         
@@ -564,7 +564,7 @@ def handleEnd(data):
         End_Loop = True
 
 # checks drone camera with yolo detection
-def wolfCameraDetection(droneName, model):
+def wolfCameraDetection(droneName):
     threadClient = airsim.MultirotorClient(LOCAL_IP)
     debugPrint("Starting wolfCameraDetection loop")
     i = 0
