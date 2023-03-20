@@ -77,9 +77,9 @@ def lineBehavior(client, curDroneIndex, waypoint_coords):
     wolfInfoArray = getWolfState()
 
     # If there currently is not droneData
-    if (wolfInfoArray[0].droneName == ""):
+    if (wolfInfoArray[curDroneIndex].droneName == ""):
         print("No drone data")
-        return [0, 0]
+        return [0, 0], False
 
     # Gets repulsion and direction vectors and adds them up
     velocityR = repulsion(client, curDroneIndex)

@@ -59,8 +59,8 @@ def runYolov5(client, responses, model, vehicleName, confidanceMin):
             end_point = (xmax, ymax)
             newImag = cv2.rectangle(sceneRGB2, start_point, end_point, (0, 255, 0), 2)
             # save new image only with highest confidence detection
-            cv2.imwrite(dataDir + "/" + ('%s' % j)+"origImg.jpg", sceneRGB1)
-            cv2.imwrite(dataDir + "/" + ('%s' % j)+"newImg.jpg", newImag)
+            cv2.imwrite(dataDir + "/" + ('%s' % j)+"origImg"+str(vehicleName)+".jpg", sceneRGB1)
+            cv2.imwrite(dataDir + "/" + ('%s' % j)+"newImg"+str(vehicleName)+".jpg", newImag)
 
             #print("------------------------------------------------------------------------------------------------------------------")
             # use bb dimensions/location for GPS estimation
@@ -71,7 +71,7 @@ def runYolov5(client, responses, model, vehicleName, confidanceMin):
             #print("------------------------------------------------------------------------------------------------------------------")
 
             # write corresponding text file
-            with open(dataDir + "/" + ('%s' % j)+"GPSEstimate.txt", 'w') as f:
+            with open(dataDir + "/" + ('%s' % j)+"GPSEstimate"+str(vehicleName)+".txt", 'w') as f:
                 f.write(str(resultsPandas))
                 f.write("\n\tMax Confidence: "+str(confidence))
                 f.write("\n\tMax Confidence Estimate:"+ str(lat) + " lat, " + str(lon) + " lon")
@@ -98,7 +98,7 @@ def runYolov5(client, responses, model, vehicleName, confidanceMin):
                 open_cv_image = open_cv_image[:, :, ::-1].copy()
 
                 # TODO: Draw rectangles using bounding box dimensions array
-                cv2.imwrite(dataDir + "/" + ('%s' % j)+"yoloDetect.jpg", open_cv_image)
+                cv2.imwrite(dataDir + "/" + ('%s' % j)+"yoloDetect"+str(vehicleName)+".jpg", open_cv_image)
                 cv2.waitKey(1)
 
 

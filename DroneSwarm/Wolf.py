@@ -110,7 +110,7 @@ Drone_Max_Wait_Time_Start = time.time()
 Test_REMOVE = False
 
 # Main Process Start ----------------------------------------------
-def wolfDroneController(droneName, droneCount, overseerCount, model):
+def wolfDroneController(droneName, droneCount, overseerCount):
     # set global vairable
     global DM_Drone_Name
     DM_Drone_Name = droneName
@@ -163,6 +163,12 @@ def wolfDroneController(droneName, droneCount, overseerCount, model):
     client = takeOff(droneName)
     client.moveToZAsync(z=-3, velocity=8, vehicle_name = droneName).join()
     
+    # loading yolov5
+    cwd = os.getcwd()
+    yoloPT = os.path.join(str(cwd), 'best.pt')
+    model = torch.hub.load('ultralytics/yolov5', 'custom', path=yoloPT, trust_repo=True)
+    model.cuda()
+
     debugPrint("At wolf camera thread setup")
     # start camera thread here
     t3 = Thread(target = wolfCameraDetection, args=(droneName, model))
@@ -498,12 +504,12 @@ def wolfCameraDetection(droneName, model):
         start=time.time() # gather time data
         # todo: mary add camera checkl nad yolo detector
         # TODO: remove
-        if (droneName != '0' and droneName != '1'):
-            time.sleep(1);
-            end = time.time();
-            timeSpent += end-start;
-            i+=1
-            continue;
+        # if (droneName != '0' and droneName != '1'):
+        #     time.sleep(1);
+        #     end = time.time();
+        #     timeSpent += end-start;
+        #     i+=1
+        #     continue;
 
         responses = getInfo.getScene(threadClient, droneName)
         wolfEstimate = yolov5.runYolov5(threadClient, responses, model, droneName, YOLO_CONFIDENCE)
@@ -514,32 +520,32 @@ def wolfCameraDetection(droneName, model):
             # debugPrint("\nGot a detection! : \n"+str(formattedWolfEstimateGPS))
             # print("\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n")
 
-            if(not Consensus_Decision_Behavior):
-                # detection with no consensus behavior
-                # assign consensus
-                debugPrint("\nGot a detection yolo! : \n"+str(formattedWolfEstimateGPS))
-                print("\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n")
+        #     if(not Consensus_Decision_Behavior):
+        #         # detection with no consensus behavior
+        #         # assign consensus
+        #         debugPrint("\nGot a detection yolo! : \n"+str(formattedWolfEstimateGPS))
+        #         print("\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n")
 
-                circleRadiusGPS = MIN_CIRCLE_RADIUS_GPS
-                circleRadiusMeters = MIN_CIRCLE_RADIUS_METERS
-                searchTimeS = 8
-                taskGroup = droneName + "Con"
-                startConsensusDecision( circleCenterGPS=formattedWolfEstimateGPS, circleRadiusGPS=circleRadiusGPS, circleRadiusMeters=circleRadiusMeters, searchTimeS=searchTimeS, taskGroup=taskGroup )
+        #         circleRadiusGPS = MIN_CIRCLE_RADIUS_GPS
+        #         circleRadiusMeters = MIN_CIRCLE_RADIUS_METERS
+        #         searchTimeS = 8
+        #         taskGroup = droneName + "Con"
+        #         startConsensusDecision( circleCenterGPS=formattedWolfEstimateGPS, circleRadiusGPS=circleRadiusGPS, circleRadiusMeters=circleRadiusMeters, searchTimeS=searchTimeS, taskGroup=taskGroup )
 
-            else:
-                # ToDo: use locl
-                global Success_Det_Count, Avg_Consensus_Decion_GPS
-                totalLon = Avg_Consensus_Decion_GPS.longitude * Success_Det_Count
-                totalLat = Avg_Consensus_Decion_GPS.latitude * Success_Det_Count
-                Success_Det_Count += 1
-                Avg_Consensus_Decion_GPS.longitude = (totalLon + formattedWolfEstimateGPS.longitude) / Success_Det_Count;
-                Avg_Consensus_Decion_GPS.latitude = (totalLat + formattedWolfEstimateGPS.latitude) / Success_Det_Count;
+        #     else:
+        #         # ToDo: use locl
+        #         global Success_Det_Count, Avg_Consensus_Decion_GPS
+        #         totalLon = Avg_Consensus_Decion_GPS.longitude * Success_Det_Count
+        #         totalLat = Avg_Consensus_Decion_GPS.latitude * Success_Det_Count
+        #         Success_Det_Count += 1
+        #         Avg_Consensus_Decion_GPS.longitude = (totalLon + formattedWolfEstimateGPS.longitude) / Success_Det_Count;
+        #         Avg_Consensus_Decion_GPS.latitude = (totalLat + formattedWolfEstimateGPS.latitude) / Success_Det_Count;
 
-        else:
-            if(Consensus_Decision_Behavior):
-                # no detection - currently consensus Behavior
-                global Fail_Det_Count
-                Fail_Det_Count += 1
+        # else:
+        #     if(Consensus_Decision_Behavior):
+        #         # no detection - currently consensus Behavior
+        #         global Fail_Det_Count
+        #         Fail_Det_Count += 1
 
 
         # mock detection
