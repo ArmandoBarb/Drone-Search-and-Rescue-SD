@@ -112,13 +112,28 @@ def pixelClustering(height, width, segRGB, sceneRGB):
                     if not isMatch:
                         clusters.append(pixel)
 
-def drawBB(sceneRGB):
+def drawBB(height, width, sceneRGB, sceneRGB2):
     global heightArr
     global widthArr
     global clusters
 
     hArr = []
     wArr = []
+
+    dataDir='/home/testuser/AirSim/PythonClient/multirotor/Drone-Search-and-Rescue-SD-1/DroneSwarm/DataCollection'
+
+    bbDir = dataDir + '/bb'
+    imgDir = dataDir + '/images'
+    labelDir = dataDir + '/labels'
+
+    j=0
+    while os.path.exists(os.path.join(str(labelDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.txt")):
+        j+=1
+
+    clusterLen = len(clusters)
+
+    if(clusterLen!=0):
+        f = open(os.path.join(str(labelDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.txt"), 'w')
 
     for cluster in clusters:
         for coord in cluster:
@@ -147,25 +162,27 @@ def drawBB(sceneRGB):
         hArr=heightArr
         wArr=widthArr
 
+        saveLabel(height, width, heightArr, widthArr, labelDir, j, f)
+
         # reset height and width arrays
         heightArr = []
         widthArr = []
         
         # print("Number of clusters: ", len(clusters))
-
         # empty cluster list
         clusters = []
 
-    saveData(sceneRGB, hArr, wArr)
+    if(clusterLen!=0):
+        f.close()
+
+    if(clusterLen!=0):
+        saveImgs(sceneRGB2, sceneRGB, bbDir, imgDir, j)
+
     pixCount = 0
 
     return sceneRGB
 
-def saveData(sceneRGB2, heightArr, widthArr):
-    dataDir='/home/testuser/AirSim/PythonClient/multirotor/Drone-Search-and-Rescue-SD-1/DroneSwarm/DataCollection'
-
-    imgDir = dataDir + '/images'
-    labelDir = dataDir + '/labels'
+def saveLabel(height, width, heightArr, widthArr, labelDir, j, f):
 
     if ((len(heightArr) != 0) and (pixCount >= 200)):
         # calculate y centroids
@@ -191,35 +208,31 @@ def saveData(sceneRGB2, heightArr, widthArr):
         start_point2 = (x0, y1) # top left corner
         end_point2 = (x1, y0)   # bottom right corner
 
-        # print(os.path.exists(imgTrainDir+"\\" + str(j) + "imgScene.png"))
-
-        j=0
-        while os.path.exists(os.path.join(str(imgDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.png")):
-            j+=1
-
         # normalize bbox dimensions and centroids
         props = preprocessing.normalize([np.array([xC, yC, bbw, bbh])])
+        normxC = xC/width  # divide by width
+        normyC = yC/height  # divide by height
+        normW = bbw/width # divide by width
+        normH = bbh/height # divide by height
         print ("0" + str(props))
 
-        # write yolo gt to text file
-        with open(os.path.join(str(labelDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.txt"), 'w') as f:
-            f.write("0 " + str(props[0][0]) + " " + str(props[0][1]) + " " + str(props[0][2]) + " " + str(props[0][3]))
 
-        sceneSavePath2 = os.path.join(str(imgDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.png")
+        # write yolo gt to text file
+        f.write("0 " + str(normxC) + " " + str(normyC) + " " + str(normW) + " " + str(normH)+"\n")
+
+
+def saveImgs(sceneRGB2, sceneRGB, bbDir, imgDir, j):
+        sceneSavePathOrig = os.path.join(str(imgDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.png")
+        sceneSavePathBB = os.path.join(str(bbDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.png")
         
-        airsim.write_png(os.path.normpath(sceneSavePath2), sceneRGB2)
+        airsim.write_png(os.path.normpath(sceneSavePathOrig), sceneRGB2)
+        airsim.write_png(os.path.normpath(sceneSavePathBB), sceneRGB)
 
 def setupDirectories():
-    # cwd = os.getcwd()
-    # dataDir=os.path.join(str(cwd),'DataCollection')
-    # isExist=os.path.exists(dataDir)
-
-    # imgDir = os.path.join(str(dataDir), 'images')
-    # labelDir = os.path.join(str(dataDir), 'labels')
-
     dataDir='/home/testuser/AirSim/PythonClient/multirotor/Drone-Search-and-Rescue-SD-1/DroneSwarm/DataCollection'
     isExist=os.path.exists(dataDir)
 
+    bbDir = dataDir + '/bb'
     imgDir = dataDir + '/images'
     labelDir = dataDir + '/labels'
 
@@ -227,6 +240,13 @@ def setupDirectories():
         # make directory if not already there
         os.makedirs(dataDir)
         print('Created: ' + dataDir)
+
+    # check that directory exists
+    isExist = os.path.exists(bbDir)
+    if not isExist:
+        # make directory if not already there
+        os.makedirs(bbDir)
+        print('Created: ' + bbDir)
 
     # check that directory exists
     isExist = os.path.exists(imgDir)
@@ -267,7 +287,7 @@ def processImageResponses(responses):
     pixelClustering(height, width, segRGB, sceneRGB)
 
     # drawing bounding box
-    sceneRGB = drawBB(sceneRGB)
+    sceneRGB = drawBB(height, width, sceneRGB, sceneRGB2)
 
     # time.sleep(1)
 
