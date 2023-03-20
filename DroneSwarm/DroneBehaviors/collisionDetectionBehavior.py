@@ -58,28 +58,6 @@ def getSlightDeviation(client,vehicle_name):
                     {"name": "Right_12",'distance':client.getDistanceSensorData(distance_sensor_name="Right(11)",vehicle_name=vehicle_name).distance},
                     {"name": "Left_13",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-13)",vehicle_name=vehicle_name).distance},
                     {"name": "Right_13",'distance':client.getDistanceSensorData(distance_sensor_name="Right(13)",vehicle_name=vehicle_name).distance},
-                    {"name": "Left_44",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-44)",vehicle_name=vehicle_name).distance},
-                    {"name": "Right_44",'distance':client.getDistanceSensorData(distance_sensor_name="Right(44)",vehicle_name=vehicle_name).distance},
-                    {"name": "Left_43",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-43)",vehicle_name=vehicle_name).distance},
-                    {"name": "Right_43",'distance':client.getDistanceSensorData(distance_sensor_name="Right(43)",vehicle_name=vehicle_name).distance},
-                    {"name": "Left_42",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-43)",vehicle_name=vehicle_name).distance},
-                    {"name": "Right_42",'distance':client.getDistanceSensorData(distance_sensor_name="Right(43)",vehicle_name=vehicle_name).distance},
-                    {"name": "Left_41",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-41)",vehicle_name=vehicle_name).distance},
-                    {"name": "Right_41",'distance':client.getDistanceSensorData(distance_sensor_name="Right(41)",vehicle_name=vehicle_name).distance},
-                    {"name": "Left_40",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-40)",vehicle_name=vehicle_name).distance},
-                    {"name": "Right_40",'distance':client.getDistanceSensorData(distance_sensor_name="Right(39)",vehicle_name=vehicle_name).distance},
-                    {"name": "Left_39",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-39)",vehicle_name=vehicle_name).distance},
-                    {"name": "Right_39",'distance':client.getDistanceSensorData(distance_sensor_name="Right(39)",vehicle_name=vehicle_name).distance},
-                    {"name": "Left_38",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-38)",vehicle_name=vehicle_name).distance},
-                    {"name": "Right_38",'distance':client.getDistanceSensorData(distance_sensor_name="Right(38)",vehicle_name=vehicle_name).distance},
-                    {"name": "Left_37",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-37)",vehicle_name=vehicle_name).distance},
-                    {"name": "Right_37",'distance':client.getDistanceSensorData(distance_sensor_name="Right(37)",vehicle_name=vehicle_name).distance},
-                    {"name": "Left_36",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-36)",vehicle_name=vehicle_name).distance},
-                    {"name": "Right_36",'distance':client.getDistanceSensorData(distance_sensor_name="Right(36)",vehicle_name=vehicle_name).distance},
-                    {"name": "Left_35",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-35)",vehicle_name=vehicle_name).distance},
-                    {"name": "Right_35",'distance':client.getDistanceSensorData(distance_sensor_name="Right(35)",vehicle_name=vehicle_name).distance},
-                    {"name": "Left_34",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-34)",vehicle_name=vehicle_name).distance},
-                    {"name": "Right_34",'distance':client.getDistanceSensorData(distance_sensor_name="Right(34)",vehicle_name=vehicle_name).distance},
                     {"name": "Left_33",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-33)",vehicle_name=vehicle_name).distance},
                     {"name": "Right_33",'distance':client.getDistanceSensorData(distance_sensor_name="Right(33)",vehicle_name=vehicle_name).distance},
                     {"name": "Left_32",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-32)",vehicle_name=vehicle_name).distance},
@@ -87,14 +65,37 @@ def getSlightDeviation(client,vehicle_name):
                     {"name": "Left_31",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-31)",vehicle_name=vehicle_name).distance},
                     {"name": "Right_31",'distance':client.getDistanceSensorData(distance_sensor_name="Right(31)",vehicle_name=vehicle_name).distance},
                     {"name": "Left_30",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-31)",vehicle_name=vehicle_name).distance},
-                    {"name": "Right_30",'distance':client.getDistanceSensorData(distance_sensor_name="Right(31)",vehicle_name=vehicle_name).distance},]
+                    {"name": "Right_30",'distance':client.getDistanceSensorData(distance_sensor_name="Right(31)",vehicle_name=vehicle_name).distance},
+                    {"name": "Side(75)",'distance':client.getDistanceSensorData(distance_sensor_name="RightSide(75)",vehicle_name=vehicle_name).distance},
+                    {"name": "Side(-75)",'distance':client.getDistanceSensorData(distance_sensor_name="LeftSide(-75)",vehicle_name=vehicle_name).distance},
+                    {"name": "Side(76)",'distance':client.getDistanceSensorData(distance_sensor_name="RightSide(76)",vehicle_name=vehicle_name).distance},
+                    {"name": "Side(-76)",'distance':client.getDistanceSensorData(distance_sensor_name="LeftSide(-76)",vehicle_name=vehicle_name).distance},
+                    {"name": "Side(77)",'distance':client.getDistanceSensorData(distance_sensor_name="RightSide(77)",vehicle_name=vehicle_name).distance},
+                    {"name": "Side(-77)",'distance':client.getDistanceSensorData(distance_sensor_name="LeftSide(-77)",vehicle_name=vehicle_name).distance},
+                    {"name": "Side(78)",'distance':client.getDistanceSensorData(distance_sensor_name="RightSide(78)",vehicle_name=vehicle_name).distance},
+                    {"name": "Side(-78)",'distance':client.getDistanceSensorData(distance_sensor_name="LeftSide(-78)",vehicle_name=vehicle_name).distance},
+                    {"name": "Side(79)",'distance':client.getDistanceSensorData(distance_sensor_name="RightSide(79)",vehicle_name=vehicle_name).distance},
+                    {"name": "Side(-79)",'distance':client.getDistanceSensorData(distance_sensor_name="LeftSide(-79)",vehicle_name=vehicle_name).distance},
+                    {"name": "Side(80)",'distance':client.getDistanceSensorData(distance_sensor_name="RightSide(80)",vehicle_name=vehicle_name).distance},
+                    {"name": "Side(-80)",'distance':client.getDistanceSensorData(distance_sensor_name="LeftSide(-80)",vehicle_name=vehicle_name).distance},]
 
     return deviationArray
 
 def getSideSensors(client,vehicle_name):
 
-    sideSensors = [client.getDistanceSensorData(distance_sensor_name="Left_Side",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Right_Side",vehicle_name=vehicle_name).distance]
+    sideSensors = [ {"name": "Side(75)",'distance':client.getDistanceSensorData(distance_sensor_name="Side(75)",vehicle_name=vehicle_name).distance},
+                    {"name": "Side(-75)",'distance':client.getDistanceSensorData(distance_sensor_name="Side(-75)",vehicle_name=vehicle_name).distance},
+                    {"name": "Side(76)",'distance':client.getDistanceSensorData(distance_sensor_name="Side(76)",vehicle_name=vehicle_name).distance},
+                    {"name": "Side(-76)",'distance':client.getDistanceSensorData(distance_sensor_name="Side(-76)",vehicle_name=vehicle_name).distance},
+                    {"name": "Side(77)",'distance':client.getDistanceSensorData(distance_sensor_name="Side(77)",vehicle_name=vehicle_name).distance},
+                    {"name": "Side(-77)",'distance':client.getDistanceSensorData(distance_sensor_name="Side(-77)",vehicle_name=vehicle_name).distance},
+                    {"name": "Side(78)",'distance':client.getDistanceSensorData(distance_sensor_name="Side(78)",vehicle_name=vehicle_name).distance},
+                    {"name": "Side(-78)",'distance':client.getDistanceSensorData(distance_sensor_name="Side(-78)",vehicle_name=vehicle_name).distance},
+                    {"name": "Side(79)",'distance':client.getDistanceSensorData(distance_sensor_name="Side(79)",vehicle_name=vehicle_name).distance},
+                    {"name": "Side(-79)",'distance':client.getDistanceSensorData(distance_sensor_name="Side(-79)",vehicle_name=vehicle_name).distance},
+                    {"name": "Side(80)",'distance':client.getDistanceSensorData(distance_sensor_name="Side(80)",vehicle_name=vehicle_name).distance},
+                    {"name": "Side(-80)",'distance':client.getDistanceSensorData(distance_sensor_name="Side(-80)",vehicle_name=vehicle_name).distance},
+                    ]
 
     # print(sideSensors)
 
@@ -142,16 +143,17 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
         temp = np.average(img)
         if(temp > lowDepth):
             if(len(imageContainer) >= 1):
+                secondContainer = imageContainer
                 imageContainer.clear()
             lowDepth = temp
             imageContainer.append(images)
     treeWidth = (242.7/100) + 2.5
     # halOfDrone = 2
-    velX,velY = getVelo(treeWidth, closestObjectDistance,DIRECTION_FACTOR)
+    # velX,velY = getVelo(treeWidth, closestObjectDistance,DIRECTION_FACTOR)
 
     if (len(imageContainer) == 0):  
         print("No images")
-    elif(imageContainer[0].__contains__('0') and ( not sensorName.__contains__('Left'))):
+    elif(imageContainer[0].__contains__('0') and ( not ("Left" in sensorName))):
         # if (vehicle_name == '0'):
         #     print("Got a detection, picking left image: ", vehicle_name)
         velocity = client.getGpsData(vehicle_name = vehicle_name)
@@ -159,25 +161,24 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
         if(slightFlag):
             print("Slight Deviation")
             theta = math.atan2(treeWidth,slightDeviation)/math.pi*180
+            if(slightDeviation < 6):
+                if (theta < 0):
+                    theta = theta - 5
+                else:
+                    theta = theta + 5
+
         else:
             print("Collision")
             theta = math.atan2(treeWidth,closestObjectDistance)/math.pi*180
+            if(closestObjectDistance < 6):
+                if (theta < 0):
+                    theta = theta - 5
+                else:
+                    theta = theta + 5   
 
-        if(closestObjectDistance < 5 or slightDeviation < 5):
-            print(imageContainer)
-            print(sensorName)
-            print(theta)
-            print(slightDeviation)
-            print(closestObjectDistance)
         # math to find the x and y values to find the vectors
 
         # Adds five percent increase 
-        if(closestObjectDistance < 5 or slightDeviation < 5):
-            if (theta < 0):
-                theta = theta - 5
-            else:
-                theta = theta + 5
-        
         theta = theta * -1
         cs = math.cos(theta)
         sn = math.sin(theta)
@@ -197,31 +198,30 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
         #     velY = 0
 
         # print("Degree turn: ", theta)
-
         
-    elif(imageContainer[0].__contains__('1') and ( not sensorName.__contains__('Front'))):
+    elif(imageContainer[0].__contains__('1') and ( not ("Front" in sensorName))):
         # if (vehicle_name == '0'):
         #     print("Got a detection, picking center image: ", vehicle_name)
         velocity = client.getGpsData(vehicle_name = vehicle_name)
         # math to find the x and y values to find the vectors
         # print("Collision")
-        theta = math.atan2(treeWidth,closestObjectDistance)/math.pi*180
-        # print(sensorName)
-        # print(imageContainer)
-
-        # Adds five percent increase 
-        if(closestObjectDistance < 5 ):
-            if (theta < 0):
-                theta = theta - 5
-            else:
-                theta = theta + 5
-        
-        if(closestObjectDistance < 5 or slightDeviation < 5):
-            print(imageContainer)
-            print(sensorName)
-            print(theta)
-            print(slightDeviation)
-            print(closestObjectDistance)
+        if(slightFlag):
+            print("Slight Deviation")
+            theta = math.atan2(treeWidth,slightDeviation)/math.pi*180
+            if(slightDeviation < 6):
+                if (theta < 0):
+                    theta = theta - 5
+                else:
+                    theta = theta + 5
+        else:
+            print("Collision")
+            theta = math.atan2(treeWidth,closestObjectDistance)/math.pi*180
+            if(closestObjectDistance < 6):
+                if (theta < 0):
+                    theta = theta - 5
+                else:
+                    theta = theta + 5  
+    
         cs = math.cos(theta)
         sn = math.sin(theta)
 
@@ -236,8 +236,7 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
 
         # print("Degree turn: ", theta)
 
-    
-    elif(imageContainer[0].__contains__('2') and ( not sensorName.__contains__('Right'))):
+    elif(imageContainer[0].__contains__('2') and ( not ("Right" in sensorName))):
         # if (vehicle_name == '0'):
         #     print("Got a detection, picking right image: ", vehicle_name)
         velocity = client.getGpsData(vehicle_name = vehicle_name)
@@ -246,26 +245,19 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
         if(slightFlag):
             print("Slight Deviation")
             theta = math.atan2(treeWidth,slightDeviation)/math.pi*180
+            if(slightDeviation < 6):
+                if (theta < 0):
+                    theta = theta - 5
+                else:
+                    theta = theta + 5
         else:
-        # print("Collision")
+            print("Collision")
             theta = math.atan2(treeWidth,closestObjectDistance)/math.pi*180
-        # theta = theta * -1
-        # print(sensorName)
-        # print(imageContainer)
-       
-        if(closestObjectDistance < 5 or slightDeviation < 5):
-            print(imageContainer)
-            print(sensorName)
-            print(theta)
-            print(slightDeviation)
-            print(closestObjectDistance)
-            
-        # Adds five percent increase 
-        if(closestObjectDistance < 5 or slightDeviation < 5):
-            if (theta < 0):
-                theta = theta - 5
-            else:
-                theta = theta + 5
+            if(closestObjectDistance < 6):
+                if (theta < 0):
+                    theta = theta - 5
+                else:
+                    theta = theta + 5  
 
         theta = theta
         cs = math.cos(theta)
@@ -286,6 +278,81 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
         #     velY = 0
 
         # print("Degree turn: ", theta)
+
+    elif(( ("Left" in sensorName))):
+       # if (vehicle_name == '0'):
+        #     print("Got a detection, picking right image: ", vehicle_name)
+        velocity = client.getGpsData(vehicle_name = vehicle_name)
+
+        # math to find the x and y values to find the vectors
+        if(slightFlag):
+            print("Slight Deviation")
+            theta = math.atan2(treeWidth,slightDeviation)/math.pi*180
+            if(slightDeviation < 6.5):
+                if (theta < 0):
+                    theta = theta - 5
+                else:
+                    theta = theta + 5
+        else:
+            print("Collision")
+            theta = math.atan2(treeWidth,closestObjectDistance)/math.pi*180
+            if(closestObjectDistance < 6.5):
+                if (theta < 0):
+                    theta = theta - 5
+                else:
+                    theta = theta + 5  
+
+        theta = theta
+        cs = math.cos(theta)
+        sn = math.sin(theta)
+
+        px = velocity.gnss.velocity.x_val * cs - velocity.gnss.velocity.y_val * sn
+        py = velocity.gnss.velocity.x_val * sn + velocity.gnss.velocity.y_val * cs
+
+        pxNormalized = (px / math.sqrt(px**2 + py**2))*DIRECTION_FACTOR
+        pyNormalized = (py / math.sqrt(px**2 + py**2))*DIRECTION_FACTOR 
+
+        velX = pxNormalized
+        velY = pyNormalized
+
+    elif(( ("Right" in sensorName))):
+        # if (vehicle_name == '0'):
+        #     print("Got a detection, picking left image: ", vehicle_name)
+        velocity = client.getGpsData(vehicle_name = vehicle_name)
+
+        if(slightFlag):
+            print("Slight Deviation")
+            theta = math.atan2(treeWidth,slightDeviation)/math.pi*180
+            if(slightDeviation < 6.5):
+                if (theta < 0):
+                    theta = theta - 5
+                else:
+                    theta = theta + 5
+        else:
+            print("Collision")
+            theta = math.atan2(treeWidth,closestObjectDistance)/math.pi*180
+            if(closestObjectDistance < 6.5):
+                if (theta < 0):
+                    theta = theta - 5
+                else:
+                    theta = theta + 5  
+        
+        theta = theta * -1
+        cs = math.cos(theta)
+        sn = math.sin(theta)
+
+        px = velocity.gnss.velocity.x_val * cs - velocity.gnss.velocity.y_val * sn
+        py = velocity.gnss.velocity.x_val * sn + velocity.gnss.velocity.y_val * cs
+
+        pxNormalized = (px / math.sqrt(px**2 + py**2))*DIRECTION_FACTOR
+        pyNormalized = (py / math.sqrt(px**2 + py**2))*DIRECTION_FACTOR 
+
+        velX = pxNormalized
+        velY = pyNormalized
+        # Turn left
+
+    else:
+        print("we got nothing" , velX,velY)
 
     return [velY, velX]
 
@@ -310,11 +377,15 @@ def collisionAvoidanceCheck(client, vehicle_name, threshhold,slightThresh):
     # tweakDronePath(client, vehicle_name)
     # repulsion(client, vehicle_name, DIRECTION_FACTOR)
     distanceXConeArray = getDistanceXConeArray(client, vehicle_name)
+
     extremeSensors = getSlightDeviation(client, vehicle_name)
+
     closestObjectDistance = 50
     tempSlightDeviation = 50
+    tempSide = 50
     slightFlag = False
-
+    sideFlag = False
+        
     for distance in distanceXConeArray:
         if(closestObjectDistance > distance['distance']):
                 sensorName = distance['name']
@@ -322,12 +393,15 @@ def collisionAvoidanceCheck(client, vehicle_name, threshhold,slightThresh):
 
     for distance in extremeSensors:
         if(tempSlightDeviation > distance['distance']):
-                slightFlag = True
                 sensorName = distance['name']
                 tempSlightDeviation = distance['distance']
+
+    # print("Slight :", tempSlightDeviation , "Closest Object:", closestObjectDistance)
     
-    if ((closestObjectDistance < threshhold) or ((slightThresh > tempSlightDeviation) and (tempSlightDeviation > closestObjectDistance))):
-        return True, closestObjectDistance , tempSlightDeviation , slightFlag , sensorName
+    if (closestObjectDistance < threshhold):
+        return True, closestObjectDistance,None,False,sensorName 
+    elif((slightThresh > tempSlightDeviation)):
+        return True,None,tempSlightDeviation,True, sensorName
     else:
         return False, None , None , None ,None
 

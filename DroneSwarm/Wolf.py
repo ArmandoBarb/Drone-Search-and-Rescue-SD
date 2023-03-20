@@ -131,6 +131,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
     global Speed_Factor
     global Previously_Had_Collision
     global Collision_Mode_Time_Length
+    depthImageCount = 0
 
     # loading yolov5
     # cwd = os.getcwd()
@@ -290,8 +291,8 @@ def wolfDroneController(droneName, droneCount, overseerCount):
         collisionAvoidance = False # set to true if need to do collision avoidance (open to better integration method)
         isChangeVelocity = True
         droneSpeed = getDroneSpeed(client, droneName)
-        threshold = droneSpeed * 2
-        slightDeviation = getDroneSpeed(client, droneName) * 1.25
+        threshold = droneSpeed * 2.5
+        slightDeviation = getDroneSpeed(client, droneName)
 
         # # Check if threshold is under min
         # if (threshold < 5):
@@ -306,7 +307,10 @@ def wolfDroneController(droneName, droneCount, overseerCount):
             
             # distanceForTimeCalc = 0
             # if (closestObjectDistance < slightDeviationDistance):
-            distanceForTimeCalc = closestObjectDistance
+            if(slightFlag):
+                distanceForTimeCalc = slightDeviationDistance
+            else:
+                distanceForTimeCalc = closestObjectDistance
             # else:
             #     distanceForTimeCalc = slightDeviationDistance
 
@@ -317,11 +321,14 @@ def wolfDroneController(droneName, droneCount, overseerCount):
                 totalTime = MIN_COLLISION_TIME
 
             Collision_Mode_Time_Length = totalTime
-            text = "Collision avoidance time: " + str(Collision_Mode_Time_Length)
-            debugPrint(text)
 
             yaw_mode = airsim.YawMode(is_rate=True, yaw_or_rate=(10));
+            colTime = time.time()
             vector = collisionDetectionBehavior.collisionAlgo(client,imgDir,droneName,closestObjectDistance,slightDeviationDistance,droneSpeed,slightFlag,sensorName)
+            endTime = time.time() - colTime
+            depthImageCount += 1
+            text = "Collision avoidance time: " + str(Collision_Mode_Time_Length) + " Depth image count: " + str(depthImageCount) + "Collision algo time: " + str(endTime)
+            debugPrint(text)
 
             # client.moveByVelocityZAsync(vector[0], vector[1], -4, duration = COLLISION_DIRECTION_FACTOR, yaw_mode=yaw_mode, vehicle_name=droneName)
 
@@ -336,7 +343,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
             vector = consensusDecisionBehaviorGetVector(currentDroneData);
 
             yawDegrees = circleBehavior.calcYaw(currentGPS=currentDroneData.gps_location, targetGPS=Circle_Center_GPS);
-            yawDegrees = yawDegrees + 90
+            yawDegrees = yawDegrees - 90
             yaw_mode  = airsim.YawMode(is_rate=False, yaw_or_rate=(yawDegrees));
 
             # check if time to end consensus Desension
@@ -400,7 +407,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
             vector = wolfSearchBehaviorGetVector(wolfCommPublish, client, currentDroneData);
             
             yawDegrees = circleBehavior.calcYaw(currentGPS=currentDroneData.gps_location, targetGPS=Circle_Center_GPS);
-            yawDegrees = yawDegrees + 90
+            yawDegrees = yawDegrees - 90
             yaw_mode  = airsim.YawMode(is_rate=False, yaw_or_rate=(yawDegrees));
 
             if (In_Position_WS):
