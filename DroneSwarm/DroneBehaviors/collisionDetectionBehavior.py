@@ -34,7 +34,11 @@ def getDistanceXConeArray(client,vehicle_name):
                     {"name": "Left(-5)",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-5)",vehicle_name=vehicle_name).distance},
                     {"name": "Right(5)",'distance':client.getDistanceSensorData(distance_sensor_name="Right(5)",vehicle_name=vehicle_name).distance},
                     {"name": "Left(-4)",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-4)",vehicle_name=vehicle_name).distance},
-                    {"name": "Left(4)",'distance':client.getDistanceSensorData(distance_sensor_name="Right(4)",vehicle_name=vehicle_name).distance},]
+                    {"name": "Left(4)",'distance':client.getDistanceSensorData(distance_sensor_name="Right(4)",vehicle_name=vehicle_name).distance},
+                    {"name": "Left_7",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-7)",vehicle_name=vehicle_name).distance},
+                    {"name": "Right_7",'distance':client.getDistanceSensorData(distance_sensor_name="Right(7)",vehicle_name=vehicle_name).distance},
+                    {"name": "Left_6",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-6)",vehicle_name=vehicle_name).distance},
+                    {"name": "Right_6",'distance':client.getDistanceSensorData(distance_sensor_name="Right(6)",vehicle_name=vehicle_name).distance},]
     # for distance in distanceXConeArray:
     #     print(distance)
 
@@ -42,11 +46,7 @@ def getDistanceXConeArray(client,vehicle_name):
 
 def getSlightDeviation(client,vehicle_name):
 
-    deviationArray = [{"name": "Left_7",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-7)",vehicle_name=vehicle_name).distance},
-                    {"name": "Right_7",'distance':client.getDistanceSensorData(distance_sensor_name="Right(7)",vehicle_name=vehicle_name).distance},
-                    {"name": "Left_6",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-6)",vehicle_name=vehicle_name).distance},
-                    {"name": "Right_6",'distance':client.getDistanceSensorData(distance_sensor_name="Right(6)",vehicle_name=vehicle_name).distance},
-                    {"name": "Left_8",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-8)",vehicle_name=vehicle_name).distance},
+    deviationArray = [{"name": "Left_8",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-8)",vehicle_name=vehicle_name).distance},
                     {"name": "Right_8",'distance':client.getDistanceSensorData(distance_sensor_name="Right(8)",vehicle_name=vehicle_name).distance},
                     {"name": "Left_9",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-9)",vehicle_name=vehicle_name).distance},
                     {"name": "Right_9",'distance':client.getDistanceSensorData(distance_sensor_name="Right(9)",vehicle_name=vehicle_name).distance},
@@ -161,16 +161,15 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
         if(slightFlag):
             print("Slight Deviation")
             theta = math.atan2(treeWidth,slightDeviation)/math.pi*180
-            if(slightDeviation < 6):
+            if(slightDeviation < 4.5):
                 if (theta < 0):
-                    theta = theta - 5
+                    theta = theta - 2
                 else:
-                    theta = theta + 5
-
+                    theta = theta + 2
         else:
             print("Collision")
             theta = math.atan2(treeWidth,closestObjectDistance)/math.pi*180
-            if(closestObjectDistance < 6):
+            if(closestObjectDistance < 7):
                 if (theta < 0):
                     theta = theta - 5
                 else:
@@ -208,15 +207,15 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
         if(slightFlag):
             print("Slight Deviation")
             theta = math.atan2(treeWidth,slightDeviation)/math.pi*180
-            if(slightDeviation < 6):
+            if(slightDeviation < 4.5):
                 if (theta < 0):
-                    theta = theta - 5
+                    theta = theta - 2
                 else:
-                    theta = theta + 5
+                    theta = theta + 2
         else:
             print("Collision")
             theta = math.atan2(treeWidth,closestObjectDistance)/math.pi*180
-            if(closestObjectDistance < 6):
+            if(closestObjectDistance < 7):
                 if (theta < 0):
                     theta = theta - 5
                 else:
@@ -245,15 +244,15 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
         if(slightFlag):
             print("Slight Deviation")
             theta = math.atan2(treeWidth,slightDeviation)/math.pi*180
-            if(slightDeviation < 6):
+            if(slightDeviation < 4.5):
                 if (theta < 0):
-                    theta = theta - 5
+                    theta = theta - 2
                 else:
-                    theta = theta + 5
+                    theta = theta + 2
         else:
             print("Collision")
             theta = math.atan2(treeWidth,closestObjectDistance)/math.pi*180
-            if(closestObjectDistance < 6):
+            if(closestObjectDistance < 7):
                 if (theta < 0):
                     theta = theta - 5
                 else:
@@ -288,15 +287,15 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
         if(slightFlag):
             print("Slight Deviation")
             theta = math.atan2(treeWidth,slightDeviation)/math.pi*180
-            if(slightDeviation < 6.5):
+            if(slightDeviation < 4.5):
                 if (theta < 0):
-                    theta = theta - 5
+                    theta = theta - 2
                 else:
-                    theta = theta + 5
+                    theta = theta + 2
         else:
             print("Collision")
             theta = math.atan2(treeWidth,closestObjectDistance)/math.pi*180
-            if(closestObjectDistance < 6.5):
+            if(closestObjectDistance < 7):
                 if (theta < 0):
                     theta = theta - 5
                 else:
@@ -323,15 +322,15 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
         if(slightFlag):
             print("Slight Deviation")
             theta = math.atan2(treeWidth,slightDeviation)/math.pi*180
-            if(slightDeviation < 6.5):
+            if(slightDeviation < 4.5):
                 if (theta < 0):
-                    theta = theta - 5
+                    theta = theta - 2
                 else:
-                    theta = theta + 5
+                    theta = theta + 2
         else:
             print("Collision")
             theta = math.atan2(treeWidth,closestObjectDistance)/math.pi*180
-            if(closestObjectDistance < 6.5):
+            if(closestObjectDistance < 7):
                 if (theta < 0):
                     theta = theta - 5
                 else:
@@ -351,8 +350,42 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
         velY = pyNormalized
         # Turn left
 
-    else:
-        print("we got nothing" , velX,velY)
+    
+    elif(( ("Front" in sensorName))):
+        # if (vehicle_name == '0'):
+        #     print("Got a detection, picking left image: ", vehicle_name)
+        velocity = client.getGpsData(vehicle_name = vehicle_name)
+    
+        if(slightFlag):
+            print("Slight Deviation")
+            theta = math.atan2(treeWidth,slightDeviation)/math.pi*180
+            if(slightDeviation < 4.5):
+                if (theta < 0):
+                    theta = theta - 2
+                else:
+                    theta = theta + 2
+        else:
+            print("Collision")
+            theta = math.atan2(treeWidth,closestObjectDistance)/math.pi*180
+            if(closestObjectDistance < 7):
+                if (theta < 0):
+                    theta = theta - 5
+                else:
+                    theta = theta + 5   
+        
+        theta = theta
+        cs = math.cos(theta)
+        sn = math.sin(theta)
+
+        px = velocity.gnss.velocity.x_val * cs - velocity.gnss.velocity.y_val * sn
+        py = velocity.gnss.velocity.x_val * sn + velocity.gnss.velocity.y_val * cs
+
+        pxNormalized = (px / math.sqrt(px**2 + py**2))*DIRECTION_FACTOR
+        pyNormalized = (py / math.sqrt(px**2 + py**2))*DIRECTION_FACTOR 
+
+        velX = pxNormalized
+        velY = pyNormalizedelse
+    
 
     return [velY, velX]
 

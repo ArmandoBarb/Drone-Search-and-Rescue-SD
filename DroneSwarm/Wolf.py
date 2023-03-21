@@ -461,6 +461,10 @@ def wolfDroneController(droneName, droneCount, overseerCount):
         vector = helper.turningCalculation(curDroneVelocity, vector, MAX_TURN_ANGLE)
 
         if (isChangeVelocity):
+            # if(collisionAvoidance):
+                # client.moveByVelocityZAsync(vector[0], vector[1], -3, duration = 10, yaw_mode=yaw_mode, vehicle_name=droneName)
+            # else:
+                # client.moveByVelocityZAsync(vector[0], vector[1], -3, duration = 10,drivetrain =1,yaw_mode=airsim.YawMode(False,0), vehicle_name=droneName)
             client.moveByVelocityZAsync(vector[0], vector[1], -3, duration = 10, yaw_mode=yaw_mode, vehicle_name=droneName)
         
         # Add in artifical loop delay (How fast the loop runs dictates the drones reaction speed)
