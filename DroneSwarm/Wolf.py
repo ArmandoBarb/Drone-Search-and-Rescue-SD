@@ -240,7 +240,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
         if (timeDiff > MAX_TIME):
             debugPrint("max time")
             debugPrint("RunTime: " + str(time.time() - runtime))
-            endLineBehavior()
+            # endLineBehavior()
             break;
 
         vector = [0, 0] # dont move if nothing to do
