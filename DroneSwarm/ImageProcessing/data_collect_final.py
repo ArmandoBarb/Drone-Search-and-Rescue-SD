@@ -83,8 +83,14 @@ def pixelClustering(height, width, segRGB, sceneRGB):
                             else:
                                 isMatch = True
 
+                            midpoint = height/2
+                            topHeight = (j<=midpoint or coord[1]<=midpoint)
+                            topThreshold = topHeight and (dist([i, j], [coord[0], coord[1]]) < 20)
+                            bottomHeight = (j>midpoint or coord[1]>midpoint)
+                            bottomThreshold = bottomHeight and (dist([i, j], [coord[0], coord[1]]) < 130)
+
                             # otherwise threshold and sort the coordinate
-                            if dist([i, j], [coord[0], coord[1]]) < 100:
+                            if topThreshold or bottomThreshold:
                                 # print("in dist([i, j], [coord[0], coord[1]]) < 40")
                                 # print("After dist([i, j], [coord[0], coord[1]]) < 40")
                                 # print("Cluster size: ", len(cluster))
