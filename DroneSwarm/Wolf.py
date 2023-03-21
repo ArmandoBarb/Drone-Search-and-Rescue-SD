@@ -301,7 +301,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
         collisionAvoidance, closestObjectDistance,slightDeviationDistance, slightFlag,sensorName = collisionDetectionBehavior.collisionAvoidanceCheck(client, droneName, threshold,slightDeviation)
         timeDiff = time.time() - Collision_Mode_Time
         if(collisionAvoidance):
-            debugPrint("Doing collision")
+            # debugPrint("Doing collision")
             Previously_Had_Collision = True
             Collision_Mode_Time = time.time()
             
@@ -327,8 +327,8 @@ def wolfDroneController(droneName, droneCount, overseerCount):
             vector = collisionDetectionBehavior.collisionAlgo(client,imgDir,droneName,closestObjectDistance,slightDeviationDistance,droneSpeed,slightFlag,sensorName)
             endTime = time.time() - colTime
             depthImageCount += 1
-            text = "Collision avoidance time: " + str(Collision_Mode_Time_Length) + " Depth image count: " + str(depthImageCount) + "Collision algo time: " + str(endTime)
-            debugPrint(text)
+            # text = "Collision avoidance time: " + str(Collision_Mode_Time_Length) + " Depth image count: " + str(depthImageCount) + "Collision algo time: " + str(endTime)
+            # debugPrint(text)
 
             # client.moveByVelocityZAsync(vector[0], vector[1], -4, duration = COLLISION_DIRECTION_FACTOR, yaw_mode=yaw_mode, vehicle_name=droneName)
 

@@ -152,14 +152,15 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
     # velX,velY = getVelo(treeWidth, closestObjectDistance,DIRECTION_FACTOR)
 
     if (len(imageContainer) == 0):  
-        print("No images")
+        # print("No images")
+        print()
     elif(imageContainer[0].__contains__('0') and ( not ("Left" in sensorName))):
         # if (vehicle_name == '0'):
         #     print("Got a detection, picking left image: ", vehicle_name)
         velocity = client.getGpsData(vehicle_name = vehicle_name)
 
         if(slightFlag):
-            print("Slight Deviation")
+            # print("Slight Deviation")
             theta = math.atan2(treeWidth,slightDeviation)/math.pi*180
             if(slightDeviation < 4.5):
                 if (theta < 0):
@@ -167,7 +168,7 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
                 else:
                     theta = theta + 2
         else:
-            print("Collision")
+            # print("Collision")
             theta = math.atan2(treeWidth,closestObjectDistance)/math.pi*180
             if(closestObjectDistance < 7):
                 if (theta < 0):
@@ -205,7 +206,7 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
         # math to find the x and y values to find the vectors
         # print("Collision")
         if(slightFlag):
-            print("Slight Deviation")
+            # print("Slight Deviation")
             theta = math.atan2(treeWidth,slightDeviation)/math.pi*180
             if(slightDeviation < 4.5):
                 if (theta < 0):
@@ -213,7 +214,7 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
                 else:
                     theta = theta + 2
         else:
-            print("Collision")
+            # print("Collision")
             theta = math.atan2(treeWidth,closestObjectDistance)/math.pi*180
             if(closestObjectDistance < 7):
                 if (theta < 0):
@@ -242,7 +243,7 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
 
         # math to find the x and y values to find the vectors
         if(slightFlag):
-            print("Slight Deviation")
+            # print("Slight Deviation")
             theta = math.atan2(treeWidth,slightDeviation)/math.pi*180
             if(slightDeviation < 4.5):
                 if (theta < 0):
@@ -250,7 +251,7 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
                 else:
                     theta = theta + 2
         else:
-            print("Collision")
+            # print("Collision")
             theta = math.atan2(treeWidth,closestObjectDistance)/math.pi*180
             if(closestObjectDistance < 7):
                 if (theta < 0):
@@ -285,7 +286,7 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
 
         # math to find the x and y values to find the vectors
         if(slightFlag):
-            print("Slight Deviation")
+            # print("Slight Deviation")
             theta = math.atan2(treeWidth,slightDeviation)/math.pi*180
             if(slightDeviation < 4.5):
                 if (theta < 0):
@@ -293,7 +294,7 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
                 else:
                     theta = theta + 2
         else:
-            print("Collision")
+            # print("Collision")
             theta = math.atan2(treeWidth,closestObjectDistance)/math.pi*180
             if(closestObjectDistance < 7):
                 if (theta < 0):
@@ -320,7 +321,7 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
         velocity = client.getGpsData(vehicle_name = vehicle_name)
 
         if(slightFlag):
-            print("Slight Deviation")
+            # print("Slight Deviation")
             theta = math.atan2(treeWidth,slightDeviation)/math.pi*180
             if(slightDeviation < 4.5):
                 if (theta < 0):
@@ -328,7 +329,7 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
                 else:
                     theta = theta + 2
         else:
-            print("Collision")
+            # print("Collision")
             theta = math.atan2(treeWidth,closestObjectDistance)/math.pi*180
             if(closestObjectDistance < 7):
                 if (theta < 0):
@@ -357,7 +358,7 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
         velocity = client.getGpsData(vehicle_name = vehicle_name)
     
         if(slightFlag):
-            print("Slight Deviation")
+            # print("Slight Deviation")
             theta = math.atan2(treeWidth,slightDeviation)/math.pi*180
             if(slightDeviation < 4.5):
                 if (theta < 0):
@@ -365,7 +366,7 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
                 else:
                     theta = theta + 2
         else:
-            print("Collision")
+            # print("Collision")
             theta = math.atan2(treeWidth,closestObjectDistance)/math.pi*180
             if(closestObjectDistance < 7):
                 if (theta < 0):
@@ -395,12 +396,12 @@ def repulsion(client,vehicle_name,DIRECTION_FACTOR):
 
     if(sideSensors[0] < 0.8):
         difference = 0.8-sideSensors[0]
-        print(difference)
+        # print(difference)
         velX,velY = getVelo(difference, 0, DIRECTION_FACTOR)
 
     if(sideSensors[1] < 0.8):
         difference = 0.8-sideSensors[1]
-        print(difference)
+        # print(difference)
         velX,velY = getVelo(difference, 0, DIRECTION_FACTOR)
         velX = -velX
 
@@ -447,7 +448,7 @@ def setupCollisionDirectory(vehicle_name):
     if not isExist:
         # make directory if not already there
         os.mkdir(imgDir)
-        print('Created: ' + imgDir)
+        # print('Created: ' + imgDir)
 
     return imgDir
 
