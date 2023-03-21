@@ -118,7 +118,7 @@ def overseerDroneController(droneName, overseerCount, wolfCount):
 
     # Sets client and takes off drone
     client = takeOff(droneName)
-    client.moveToZAsync(z=-50, velocity=8, vehicle_name = droneName).join()
+    client.moveToZAsync(z=-40, velocity=8, vehicle_name = droneName).join()
 
     # thread for infared waypoint detection
     t1 = Thread(target = overseerInfraredDetection, args=({droneName}))
@@ -288,7 +288,7 @@ def overseerDroneController(droneName, overseerCount, wolfCount):
         # If all drones make it to the waypoint, more to next waypoint
         allDronesAtWaypoint(droneName)
 
-        client.moveByVelocityZAsync(vector[1], vector[0], -50, duration = 1, vehicle_name=droneName)
+        client.moveByVelocityZAsync(vector[1], vector[0], -40, duration = 1, vehicle_name=droneName)
 
         # TODO: Add in Overseer behavior
         # TODO: Creeping Line lead behavior
