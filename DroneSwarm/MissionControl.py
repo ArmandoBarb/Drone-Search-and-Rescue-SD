@@ -36,6 +36,9 @@ COMMAND_TOPIC = ros.COMMAND_TOPIC
 COMMAND_RESULT_TOPIC = ros.COMMAND_RESULT_TOPIC
 SLAM_MERGE_TOPIC = ros.SLAM_MERGE_TOPIC
 
+# ros service
+GPU_SERVICE = ros.GPU_SERVICE
+
 # Main Process Start ----------------------------------------------
 # Main function for mission control
 print('Starting Mission Control')
@@ -62,13 +65,19 @@ if __name__ == '__main__': # Only runs if this is main processes
 
     # Starts node for gpu yolo processing
     mp.Process(target=startYoloGPU, args=()).start()
-    time.sleep(10);
+    time.sleep(5);
 
+    print("Checking if yolo loaded")
     rospy.wait_for_service(GPU_SERVICE)
     response = rospy.ServiceProxy(GPU_SERVICE, requestGPU)
-    responseObject = response("")
-    if (responseObject.success == True):
-        print("GPU model is ready")
+    responseObject = response("", 0, 0)
+
+    while (not responseObject.success):
+        rospy.wait_for_service(GPU_SERVICE)
+        response = rospy.ServiceProxy(GPU_SERVICE, requestGPU)
+        responseObject = response("", 0, 0)
+
+    print("Loaded yolo")
 
     # Start wolf proximity subscriber and wolf nodes
     mp.Process(target=startProximityWolf, args=(wolfCount,)).start()

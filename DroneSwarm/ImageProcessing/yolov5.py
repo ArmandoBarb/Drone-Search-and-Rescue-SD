@@ -7,7 +7,8 @@ from ImageProcessing import getInfoWolf
 import os
 import rospy
 from airsim_ros_pkgs.srv import requestGPU
-
+import rospy
+import Constants.ros as ros
 GPU_SERVICE = ros.GPU_SERVICE
 
 def runYolov5(client, responses, vehicleName, confidanceMin):
@@ -22,14 +23,18 @@ def runYolov5(client, responses, vehicleName, confidanceMin):
     # Requests gpu service and sends over response string, gets response object
     rospy.wait_for_service(GPU_SERVICE)
     response = rospy.ServiceProxy(GPU_SERVICE, requestGPU)
-    responseObject = response(responseString)
+    responseObject = response(str(responseString.decode('latin-1')), height, width)
 
     # Set variables from response object
     success = responseObject.success
-    xmin = responseObject.xMin
-    ymin = responseObject.yMin
-    xmax = responseObject.xMax
-    ymax = responseObject.yMax
+    xmin = int(responseObject.xMin)
+    ymin = int(responseObject.yMin)
+    xmax = int(responseObject.xMax)
+    ymax = int(responseObject.yMax)
+    confidence = responseObject.confidence
+
+    print("Min values", (xmin, ymin))
+    print("Max values", (xmax, ymax))
 
     # segArr = np.fromstring(responseString, dtype=np.uint8)
     # sceneRGB1 = segArr.reshape(height, width, 3)
@@ -64,22 +69,22 @@ def runYolov5(client, responses, vehicleName, confidanceMin):
     #ToDo: just pass loop index adn drone name
     # or in final build just overwite
     j=0
-    while os.path.exists(dataDir + "/" + ('%s' % j)+"yoloDetect.jpg"):
+    while os.path.exists(dataDir + "/" + ('%s' % j)+"newImg.jpg"):
         j+=1
 
     # TODO: CHANGE WITH SUCCESS BOOL FROM ROS
-    if(len(resultsPandas) > 0):
-        confidence = confidenceArr[0]
+    if(success):
+        # confidence = responseObject.confidence
         # if confidence is high enough use for GPS estimation
         if(confidence > confidanceMin):
             #print("Found a target!!!")
             validDetection=True
-            # xmin, ymin, xmax, ymax = int(xminArr[0]), int(yminArr[0]), int(xmaxArr[0]), int(ymaxArr[0])
+
             start_point = (xmin, ymin)
             end_point = (xmax, ymax)
             newImag = cv2.rectangle(sceneRGB2, start_point, end_point, (0, 255, 0), 2)
             # save new image only with highest confidence detection
-            cv2.imwrite(dataDir + "/" + ('%s' % j)+"origImg.jpg", sceneRGB1)
+            cv2.imwrite(dataDir + "/" + ('%s' % j)+"origImg.jpg", sceneRGB2)
             cv2.imwrite(dataDir + "/" + ('%s' % j)+"newImg.jpg", newImag)
 
             #print("------------------------------------------------------------------------------------------------------------------")
@@ -92,14 +97,14 @@ def runYolov5(client, responses, vehicleName, confidanceMin):
 
             # write corresponding text file
             with open(dataDir + "/" + ('%s' % j)+"GPSEstimate.txt", 'w') as f:
-                f.write(str(resultsPandas))
+                # f.write(str(resultsPandas))
                 f.write("\n\tMax Confidence: "+str(confidence))
                 f.write("\n\tMax Confidence Estimate:"+ str(lat) + " lat, " + str(lon) + " lon")
                 f.close()
 
             # save yolov5 results image
-            results.ims # array of original images (as np array) passed to model for inference
-            results.render()  # updates results.ims with boxes and labels
+            # results.ims # array of original images (as np array) passed to model for inference
+            # results.render()  # updates results.ims with boxes and labels
 
             cwd = os.getcwd()
             dataDir=os.path.join(str(cwd),'yolov5Images')
@@ -111,15 +116,15 @@ def runYolov5(client, responses, vehicleName, confidanceMin):
                 os.makedirs(dataDir)
                 #print('Created: ' + dataDir)
                 
-            for im in results.ims:
-                pil_image = Image.fromarray(im).convert('RGB') 
-                open_cv_image = np.array(pil_image) 
-                # Convert RGB to BGR 
-                open_cv_image = open_cv_image[:, :, ::-1].copy()
+            # for im in results.ims:
+            #     pil_image = Image.fromarray(im).convert('RGB') 
+            #     open_cv_image = np.array(pil_image) 
+            #     # Convert RGB to BGR 
+            #     open_cv_image = open_cv_image[:, :, ::-1].copy()
 
-                # TODO: Draw rectangles using bounding box dimensions array
-                cv2.imwrite(dataDir + "/" + ('%s' % j)+"yoloDetect.jpg", open_cv_image)
-                cv2.waitKey(1)
+            #     # TODO: Draw rectangles using bounding box dimensions array
+            #     cv2.imwrite(dataDir + "/" + ('%s' % j)+"yoloDetect.jpg", open_cv_image)
+            #     cv2.waitKey(1)
 
 
     # print("GPS estimation cycle complete.")
