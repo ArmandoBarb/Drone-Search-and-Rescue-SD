@@ -418,7 +418,7 @@ def overseerInfraredDetection(droneName):
                     circleRadiusGPS = circleList[x].radius
                     circleRadiusMeters = (circleList[x].radius*MIN_CIRCLE_RADIUS_METERS)/MIN_CIRCLE_RADIUS_GPS
                     spreadTimeS = 30
-                    searchTimeS = (circleList[x].radius*15)/MIN_CIRCLE_RADIUS_GPS
+                    searchTimeS = (circleList[x].radius*20)/MIN_CIRCLE_RADIUS_GPS + 20
                     taskGroup = EMPTY_CLUSTER  # Let's wolf know it comes from an overseer
 
                     # IF TASK GROUP IS EMPTY, THE REQUEST IS FROM THE OVERSEER

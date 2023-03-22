@@ -108,12 +108,12 @@ def repulsion(client,vehicle_name,DIRECTION_FACTOR):
 
     if(sideSensors[0] < 0.8):
         difference = 0.8-sideSensors[0]
-        print(difference)
+        #print(difference)
         velX,velY = getVelo(difference, 0, DIRECTION_FACTOR)
 
     if(sideSensors[1] < 0.8):
         difference = 0.8-sideSensors[1]
-        print(difference)
+        # print(difference)
         velX,velY = getVelo(difference, 0, DIRECTION_FACTOR)
         velX = -velX
 

@@ -194,7 +194,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
 
     # Sets and connects to client and takes off drone
     client = takeOff(droneName)
-    client.moveToZAsync(z=-3.5, velocity=8, vehicle_name = droneName).join()
+    client.moveToZAsync(z=-3, velocity=8, vehicle_name = droneName).join()
     
     debugPrint("At wolf camera thread setup")
     # start camera thread here
@@ -493,7 +493,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
         vector = helper.turningCalculation(curDroneVelocity, vector, MAX_TURN_ANGLE)
 
         if (isChangeVelocity):
-            client.moveByVelocityZAsync(vector[0], vector[1], z=-3.5, duration = 10, yaw_mode=yaw_mode, vehicle_name=droneName)
+            client.moveByVelocityZAsync(vector[0], vector[1], z=-3, duration = 10, yaw_mode=yaw_mode, vehicle_name=droneName)
         
         # Add in artifical loop delay (How fast the loop runs dictates the drones reaction speed)
         
@@ -1012,7 +1012,11 @@ def subWaypointCalculator(currentWaypoint, previousWaypoint, radius, droneName):
             subwaypointList.append(newWaypoint)
 
     # Gets lane and subwaypoint from calculated list
-    lane = int(droneName) % clusterSize
+    # ToDO: fix this
+    lane = 0
+    if(clusterSize != 0):
+        lane = int(droneName) % clusterSize
+    
     newWaypoint = subwaypointList[lane]
 
     return newWaypoint
