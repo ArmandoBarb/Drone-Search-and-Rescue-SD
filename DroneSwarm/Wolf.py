@@ -206,7 +206,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
         timeDiff = time.time() - runtime
         if (timeDiff > MAX_TIME):
             debugPrint("max time")
-            endLineBehavior()
+            # endLineBehavior()
             break;
 
         vector = [0, 0] # dont move if nothing to do
@@ -257,9 +257,9 @@ def wolfDroneController(droneName, droneCount, overseerCount):
                         
                         if(currIterationNum > Cur_Consensus_Iteration_Number):
                             # share results to other drones
-                            debugPrint("wolfSignalPublisherGPS: Iteration: " + str(currIterationNum))
-                            debugPrint("Cluster: " + str(Cluster))
-                            debugPrint("Task_Group: " + str(Task_Group))
+                            # debugPrint("wolfSignalPublisherGPS: Iteration: " + str(currIterationNum))
+                            # debugPrint("Cluster: " + str(Cluster))
+                            # debugPrint("Task_Group: " + str(Task_Group))
                             wolfSignalPublisherGPS(wolfCommPublish, client, str(Cluster), str(Task_Group), CONSENSUS_DECISION_SIGNAL, \
                                 signalGPS=newGPSCenter, iterationNumber=currIterationNum, result=passThreshold)
 
@@ -290,7 +290,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
                     # ToDO droneComminication
                     wolfSignalPublisher(wolfCommPublish, client, str(Cluster), str(Task_Group), IN_POSITION_SIGNAL, IsWS=False)
                     Start_Time = time.time();
-                    debugPrint("IN Positionsetfor Consus: " + str(currIterationNum))
+                    # debugPrint("IN Positionsetfor Consus: " + str(currIterationNum))
                     In_Position_CD = True
 
         elif (Wolf_Search_Behavior): # Wolf Search behavior
@@ -488,8 +488,8 @@ def wolfCameraDetection(droneName):
             if(not Consensus_Decision_Behavior):
                 # detection with no consensus behavior
                 # assign consensus
-                debugPrint("\nGot a detection yolo! : \n"+str(formattedWolfEstimateGPS))
-                print("\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n")
+                # debugPrint("\nGot a detection yolo! : \n"+str(formattedWolfEstimateGPS))
+                # print("\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n")
 
                 circleRadiusGPS = MIN_CIRCLE_RADIUS_GPS
                 circleRadiusMeters = MIN_CIRCLE_RADIUS_METERS
@@ -1129,7 +1129,7 @@ def startConsensusDecision( circleCenterGPS, circleRadiusGPS, circleRadiusMeters
     Success_Det_Count = 0
     Fail_Det_Count = 0
     In_Position_CD = False
-    debugPrint("start consenus decion")
+    # debugPrint("start consenus decion")
     Consensus_Decision_Behavior = True;
     Wolf_Search_Behavior = False; 
 
@@ -1173,14 +1173,14 @@ def updateConsensusDecisionCenter(circleCenterGPS, currIterationNum, result):
                 # ToDo: success
                 debugPrint("target GPS: " + str(circleCenterGPS))
                 debugPrint("======================================================================================== \n \
-                            Another day in paidise \n \
+                            Another day in paradise \n \
                             ======================================================================================== \n ")
                 endTaskPublish = rospy.Publisher(ros.END_LOOP_TOPIC, String, latch=True, queue_size=1)
                 endTaskPublish.publish("e")
         # consenus decion no target found
-        debugPrint("Cluster: " + str(Cluster))
-        debugPrint("taskGroup: " + str(Task_Group))
-        debugPrint("consenus failed")
+        # debugPrint("Cluster: " + str(Cluster))
+        # debugPrint("taskGroup: " + str(Task_Group))
+        # debugPrint("consenus failed")
         global Consensus_Decision_Behavior;
         if (Consensus_Decision_Behavior):
             endConsensusDecision();
@@ -1195,7 +1195,7 @@ def endConsensusDecision():
     global Start_Time, Spread_Time, Search_Time;
     global Task_Group;
     global Test_REMOVE
-    debugPrint("End consenus: " + str(Wolf_Search_Behavior))
+    # debugPrint("End consenus: " + str(Wolf_Search_Behavior))
     Consensus_Decision_Behavior = False;
     Circle_Center_GPS = None;
     Circle_Radius_GPS, Circle_Radius_Meters = None, None;
