@@ -45,21 +45,17 @@ print('Starting Mission Control')
 if __name__ == '__main__': # Only runs if this is main processes
     mp.set_start_method('fork') # windows specific. Change based on OS.
 
+    # Creates waypoints for each search group
     createWaypoints()
 
-    # overseerCount = mp.cpu_count() - 5
-
+    # Set drone counts
     overseerCount = 2
-    wolfCount = 8
+    wolfCount = 6
 
     # apply infrared to overseers
     client = airsim.MultirotorClient(LOCAL_IP)
     clusterHelper.applyInfrared(client)
 
-    # # loading yolov5
-    # cwd = os.getcwd()
-    # yoloPT = os.path.join(str(cwd), 'best.pt')
-    # model = torch.hub.load('ultralytics/yolov5', 'custom', path=yoloPT, trust_repo=True)
 
     # TODO: start all procecess for ros Nodes here
 
@@ -67,11 +63,13 @@ if __name__ == '__main__': # Only runs if this is main processes
     mp.Process(target=startYoloGPU, args=()).start()
     time.sleep(5);
 
+    # Does first check on if gpu is loaded
     print("Checking if yolo loaded")
     rospy.wait_for_service(GPU_SERVICE)
     response = rospy.ServiceProxy(GPU_SERVICE, requestGPU)
     responseObject = response("", 0, 0)
 
+    # Stays in while until yolo is loaded on the gpu
     while (not responseObject.success):
         rospy.wait_for_service(GPU_SERVICE)
         response = rospy.ServiceProxy(GPU_SERVICE, requestGPU)

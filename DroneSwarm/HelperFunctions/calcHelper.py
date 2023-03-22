@@ -182,7 +182,7 @@ def calcNewConsenusGPS(wolfDataArray, gpsCenter, threshold):
         
         print("failDetCount: " + str(wolf.failDetCount) + " successDetCount: " + str(wolf.successDetCount))
         print("threshold: " + str(successRate) + " successRate: " + str(successRate))
-        if(threshold <= successRate):
+        if(threshold <= int(successRate)):
             droneSucc += 1
         else:
             droneFail += 1

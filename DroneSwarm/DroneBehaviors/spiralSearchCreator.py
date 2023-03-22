@@ -55,7 +55,7 @@ def createWaypoints():
     waypointDistance = 0.0004
     spawnLocation = [0.0001, -0.0001]
     centerStartLocation = [0.0006, -0.0008]
-    amountOfWaypoints = 4
+    amountOfWaypoints = 8
     spiral0Filename = 'Constants/Group0Spiral.txt'
     spiralSearchCoordinateMaker(spiral0Filename, waypointDistance, spawnLocation, centerStartLocation, amountOfWaypoints)
 
@@ -63,6 +63,6 @@ def createWaypoints():
     waypointDistance = 0.0004                                   # Distance between waypoints
     spawnLocation = [-0.0001, -0.0001]
     centerStartLocation = [-0.0006, -0.0008]                     # Starting center of the spiral
-    amountOfWaypoints = 4                                       # Amount of edges
+    amountOfWaypoints =  8                                       # Amount of edges
     spiral1Filename = 'Constants/Group1Spiral.txt'
     spiralSearchCoordinateMaker(spiral1Filename, waypointDistance, spawnLocation, centerStartLocation, amountOfWaypoints)
