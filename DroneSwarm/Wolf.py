@@ -498,17 +498,27 @@ def wolfCameraDetection(droneName):
         start=time.time() # gather time data
         # todo: mary add camera checkl nad yolo detector
         # TODO: remove
-        if (droneName != '0' and droneName != '1'):
-            time.sleep(1);
-            end = time.time();
-            timeSpent += end-start;
-            i+=1
-            continue;
+        # if (droneName != '0' and droneName != '1'):
+        #     time.sleep(1);
+        #     end = time.time();
+        #     timeSpent += end-start;
+        #     i+=1
+        #     continue;
 
+        getImageTime = time.time()
         responses = getInfo.getScene(threadClient, droneName)
+        getImageLen = time.time() - getImageTime
+        debugPrint("retrieve image length: " + str(getImageLen) + "       ++++++++++++++++++")
 
-        # TODO: Fix how to run yolo with service
-        wolfEstimate = yolov5.runYolov5(threadClient, responses, droneName, YOLO_CONFIDENCE)
+        cameraName="front"
+
+        if Line_Behavior:
+            cameraName="front"
+        elif Wolf_Search_Behavior or Consensus_Decision_Behavior:
+            cameraName="right"
+
+        # TODO: RUN with two cameras (front and right)
+        wolfEstimate = yolov5.runYolov5(threadClient, responses, cameraName, droneName, YOLO_CONFIDENCE)
 
         if(wolfEstimate[0]!=None and wolfEstimate[1]!=None):
             # detection

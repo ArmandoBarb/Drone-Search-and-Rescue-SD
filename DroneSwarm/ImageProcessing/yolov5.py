@@ -9,21 +9,32 @@ import rospy
 from airsim_ros_pkgs.srv import requestGPU
 import rospy
 import Constants.ros as ros
+import time
 GPU_SERVICE = ros.GPU_SERVICE
 
-def runYolov5(client, responses, vehicleName, confidanceMin):
+def runYolov5(client, responses, cameraName, vehicleName, confidanceMin):
     global GPU_SERVICE
 
+    responseIndex = 0
+
+    if(cameraName=="front"):
+        responseIndex = 0
+    elif(cameraName=="right"):
+        responseIndex = 1
+
     # get response object with input image
-    height, width, sceneRGB2 = getInfo.getSegInfo(responses)
+    height, width, sceneRGB2 = getInfo.getHeightWidthArr(responses, responseIndex)
 
     # original image unedited
-    responseString= responses[0].image_data_uint8
+    responseString= responses[int(responseIndex)].image_data_uint8
 
     # Requests gpu service and sends over response string, gets response object
+    gpuServiceTime = time.time()
     rospy.wait_for_service(GPU_SERVICE)
     response = rospy.ServiceProxy(GPU_SERVICE, requestGPU)
     responseObject = response(str(responseString.decode('latin-1')), height, width)
+    gpuLen = time.time() - gpuServiceTime
+    print("gpuLen:       " + str(gpuLen) + "         999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999")
 
     # Set variables from response object
     success = responseObject.success
@@ -32,26 +43,6 @@ def runYolov5(client, responses, vehicleName, confidanceMin):
     xmax = int(responseObject.xMax)
     ymax = int(responseObject.yMax)
     confidence = responseObject.confidence
-
-    print("Min values", (xmin, ymin))
-    print("Max values", (xmax, ymax))
-
-    # segArr = np.fromstring(responseString, dtype=np.uint8)
-    # sceneRGB1 = segArr.reshape(height, width, 3)
-
-    # #print("RESULTS yolov5:")
-    # model.classes = [0] # detect only for person class (0)
-    # results=model(sceneRGB2)
-    # #results.print()
-
-    # # get the bounding boxes and confidence scores for single image
-    # validDetection = False
-    # resultsPandas = results.pandas().xyxy[0]
-    # confidenceArr = resultsPandas.confidence
-    # xminArr = resultsPandas.xmin
-    # yminArr = resultsPandas.ymin
-    # xmaxArr = resultsPandas.xmax
-    # ymaxArr = resultsPandas.ymax
 
     maxConfidence = 0
     maxConfidenceGPS = [None, None]
@@ -102,10 +93,6 @@ def runYolov5(client, responses, vehicleName, confidanceMin):
                 f.write("\n\tMax Confidence Estimate:"+ str(lat) + " lat, " + str(lon) + " lon")
                 f.close()
 
-            # save yolov5 results image
-            # results.ims # array of original images (as np array) passed to model for inference
-            # results.render()  # updates results.ims with boxes and labels
-
             cwd = os.getcwd()
             dataDir=os.path.join(str(cwd),'yolov5Images')
             #print('CWD: '+dataDir)
@@ -115,21 +102,5 @@ def runYolov5(client, responses, vehicleName, confidanceMin):
                 # make directory if not already there
                 os.makedirs(dataDir)
                 #print('Created: ' + dataDir)
-                
-            # for im in results.ims:
-            #     pil_image = Image.fromarray(im).convert('RGB') 
-            #     open_cv_image = np.array(pil_image) 
-            #     # Convert RGB to BGR 
-            #     open_cv_image = open_cv_image[:, :, ::-1].copy()
-
-            #     # TODO: Draw rectangles using bounding box dimensions array
-            #     cv2.imwrite(dataDir + "/" + ('%s' % j)+"yoloDetect.jpg", open_cv_image)
-            #     cv2.waitKey(1)
-
-
-    # print("GPS estimation cycle complete.")
-    # print("MAX CONFIDENCE ESTIMATE:"+ str(maxConfidenceGPS[1]) + " lat, " + str(maxConfidenceGPS[0]) + " lon")
-    # print("\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n")
- 
 
     return maxConfidenceGPS

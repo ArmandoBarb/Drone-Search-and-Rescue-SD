@@ -14,7 +14,8 @@ def getInfrared(client, vehicleName):
 def getScene(client, vehicleName):
     # print(vehicleName)
     responses = client.simGetImages([
-        airsim.ImageRequest("front", airsim.ImageType.Scene, False, False)], vehicle_name = vehicleName)
+        airsim.ImageRequest("front", airsim.ImageType.Scene, False, False),
+        airsim.ImageRequest("right", airsim.ImageType.Scene, False, False)], vehicle_name = vehicleName)
     return responses
 
 def getSegInfo(responses):
@@ -22,6 +23,17 @@ def getSegInfo(responses):
 
     height = responses[0].height
     width = responses[0].width
+
+    segArr = np.fromstring(responseSeg.image_data_uint8, dtype=np.uint8)
+    segRGB = segArr.reshape(height, width, 3)
+
+    return height, width, segRGB
+
+def getHeightWidthArr(responses, responseIndex):
+    responseSeg = responses[responseIndex]
+
+    height = responses[responseIndex].height
+    width = responses[responseIndex].width
 
     segArr = np.fromstring(responseSeg.image_data_uint8, dtype=np.uint8)
     segRGB = segArr.reshape(height, width, 3)
