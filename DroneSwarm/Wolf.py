@@ -169,11 +169,11 @@ def wolfDroneController(droneName, droneCount, overseerCount):
     t3.start()
 
     # Test Code startWolfSearch
-    targetP = client.getMultirotorState(vehicle_name = "target")
-    targetC = client.getMultirotorState(vehicle_name = "circle")
+    # targetP = client.getMultirotorState(vehicle_name = "target")
+    # targetC = client.getMultirotorState(vehicle_name = "circle")
     # calc radius
-    radiusC = abs(targetP.gps_location.longitude - targetC.gps_location.longitude);
-    radiusM = calcHelper.calcDistanceInMetersBetweenGPS(targetP.gps_location, targetC.gps_location);
+    # radiusC = abs(targetP.gps_location.longitude - targetC.gps_location.longitude);
+    # radiusM = calcHelper.calcDistanceInMetersBetweenGPS(targetP.gps_location, targetC.gps_location);
 
     # test Wolf Search
     # startWolfSearch( circleCenterGPS=targetP.gps_location, circleRadiusGPS=radiusC*7, circleRadiusMeters=radiusM*7, spreadTimeS=40, searchTimeS=70 );
@@ -212,52 +212,11 @@ def wolfDroneController(droneName, droneCount, overseerCount):
         vector = [0, 0] # dont move if nothing to do
         yaw_mode = airsim.YawMode(is_rate=False, yaw_or_rate=(0)) # Set yaw to zero
 
-        # test consensus behavior
-        # if(Consensus_Decision_Behavior):
-        #     timeDiff = time.time() - Start_Time;
-        #     stageLength = Search_Time / 5
-        #     newP = None
-        #     if (timeDiff < stageLength):
-        #         newP = client.getMultirotorState(vehicle_name = "target")
-        #         # if (droneName == "0"):
-        #             # print('target');
-        #     elif (timeDiff < stageLength*2):
-        #         newP = client.getMultirotorState(vehicle_name = "targetR")
-        #         # if (droneName == "0"):
-        #             # print('targetR');
-        #     elif (timeDiff < stageLength*3):
-        #         newP = client.getMultirotorState(vehicle_name = "circle")
-        #         # if (droneName == "0"):
-        #             # print('circle');
-        #     elif (timeDiff < stageLength*4):
-        #         newP = client.getMultirotorState(vehicle_name = "circle2")
-        #         # if (droneName == "0"):
-        #             # print('circle2');
-        #     elif (timeDiff < stageLength*5):
-        #         newP = client.getMultirotorState(vehicle_name = "circle3")
-        #         # if (droneName == "0"):
-        #             # print('circle3');
-        #     else:
-        #         newP = client.getMultirotorState(vehicle_name = "target")
-        #         # if (droneName == "0"):
-        #             # print('circle3');
-        #     if (newP != None):
-        #         # if (droneName == "0"):
-        #             # print("Gps: " + str(newP.gps_location));
-        #         updateConsensusDecisionCenter(circleCenterGPS=newP.gps_location);
-
         
         start=time.time() # gather time data
 
         # Publishes to (WolfData) topic
         wolfDataPublisher(wolfDataPublish, client, droneName)
-
-        # Testing (WolfCommunication) Topic
-        # wolfSignalPublisher(wolfCommPublish, client, str(Cluster), str(Task_Group), "Do something")
-        
-        # TEST OUT WOLF SERVICE, wolfGetWolfData
-        # wolfInfoArray = getWolfState()        # Get droneWolfState state array from service
-        # print(wolfInfoArray[0])               # Example of printing wolf drone 3's information
 
         # Get Airsim Data and procesess it here
         # TODO: add Yolo person Detector (if runtime is to long Seprate into thread that runs on intervals)
@@ -508,7 +467,7 @@ def wolfCameraDetection(droneName):
         getImageTime = time.time()
         responses = getInfo.getScene(threadClient, droneName)
         getImageLen = time.time() - getImageTime
-        debugPrint("retrieve image length: " + str(getImageLen) + "       ++++++++++++++++++")
+        # debugPrint("retrieve image length: " + str(getImageLen) + "       ++++++++++++++++++")
 
         cameraName="front"
 
@@ -1079,8 +1038,7 @@ def startWolfSearch( circleCenterGPS, circleRadiusGPS, circleRadiusMeters, sprea
     global In_Position_WS
 
     global DM_Drone_Name
-    if('0' == DM_Drone_Name):
-        debugPrint("start wolf search fucker```````````````````````````````````````````~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    
     Circle_Center_GPS = circleCenterGPS;
     Circle_Radius_GPS, Circle_Radius_Meters = circleRadiusGPS, circleRadiusMeters;
     Search_Time = searchTimeS;

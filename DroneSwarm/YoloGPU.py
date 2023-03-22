@@ -112,7 +112,7 @@ def handleGPU(request):
         xMax = resultsPandas.xmax[0]
         yMax = resultsPandas.ymax[0]
         confidence = resultsPandas.confidence[0]
-        print("GOT A BOUNDING BOX")
+        # print("GOT A BOUNDING BOX")
         
         return (success, xMin, yMin, xMax, yMax, confidence)
         # load yolo model

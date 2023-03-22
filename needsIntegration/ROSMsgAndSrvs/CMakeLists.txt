@@ -74,6 +74,7 @@ add_service_files(
   SetLocalPosition.srv
   getDroneData.srv
   sendCommand.srv
+  requestGPU.srv
 )
 
 generate_messages(

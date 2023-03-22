@@ -34,7 +34,7 @@ def runYolov5(client, responses, cameraName, vehicleName, confidanceMin):
     response = rospy.ServiceProxy(GPU_SERVICE, requestGPU)
     responseObject = response(str(responseString.decode('latin-1')), height, width)
     gpuLen = time.time() - gpuServiceTime
-    print("gpuLen:       " + str(gpuLen) + "         999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999")
+    # print("gpuLen:       " + str(gpuLen) + "         999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999")
 
     # Set variables from response object
     success = responseObject.success
