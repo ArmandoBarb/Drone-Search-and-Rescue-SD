@@ -5,29 +5,48 @@ from PIL import Image
 from ImageProcessing import getInfo
 from ImageProcessing import getInfoWolf
 import os
+import rospy
+from airsim_ros_pkgs.srv import requestGPU
 
-def runYolov5(client, responses, model, vehicleName, confidanceMin):
+GPU_SERVICE = ros.GPU_SERVICE
+
+def runYolov5(client, responses, vehicleName, confidanceMin):
+    global GPU_SERVICE
+
     # get response object with input image
     height, width, sceneRGB2 = getInfo.getSegInfo(responses)
 
     # original image unedited
-    responseSeg = responses[0]
-    segArr = np.fromstring(responseSeg.image_data_uint8, dtype=np.uint8)
-    sceneRGB1 = segArr.reshape(height, width, 3)
+    responseString= responses[0].image_data_uint8
 
-    #print("RESULTS yolov5:")
-    model.classes = [0] # detect only for person class (0)
-    results=model(sceneRGB2)
-    #results.print()
+    # Requests gpu service and sends over response string, gets response object
+    rospy.wait_for_service(GPU_SERVICE)
+    response = rospy.ServiceProxy(GPU_SERVICE, requestGPU)
+    responseObject = response(responseString)
 
-    # get the bounding boxes and confidence scores for single image
-    validDetection = False
-    resultsPandas = results.pandas().xyxy[0]
-    confidenceArr = resultsPandas.confidence
-    xminArr = resultsPandas.xmin
-    yminArr = resultsPandas.ymin
-    xmaxArr = resultsPandas.xmax
-    ymaxArr = resultsPandas.ymax
+    # Set variables from response object
+    success = responseObject.success
+    xmin = responseObject.xMin
+    ymin = responseObject.yMin
+    xmax = responseObject.xMax
+    ymax = responseObject.yMax
+
+    # segArr = np.fromstring(responseString, dtype=np.uint8)
+    # sceneRGB1 = segArr.reshape(height, width, 3)
+
+    # #print("RESULTS yolov5:")
+    # model.classes = [0] # detect only for person class (0)
+    # results=model(sceneRGB2)
+    # #results.print()
+
+    # # get the bounding boxes and confidence scores for single image
+    # validDetection = False
+    # resultsPandas = results.pandas().xyxy[0]
+    # confidenceArr = resultsPandas.confidence
+    # xminArr = resultsPandas.xmin
+    # yminArr = resultsPandas.ymin
+    # xmaxArr = resultsPandas.xmax
+    # ymaxArr = resultsPandas.ymax
 
     maxConfidence = 0
     maxConfidenceGPS = [None, None]
@@ -48,13 +67,14 @@ def runYolov5(client, responses, model, vehicleName, confidanceMin):
     while os.path.exists(dataDir + "/" + ('%s' % j)+"yoloDetect.jpg"):
         j+=1
 
+    # TODO: CHANGE WITH SUCCESS BOOL FROM ROS
     if(len(resultsPandas) > 0):
         confidence = confidenceArr[0]
         # if confidence is high enough use for GPS estimation
         if(confidence > confidanceMin):
             #print("Found a target!!!")
             validDetection=True
-            xmin, ymin, xmax, ymax = int(xminArr[0]), int(yminArr[0]), int(xmaxArr[0]), int(ymaxArr[0])
+            # xmin, ymin, xmax, ymax = int(xminArr[0]), int(yminArr[0]), int(xmaxArr[0]), int(ymaxArr[0])
             start_point = (xmin, ymin)
             end_point = (xmax, ymax)
             newImag = cv2.rectangle(sceneRGB2, start_point, end_point, (0, 255, 0), 2)

@@ -15,6 +15,7 @@ from Overseer import overseerDroneController
 from Wolf import wolfDroneController
 from ProximityWolf import startProximityWolf
 from ProximityOverseer import startProximityOverseer
+from YoloGPU import startYoloGPU
 from ctypes import Structure, c_int
 from multiprocessing.sharedctypes import Array
 import multiprocessing as mp
@@ -24,6 +25,7 @@ from DroneBehaviors.spiralSearchCreator import createWaypoints
 import Constants.configDrones as configDrones
 import Constants.ros as ros
 from HelperFunctions import clusterHelper
+from airsim_ros_pkgs.srv import requestGPU
 
 # Environmental Variables
 LOOP_NUMBER = configDrones.LOOP_NUMBER
@@ -51,18 +53,29 @@ if __name__ == '__main__': # Only runs if this is main processes
     client = airsim.MultirotorClient(LOCAL_IP)
     clusterHelper.applyInfrared(client)
 
-    # loading yolov5
-    cwd = os.getcwd()
-    yoloPT = os.path.join(str(cwd), 'best.pt')
-    model = torch.hub.load('ultralytics/yolov5', 'custom', path=yoloPT, trust_repo=True)
+    # # loading yolov5
+    # cwd = os.getcwd()
+    # yoloPT = os.path.join(str(cwd), 'best.pt')
+    # model = torch.hub.load('ultralytics/yolov5', 'custom', path=yoloPT, trust_repo=True)
 
     # TODO: start all procecess for ros Nodes here
+
+    # Starts node for gpu yolo processing
+    mp.Process(target=startYoloGPU, args=()).start()
+    time.sleep(10);
+
+    rospy.wait_for_service(GPU_SERVICE)
+    response = rospy.ServiceProxy(GPU_SERVICE, requestGPU)
+    responseObject = response("")
+    if (responseObject.success == True):
+        print("GPU model is ready")
+
     # Start wolf proximity subscriber and wolf nodes
     mp.Process(target=startProximityWolf, args=(wolfCount,)).start()
     time.sleep(1);
     for wolf in range(wolfCount): # str(x) = the vechical_name of the drone
         droneName = str(wolf)
-        mp.Process(target=wolfDroneController, args=(droneName,wolfCount,overseerCount, model)).start()
+        mp.Process(target=wolfDroneController, args=(droneName,wolfCount,overseerCount)).start()
 
     # Start overseer proximity subscriber and overseer nodes
 

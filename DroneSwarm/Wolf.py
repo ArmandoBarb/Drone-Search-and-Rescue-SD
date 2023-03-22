@@ -110,7 +110,7 @@ Drone_Max_Wait_Time_Start = time.time()
 Test_REMOVE = False
 
 # Main Process Start ----------------------------------------------
-def wolfDroneController(droneName, droneCount, overseerCount, model):
+def wolfDroneController(droneName, droneCount, overseerCount):
     # set global vairable
     global DM_Drone_Name
     DM_Drone_Name = droneName
@@ -165,7 +165,7 @@ def wolfDroneController(droneName, droneCount, overseerCount, model):
     
     debugPrint("At wolf camera thread setup")
     # start camera thread here
-    t3 = Thread(target = wolfCameraDetection, args=(droneName, model))
+    t3 = Thread(target = wolfCameraDetection, args=(droneName))
     t3.start()
 
     # Test Code startWolfSearch
@@ -476,7 +476,7 @@ def handleEnd(data):
         End_Loop = True
 
 # checks drone camera with yolo detection
-def wolfCameraDetection(droneName, model):
+def wolfCameraDetection(droneName):
     threadClient = airsim.MultirotorClient(LOCAL_IP)
     debugPrint("Starting wolfCameraDetection loop")
     i = 0
@@ -506,7 +506,9 @@ def wolfCameraDetection(droneName, model):
             continue;
 
         responses = getInfo.getScene(threadClient, droneName)
-        wolfEstimate = yolov5.runYolov5(threadClient, responses, model, droneName, YOLO_CONFIDENCE)
+
+        # TODO: Fix how to run yolo with service
+        wolfEstimate = yolov5.runYolov5(threadClient, responses, droneName, YOLO_CONFIDENCE)
 
         if(wolfEstimate[0]!=None and wolfEstimate[1]!=None):
             # detection
