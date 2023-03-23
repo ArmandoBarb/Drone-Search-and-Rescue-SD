@@ -179,7 +179,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
 
     # Sets and connects to client and takes off drone
     client = takeOff(droneName)
-    client.moveToZAsync(z=-4, velocity=8, vehicle_name = droneName).join()
+    client.moveToZAsync(z=-3, velocity=8, vehicle_name = droneName).join()
 
     # start camera thread here
     t3 = Thread(target = wolfCameraDetection, args=(droneName))
@@ -293,11 +293,10 @@ def wolfDroneController(droneName, droneCount, overseerCount):
                     # check stage of conensus
                     if(currIterationNum < MAX_CONSENSUS_ITERATION_NUMBER):
                         # make new cosensus dec
-                        currIterationNum += 1
-
-                        passThreshold, newGPSCenter = calcHelper.calcNewConsenusGPS(wolfDataArray, gpsCenter, threshold)
+                        passThreshold, newGPSCenter = calcHelper.calcNewConsenusGPS(wolfDataArray, gpsCenter, threshold, droneName)
                         
-                        if(currIterationNum > Cur_Consensus_Iteration_Number):
+                        if(currIterationNum == Cur_Consensus_Iteration_Number):
+                            currIterationNum += 1
                             wolfSignalPublisherGPS(wolfCommPublish, client, str(Cluster), str(Task_Group), CONSENSUS_DECISION_SIGNAL, \
                                 signalGPS=newGPSCenter, iterationNumber=currIterationNum, result=passThreshold)
 
@@ -310,7 +309,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
                         
                     else:
                         # consenus decion target found
-                        passThreshold, newGPSCenter = calcHelper.calcNewConsenusGPS(wolfDataArray, gpsCenter, threshold)
+                        passThreshold, newGPSCenter = calcHelper.calcNewConsenusGPS(wolfDataArray, gpsCenter, threshold, droneName)
                         wolfSignalPublisherGPS(wolfCommPublish, client, str(Cluster), str(Task_Group), CONSENSUS_DECISION_SIGNAL, \
                                 signalGPS=newGPSCenter, iterationNumber=currIterationNum, result=passThreshold)
                         
@@ -339,6 +338,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
             
             yawDegrees = circleBehavior.calcYaw(currentGPS=currentDroneData.gps_location, targetGPS=Circle_Center_GPS);
             yawDegrees = yawDegrees - 90
+            
             yaw_mode  = airsim.YawMode(is_rate=False, yaw_or_rate=(yawDegrees));
 
             if (In_Position_WS):
@@ -446,6 +446,7 @@ def handleWolfSignal(data):
     result = data.result
 
     global In_Position_WS, In_Position_CD, Start_Time, WAYPOINT_INDEX
+    global Cur_Consensus_Iteration_Number
     #debugPrint("Wolf listend to wolf comm: " +  str(command))
 
     # Check if we are in the same cluster, or if cluster is empty
@@ -470,7 +471,7 @@ def handleWolfSignal(data):
 
     if(command == CONSENSUS_DECISION_SIGNAL):
         iterationNum = data.genericInt
-        if (Consensus_Decision_Behavior):
+        if (Consensus_Decision_Behavior and iterationNum > Cur_Consensus_Iteration_Number ):
             updateConsensusDecisionCenter(signalGPS, iterationNum, result);
 
     # Check if we got at spiral waypoint signal
@@ -537,18 +538,20 @@ def wolfCameraDetection(droneName):
             response = getInfo.getResponse(threadClient, droneName, "front")
 
 
+        validDetection=False
+
 
         if cameraName=="frontright":
             cameraName="front"
-            wolfEstimate = yolov5.runYolov5(threadClient, responseF, cameraName, droneName, YOLO_CONFIDENCE)
+            wolfEstimate, validDetection, passedConfidence = yolov5.runYolov5(threadClient, responseF, cameraName, droneName, YOLO_CONFIDENCE)
             # if front camera retrieves null detection, then run yolo on right camera
             if(wolfEstimate[0]==None and wolfEstimate[1]==None):
                 cameraName="right"
-                wolfEstimate = yolov5.runYolov5(threadClient, responseR, cameraName, droneName, YOLO_CONFIDENCE)
+                wolfEstimate, validDetection, passedConfidence = yolov5.runYolov5(threadClient, responseR, cameraName, droneName, YOLO_CONFIDENCE)
         else:
-            wolfEstimate = yolov5.runYolov5(threadClient, response, cameraName, droneName, YOLO_CONFIDENCE)
+            wolfEstimate, validDetection, passedConfidence = yolov5.runYolov5(threadClient, response, cameraName, droneName, YOLO_CONFIDENCE)
 
-        if(wolfEstimate[0]!=None and wolfEstimate[1]!=None):
+        if(passedConfidence):
             # detection
             formattedWolfEstimateGPS = calcHelper.fixDegenerateCoordinate(wolfEstimate)
             # debugPrint("\nGot a detection! : \n"+str(formattedWolfEstimateGPS))
@@ -563,7 +566,7 @@ def wolfCameraDetection(droneName):
                 if (not isSearched):
                     circleRadiusGPS = MIN_CIRCLE_RADIUS_GPS
                     circleRadiusMeters = MIN_CIRCLE_RADIUS_METERS
-                    searchTimeS = 8
+                    searchTimeS = 15
                     taskGroup = droneName + "Con"
                     # request nearby drones
                     requestNearbyDronesConsensusDecision(circleCenterGPS=formattedWolfEstimateGPS, circleRadiusGPS=circleRadiusGPS, circleRadiusMeters=circleRadiusMeters, searchTimeS=searchTimeS,  taskGroup=taskGroup)
@@ -580,7 +583,7 @@ def wolfCameraDetection(droneName):
                 Avg_Consensus_Decion_GPS.longitude = (totalLon + formattedWolfEstimateGPS.longitude) / Success_Det_Count;
                 Avg_Consensus_Decion_GPS.latitude = (totalLat + formattedWolfEstimateGPS.latitude) / Success_Det_Count;
 
-        else:
+        elif(validDetection):
             if(Consensus_Decision_Behavior):
                 # no detection - currently consensus Behavior
                 global Fail_Det_Count
@@ -1389,8 +1392,8 @@ def wolfSearchBehaviorGetVector(wolfCommPublish, client, currentDroneData):
     # calcSpeedVector function variables
     averageAlignmentSpeed = 5 * Speed_Factor
     bonusAlignmentSpeed = 0 * Speed_Factor
-    maxCohSepSpeed = 2 * Speed_Factor
-    maxSpeed = 13 * Speed_Factor
+    maxCohSepSpeed = 3 * Speed_Factor
+    maxSpeed = 8 * Speed_Factor
 
     vectorR = lineBehavior.repulsion(client, int(DM_Drone_Name));
     vectorR = [vectorR[1], vectorR[0]]
@@ -1453,10 +1456,10 @@ def consensusDecisionBehaviorGetVector(currentDroneData):
     # if(not In_Position_WS):
 
     # calcSpeedVector function variables
-    averageAlignmentSpeed = 12 * Speed_Factor
+    averageAlignmentSpeed = 5 * Speed_Factor
     bonusAlignmentSpeed = 0 * Speed_Factor
     maxCohSepSpeed = 4 * Speed_Factor
-    maxSpeed = 13 * Speed_Factor
+    maxSpeed = 7 * Speed_Factor
     
     vector = circleBehavior.calcSpeedVector(currentDroneData=currentDroneData, targetGPS=targetGPS, \
                 radius=radius, radiusM=radiusM, wolfData=wolfDataArray, \

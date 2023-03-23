@@ -58,50 +58,82 @@ def runYolov5(client, responses, cameraName, vehicleName, confidanceMin):
         # make directory if not already there
         os.makedirs(dataDir)
 
+    cwd = os.getcwd()
+    dataDir_fail=os.path.join(str(cwd),'yolov5Images_fails')
+    isExist=os.path.exists(dataDir_fail)
+
+    if not isExist:
+        # make directory if not already there
+        os.makedirs(dataDir_fail)
+
     #ToDo: just pass loop index adn drone name
     # or in final build just overwite
     j=0
-    while os.path.exists(dataDir + "/" + ('%s' % j)+cameraName+"newImg.jpg"):
+    while os.path.exists(dataDir + "/" + ('%s' % j)+"w"+vehicleName+cameraName+"newImg.jpg"):
         j+=1
 
+    #ToDo: just pass loop index adn drone name
+    # or in final build just overwite
+    k=0
+    while os.path.exists(dataDir + "/" + ('%s' % k)+"w"+vehicleName+cameraName+"newImg.jpg"):
+        k+=1
+
+    validDetection = False
+    passedConfidence = False
     # TODO: CHANGE WITH SUCCESS BOOL FROM ROS
     if(success):
+        validDetection = True
         confidence = responseObject.confidence
         # if confidence is high enough use for GPS estimation
         if(confidence >= confidanceMin):
+            passedConfidence=True
+            
             #print("Found a target!!!")
-            validDetection=True
 
             start_point = (xmin, ymin)
             end_point = (xmax, ymax)
             newImag = cv2.rectangle(sceneRGB2, start_point, end_point, (0, 255, 0), 2)
             # save new image only with highest confidence detection
-            cv2.imwrite(dataDir + "/" + ('%s' % j)+cameraName+"origImg.jpg", sceneRGB2)
-            cv2.imwrite(dataDir + "/" + ('%s' % j)+cameraName+"newImg.jpg", newImag)
+            cv2.imwrite(dataDir + "/" + ('%s' % j)+"w"+vehicleName+cameraName+"origImg.jpg", sceneRGB2)
+            cv2.imwrite(dataDir + "/" + ('%s' % j)+"w"+vehicleName+cameraName+"newImg.jpg", newImag)
 
             #print("------------------------------------------------------------------------------------------------------------------")
             # use bb dimensions/location for GPS estimation
-            alt, lat, lon = getInfoWolf.getWolfGPSEstimate(client, responses, vehicleName, xmin, ymin, xmax, ymax)
+            alt, lat, lon = getInfoWolf.getWolfGPSEstimate(client, responses, vehicleName, cameraName, xmin, ymin, xmax, ymax)
             #print("\tWOLF ESTIMATE: "+str(alt)+" alt, " + str(lat) + " lat, " + str(lon) + " lon")
             maxConfidenceGPS[1]=lat
             maxConfidenceGPS[0]=lon
             #print("------------------------------------------------------------------------------------------------------------------")
 
             # write corresponding text file
-            with open(dataDir + "/" + ('%s' % j)+"GPSEstimate.txt", 'w') as f:
+            with open(dataDir + "/" + ('%s' % j)+"w"+vehicleName+cameraName+"GPSEstimate.txt", 'w') as f:
                 # f.write(str(resultsPandas))
                 f.write("\n\tMax Confidence: "+str(confidence))
                 f.write("\n\tMax Confidence Estimate:"+ str(lat) + " lat, " + str(lon) + " lon")
                 f.close()
 
-            cwd = os.getcwd()
-            # dataDir=os.path.join(str(cwd),'yolov5Images')
-            #print('CWD: '+dataDir)
-            isExist=os.path.exists(dataDir)
+        else:
+            passedConfidence=False
+            start_point = (xmin, ymin)
+            end_point = (xmax, ymax)
+            newImag = cv2.rectangle(sceneRGB2, start_point, end_point, (0, 255, 0), 2)
+            # save new image only with highest confidence detection
+            cv2.imwrite(dataDir_fail + "/" + ('%s' % k)+"w"+vehicleName+cameraName+"origImg.jpg", sceneRGB2)
+            cv2.imwrite(dataDir_fail + "/" + ('%s' % k)+"w"+vehicleName+cameraName+"newImg.jpg", newImag)
 
-            if not isExist:
-                # make directory if not already there
-                os.makedirs(dataDir)
-                #print('Created: ' + dataDir)
+            #print("------------------------------------------------------------------------------------------------------------------")
+            # use bb dimensions/location for GPS estimation
+            alt, lat, lon = getInfoWolf.getWolfGPSEstimate(client, responses, vehicleName, cameraName, xmin, ymin, xmax, ymax)
+            #print("\tWOLF ESTIMATE: "+str(alt)+" alt, " + str(lat) + " lat, " + str(lon) + " lon")
+            maxConfidenceGPS[1]=lat
+            maxConfidenceGPS[0]=lon
+            #print("------------------------------------------------------------------------------------------------------------------")
 
-    return maxConfidenceGPS
+            # write corresponding text file
+            with open(dataDir_fail + "/" + ('%s' % k)+"w"+vehicleName+cameraName+"GPSEstimate.txt", 'w') as f:
+                # f.write(str(resultsPandas))
+                f.write("\n\tMax Confidence: "+str(confidence))
+                f.write("\n\tMax Confidence Estimate:"+ str(lat) + " lat, " + str(lon) + " lon")
+                f.close()
+
+    return maxConfidenceGPS, validDetection, passedConfidence

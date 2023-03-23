@@ -6,7 +6,7 @@ import math
 import time
 from ImageProcessing import getInfo 
 
-def getWolfGPSEstimate(client, responses, vehicle_name, xMin, yMin, xMax, yMax):
+def getWolfGPSEstimate(client, responses, vehicle_name, cameraName, xMin, yMin, xMax, yMax):
     gps_al, gps_lat, gps_lon = getInfo.getDroneGPS(vehicle_name, client)
     responseScene = responses[0]
 
@@ -21,20 +21,56 @@ def getWolfGPSEstimate(client, responses, vehicle_name, xMin, yMin, xMax, yMax):
     # print('Camera Y: ', str(y))
     # print('Camera Z: ', str(z))
     # print('Camera W: ', str(w))
-    
-    roll  = (180/math.pi)*math.atan2(2*y*w + 2*x*z, 1 - 2*y*y - 2*z*z)
-    pitch = (180/math.pi)*math.atan2(2*x*w + 2*y*z, 1 - 2*x*x - 2*z*z)
-    yaw0 =  (180/math.pi)*math.asin(2*x*y + 2*z*w)
-    yaw = 0
+    roll= None
+    pitch= None
+    yaw=None
 
-    if(w>.5 and yaw0>0):
-        yaw =  90-yaw0
-    elif(w<.5 and yaw0>=0):
-        yaw =  -90+yaw0
-    elif(w>.5 and yaw0<=0):
-        yaw = 90-yaw0
-    elif(w<.5 and yaw0<0):
-        yaw = -90+yaw0
+    if(cameraName=="front"):
+    
+        roll  = (180/math.pi)*math.atan2(2*y*w + 2*x*z, 1 - 2*y*y - 2*z*z)
+        pitch = (180/math.pi)*math.atan2(2*x*w + 2*y*z, 1 - 2*x*x - 2*z*z)
+        yaw0 =  (180/math.pi)*math.asin(2*x*y + 2*z*w)
+        yaw = 0
+
+        if(w>.5 and yaw0>0): # pos greater
+            yaw =  90-yaw0
+        elif(w<.5 and yaw0>=0): # pos less
+            yaw =  -90+yaw0
+        elif(w>.5 and yaw0<=0): # neg greater
+            yaw = 90-yaw0
+        elif(w<.5 and yaw0<0): # neg greater
+            yaw = -90+yaw0
+
+    elif(cameraName=="right"):
+        
+        t0 = +2.0 * (w * x + y * z)
+        t1 = +1.0 - 2.0 * (x * x + y * y)
+        roll = math.atan2(t0, t1)
+        
+        t2 = +2.0 * (w * y - z * x)
+        t2 = +1.0 if t2 > +1.0 else t2
+        t2 = -1.0 if t2 < -1.0 else t2
+        pitch = math.asin(t2)
+        
+        t3 = +2.0 * (w * z + x * y)
+        t4 = +1.0 - 2.0 * (y * y + z * z)
+        yaw = math.atan2(t3, t4)
+
+        yaw = math.degrees(yaw)
+
+        if(yaw>=90 and yaw<=180): # bottom right quadrant
+            yaw = -(yaw-90)
+        elif(yaw<=90 and yaw>=0): # top right quadrant
+            yaw = 90-yaw
+        elif(yaw<=0 and yaw>=-90): # top left quadrant
+            yaw = -(yaw-90)
+        elif(yaw<=-90 and yaw>=-135): # bottom left quadrant
+            # print(str(yaw)+"-2*("+"135+"+str(yaw)+")")
+            yaw = yaw-2*(135+yaw)
+        elif(yaw<=-130 and yaw>=-180): # bottom left quadrant
+            # print(str(yaw)+"-2*("+"135+"+str(yaw)+")")
+            yaw = yaw-2*(135+yaw)
+
 
     # print('Camera Roll: ', str(roll))
     # print('Camera Pitch: ', str(pitch))
