@@ -1284,7 +1284,7 @@ def allDronesAtWaypoint(wolfCommPublish, client):
             yDifference = wolf.latitude - float(WAYPOINT_COORDS[WAYPOINT_INDEX][1])
 
             # If any of the drones are out of bounds, return false
-            if ((abs(xDifference) > 0.0003) or (abs(yDifference) > 0.0003)):
+            if ((abs(xDifference) > 0.0004) or (abs(yDifference) > 0.0004)):
                 return 0
 
         # Check if our global value has changed
