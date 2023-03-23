@@ -89,6 +89,7 @@ if __name__ == '__main__': # Only runs if this is main processes
     # Start overseer proximity subscriber and overseer nodes
 
     mp.Process(target=startProximityOverseer, args=(overseerCount,)).start()
+    time.sleep(1);
     for overseer in range(overseerCount):
         droneNum = str(overseer)
         droneName = "Overseer_" + droneNum
