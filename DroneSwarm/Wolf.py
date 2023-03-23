@@ -462,7 +462,7 @@ def wolfCameraDetection(droneName):
                 # debugPrint("\nGot a detection yolo! : \n"+str(formattedWolfEstimateGPS))
                 # print("\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n")
                 isSearched = isAlreadySearched(formattedWolfEstimateGPS, MIN_CIRCLE_RADIUS_GPS)
-                if (not isSearched)
+                if (not isSearched):
                     circleRadiusGPS = MIN_CIRCLE_RADIUS_GPS
                     circleRadiusMeters = MIN_CIRCLE_RADIUS_METERS
                     searchTimeS = 8
@@ -1166,7 +1166,7 @@ def endConsensusDecision():
     
 def updateConsensusWaypointHistory(waypoint):
     global Consensus_Waypoint_History
-    Consensus_Waypoint_History.append([waypoint])
+    Consensus_Waypoint_History.append(waypoint)
 
 def cleanConsensusWaypointHistory():
     global Consensus_Waypoint_History
@@ -1176,7 +1176,7 @@ def isAlreadySearched(nextWaypoint, radius):
     global Consensus_Waypoint_History
     seperationRadius = radius / 2
     for pastWaypoint in Consensus_Waypoint_History:
-        distance = calcHelper.calcDistanceBetweenGPS(waypoint, pastWaypoint)
+        distance = calcHelper.calcDistanceBetweenGPS(nextWaypoint, pastWaypoint)
         if (distance < seperationRadius):
             return True;
     return False;
