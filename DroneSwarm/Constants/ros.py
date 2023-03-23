@@ -20,3 +20,6 @@ WOLF_DRONE_SERVICE = "wolf_service_"
 # task group name beginning
 SEARCH_TASK_GROUP = "Task_Group_Search_"
 MAX_DRONE_WAIT_TIMER = 90
+EMPTY_TASK_GROUP = ""
+EMPTY_CLUSTER = ""
+

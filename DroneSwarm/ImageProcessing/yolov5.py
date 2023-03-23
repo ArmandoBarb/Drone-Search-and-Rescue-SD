@@ -34,7 +34,7 @@ def runYolov5(client, responses, cameraName, vehicleName, confidanceMin):
     response = rospy.ServiceProxy(GPU_SERVICE, requestGPU)
     responseObject = response(str(responseString.decode('latin-1')), height, width)
     gpuLen = time.time() - gpuServiceTime
-    print("gpuLen:       " + str(gpuLen) + "         999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999")
+    # print("gpuLen:       " + str(gpuLen) + "         999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999")
 
     # Set variables from response object
     success = responseObject.success
@@ -49,6 +49,10 @@ def runYolov5(client, responses, cameraName, vehicleName, confidanceMin):
     detection = 0
     maxConfidenceDetection = 0
 
+    # cwd = os.getcwd()
+    # dataDir=os.path.join(str(cwd),'yolov5Images')
+    # isExist=os.path.exists(dataDir)
+    # dataDir = '/home/testuser/AirSim/PythonClient/multirotor/Drone-Search-and-Rescue-SD/DroneSwarm/yolov5Images'
     cwd = os.getcwd()
     dataDir=os.path.join(str(cwd),'yolov5Images')
     isExist=os.path.exists(dataDir)
@@ -94,7 +98,7 @@ def runYolov5(client, responses, cameraName, vehicleName, confidanceMin):
                 f.close()
 
             cwd = os.getcwd()
-            dataDir=os.path.join(str(cwd),'yolov5Images')
+            # dataDir=os.path.join(str(cwd),'yolov5Images')
             #print('CWD: '+dataDir)
             isExist=os.path.exists(dataDir)
 
