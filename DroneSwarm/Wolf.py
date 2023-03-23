@@ -226,8 +226,8 @@ def wolfDroneController(droneName, droneCount, overseerCount):
         collisionAvoidance = False # set to true if need to do collision avoidance (open to better integration method)
         isChangeVelocity = True
         droneSpeed = getDroneSpeed(client, droneName)
-        threshold = droneSpeed * 3
-        slightDeviation = getDroneSpeed(client, droneName) * 3
+        threshold = droneSpeed * 2.5
+        slightDeviation = getDroneSpeed(client, droneName) * 2.5
 
         # # Check if threshold is under min
         # if (threshold < 5):
@@ -616,6 +616,243 @@ def wolfCameraDetection(droneName):
     debugPrint(" CameraDetection: Average Loop Time: " + str(timeSpent / i))
     return;
 
+
+def mocInfraredForConsensus(client, vehicle_name):
+    # client.simSetSegmentationObjectID('.*?FoxMasterAi.*?', 215, True);  # fox
+    # client.simSetSegmentationObjectID('.*?StagMasterAi.*?', 230, True); # stag
+    # client.simSetSegmentationObjectID('.*?DoeMasterAi.*?', 200, True);  # doe
+    # client.simSetSegmentationObjectID('.*?BrianMasterAi.*?', 255, True);# brian
+    # client.simSetSegmentationObjectID('.*?BP_MovedChar.*?', 255, True); # moving brian mesh
+
+    responses = client.simGetImages([
+        airsim.ImageRequest("front-center", airsim.ImageType.Infrared, False, False), 
+        airsim.ImageRequest("front-center", airsim.ImageType.Scene, False, False)], vehicle_name = vehicleName)
+
+    responseSeg = responses[0]
+
+    height = responses[0].height
+    width = responses[0].width
+
+    segArr = np.fromstring(responseSeg.image_data_uint8, dtype=np.uint8)
+    segRGB = segArr.reshape(height, width, 3)
+
+    # fox = 215
+    # stag = 230
+    # doe = 200
+
+    # Check for fox
+    pixCount = 0
+    foxClusters = []
+
+    for i in range(height):
+        for j in range(width):
+            if segRGB[i][j][0] == 215 and \
+               segRGB[i][j][1] == 215 and \
+               segRGB[i][j][2] == 215:
+                pixCount = pixCount + 1
+
+                isMatch = False
+                isClustered = False
+                pixel = [(i, j)]
+
+                # found heat signature pixels
+                if not foxClusters:
+                    foxClusters.append(pixel)
+                else:
+                    clusterCount = 0
+                    # not empty case
+                    for cluster in foxClusters:
+                        sibilingExists = False
+                        for coord in cluster:
+                            # properly place the cluster among appropriate color
+                            imgPixel = segRGB[i][j][0]
+                            clusterPixel = segRGB[coord[0]][coord[1]][0]
+                            if imgPixel != clusterPixel:
+                                break
+                            else:
+                                isMatch = True
+
+                            # otherwise threshold and sort the coordinate
+                            if clusterHelper.dist([i, j], [coord[0], coord[1]]) < 40:
+                                foxCluster.append(pixel[0])
+                                isClustered = True
+                                break
+                            else:
+                                # used for same heat signature for two animals
+                                # but they are far apart
+                                sibilingExists = clusterHelper.checkSiblingClusterExists(clusterPixel, clusterCount, segRGB, clusters)
+                                if not sibilingExists:
+                                    isClustered = True
+                                    foxClusters.append(pixel)
+                                break
+
+                        clusterCount+=1
+                        if isClustered:
+                            break
+                    # no match for non-empty list
+                    if not isMatch:
+                        foxClusters.append(pixel)
+
+    # Check for stag
+    pixCount = 0
+    stagClusters = []
+
+    for i in range(height):
+        for j in range(width):
+            if segRGB[i][j][0] == 230 and \
+               segRGB[i][j][1] == 230 and \
+               segRGB[i][j][2] == 230:
+                pixCount = pixCount + 1
+
+                isMatch = False
+                isClustered = False
+                pixel = [(i, j)]
+
+                # found heat signature pixels
+                if not stagClusters:
+                    stagClusters.append(pixel)
+                else:
+                    clusterCount = 0
+                    # not empty case
+                    for cluster in stagClusters:
+                        sibilingExists = False
+                        for coord in cluster:
+                            # properly place the cluster among appropriate color
+                            imgPixel = segRGB[i][j][0]
+                            clusterPixel = segRGB[coord[0]][coord[1]][0]
+                            if imgPixel != clusterPixel:
+                                break
+                            else:
+                                isMatch = True
+
+                            # otherwise threshold and sort the coordinate
+                            if clusterHelper.dist([i, j], [coord[0], coord[1]]) < 40:
+                                cluster.append(pixel[0])
+                                isClustered = True
+                                break
+                            else:
+                                # used for same heat signature for two animals
+                                # but they are far apart
+                                sibilingExists = clusterHelper.checkSiblingClusterExists(clusterPixel, clusterCount, segRGB, clusters)
+                                if not sibilingExists:
+                                    isClustered = True
+                                    stagClusters.append(pixel)
+                                break
+
+                        clusterCount+=1
+                        if isClustered:
+                            break
+                    # no match for non-empty list
+                    if not isMatch:
+                        stagClusters.append(pixel)
+
+    # Check for doe
+    pixCount = 0
+    doeClusters = []
+
+    for i in range(height):
+        for j in range(width):
+            if segRGB[i][j][0] == 200 and \
+               segRGB[i][j][1] == 200 and \
+               segRGB[i][j][2] == 200:
+                pixCount = pixCount + 1
+
+                isMatch = False
+                isClustered = False
+                pixel = [(i, j)]
+
+                # found heat signature pixels
+                if not doeClusters:
+                    doeClusters.append(pixel)
+                else:
+                    clusterCount = 0
+                    # not empty case
+                    for cluster in doeClusters:
+                        sibilingExists = False
+                        for coord in cluster:
+                            # properly place the cluster among appropriate color
+                            imgPixel = segRGB[i][j][0]
+                            clusterPixel = segRGB[coord[0]][coord[1]][0]
+                            if imgPixel != clusterPixel:
+                                break
+                            else:
+                                isMatch = True
+
+                            # otherwise threshold and sort the coordinate
+                            if clusterHelper.dist([i, j], [coord[0], coord[1]]) < 40:
+                                cluster.append(pixel[0])
+                                isClustered = True
+                                break
+                            else:
+                                # used for same heat signature for two animals
+                                # but they are far apart
+                                sibilingExists = clusterHelper.checkSiblingClusterExists(clusterPixel, clusterCount, segRGB, clusters)
+                                if not sibilingExists:
+                                    isClustered = True
+                                    doeClusters.append(pixel)
+                                break
+
+                        clusterCount+=1
+                        if isClustered:
+                            break
+                    # no match for non-empty list
+                    if not isMatch:
+                        doeClusters.append(pixel)
+                        
+     # Check for doe
+    pixCount = 0
+    peopleClusters = []
+
+    for i in range(height):
+        for j in range(width):
+            if segRGB[i][j][0] == 200 and \
+               segRGB[i][j][1] == 200 and \
+               segRGB[i][j][2] == 200:
+                pixCount = pixCount + 1
+
+                isMatch = False
+                isClustered = False
+                pixel = [(i, j)]
+
+                # found heat signature pixels
+                if not peopleClusters:
+                    peopleClusters.append(pixel)
+                else:
+                    clusterCount = 0
+                    # not empty case
+                    for cluster in peopleClusters:
+                        sibilingExists = False
+                        for coord in cluster:
+                            # properly place the cluster among appropriate color
+                            imgPixel = segRGB[i][j][0]
+                            clusterPixel = segRGB[coord[0]][coord[1]][0]
+                            if imgPixel != clusterPixel:
+                                break
+                            else:
+                                isMatch = True
+
+                            # otherwise threshold and sort the coordinate
+                            if clusterHelper.dist([i, j], [coord[0], coord[1]]) < 40:
+                                cluster.append(pixel[0])
+                                isClustered = True
+                                break
+                            else:
+                                # used for same heat signature for two animals
+                                # but they are far apart
+                                sibilingExists = clusterHelper.checkSiblingClusterExists(clusterPixel, clusterCount, segRGB, clusters)
+                                if not sibilingExists:
+                                    isClustered = True
+                                    peopleClusters.append(pixel)
+                                break
+
+                        clusterCount+=1
+                        if isClustered:
+                            break
+                    # no match for non-empty list
+                    if not isMatch:
+                        peopleClusters.append(pixel)
+
+    return 0
 
 # Theads END ===========================================
 
