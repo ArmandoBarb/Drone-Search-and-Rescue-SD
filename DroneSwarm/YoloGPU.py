@@ -32,7 +32,7 @@ def startYoloGPU():
 
     # start yolo GPU
     cwd = os.getcwd()
-    yoloPT = os.path.join(str(cwd), 'best.pt')
+    yoloPT = os.path.join(str(cwd), 'best_coco.pt')
 
     # Model is loaded global to be used by service functions
     try:

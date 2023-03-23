@@ -163,7 +163,7 @@ def calcRTriangleOpposite(hypothenus, angleD):
 def calcRTriangleAdjacent(hypothenus, angleD):
     return math.cos(math.radians(angleD)) * hypothenus;
 
-def calcNewConsenusGPS(wolfDataArray, gpsCenter, threshold):
+def calcNewConsenusGPS(wolfDataArray, gpsCenter, threshold, droneName):
     newConsenuGPS = GPS()
     newConsenuGPS.longitude = gpsCenter.longitude
     newConsenuGPS.latitude = gpsCenter.latitude
@@ -171,17 +171,18 @@ def calcNewConsenusGPS(wolfDataArray, gpsCenter, threshold):
 
     droneFail = 0
     droneSucc = 0
-    print("----------------------------------------")
+    droneNet = 0
+    print("wolf:" + str(droneName) + "----------------------------------------")
     for wolf in wolfDataArray:
         totalDet = wolf.successDetCount + wolf.failDetCount
         if(totalDet <= 0):
-            droneFail += 1
+            droneNet += 1
             continue; # wtf
 
         successRate = wolf.successDetCount / totalDet
         
         print("failDetCount: " + str(wolf.failDetCount) + " successDetCount: " + str(wolf.successDetCount))
-        print("threshold: " + str(successRate) + " successRate: " + str(successRate))
+        print("threshold: " + str(threshold) + " successRate: " + str(successRate))
         if(threshold <= int(successRate)):
             droneSucc += 1
         else:
@@ -197,10 +198,12 @@ def calcNewConsenusGPS(wolfDataArray, gpsCenter, threshold):
         
 
 
-    print("new Gps Consensus" + str(newConsenuGPS.longitude) + " , " + str(newConsenuGPS.latitude))
-    print("droneFail: " + str(droneFail) + " droneSucc: " + str(droneSucc))
-    print("----------------------------------------")
-    if (droneFail > droneSucc):
+    if (droneFail > droneSucc or  0 == (droneFail + droneSucc)):
+        print("droneFail: " + str(droneFail) + " droneSucc: " + str(droneSucc) + " droneNet: " + str(droneNet))
+        print("-----------------Fail-------------------")
         return False, newConsenuGPS
     else:
+        print("new Gps Consensus" + str(newConsenuGPS.longitude) + " , " + str(newConsenuGPS.latitude))
+        print("droneFail: " + str(droneFail) + " droneSucc: " + str(droneSucc) + " droneNet: " + str(droneNet))
+        print("----------------Pass-------------------")
         return True, newConsenuGPS
