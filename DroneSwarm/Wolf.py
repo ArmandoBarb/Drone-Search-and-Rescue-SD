@@ -105,6 +105,7 @@ Success_Det_Count = 0
 Fail_Det_Count = 0
 Avg_Consensus_Decion_GPS = GPS() # gps data type
 Drone_Max_Wait_Time_Start = time.time()
+Consensus_Waypoint_History = []
 # TODO: add tunning variables for behaviors (would be cool if we can train them)
 
 # Main Process Start ----------------------------------------------
@@ -295,6 +296,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
                 if (timeDiff > MAX_DRONE_WAIT_TIMER):
                     text = "Moving to waypoint took too long, moving to: " + str(WAYPOINT_INDEX + 1)
                     debugPrint(text)
+                    cleanConsensusWaypointHistory()
                     wolfSignalWaypointPublisher(wolfCommPublish, client, str(Cluster), '', AT_SPIRAL_WAYPOINT_SIGNAL, WAYPOINT_INDEX + 1)
 
                 # Otherwise we check the whole group
@@ -375,6 +377,9 @@ def handleWolfSignal(data):
 
     # Check if we got at spiral waypoint signal
     if ((command == AT_SPIRAL_WAYPOINT_SIGNAL)):
+        # Clear current consensus 
+        cleanConsensusWaypointHistory()
+
         # If our current waypoint index is less than the one we received, use the most up to data spiral index
         spiralIndex = data.genericInt
         if(WAYPOINT_INDEX < spiralIndex):
@@ -456,15 +461,16 @@ def wolfCameraDetection(droneName):
                 # assign consensus
                 # debugPrint("\nGot a detection yolo! : \n"+str(formattedWolfEstimateGPS))
                 # print("\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n")
-
-                circleRadiusGPS = MIN_CIRCLE_RADIUS_GPS
-                circleRadiusMeters = MIN_CIRCLE_RADIUS_METERS
-                searchTimeS = 8
-                taskGroup = droneName + "Con"
-                # request nearby drones
-                requestNearbyDronesConsensusDecision(circleCenterGPS=formattedWolfEstimateGPS, circleRadiusGPS=circleRadiusGPS, circleRadiusMeters=circleRadiusMeters, searchTimeS=searchTimeS,  taskGroup=taskGroup)
-                # current Drones
-                startConsensusDecision( circleCenterGPS=formattedWolfEstimateGPS, circleRadiusGPS=circleRadiusGPS, circleRadiusMeters=circleRadiusMeters, searchTimeS=searchTimeS, taskGroup=taskGroup )
+                isSearched = isAlreadySearched(formattedWolfEstimateGPS, MIN_CIRCLE_RADIUS_GPS)
+                if (not isSearched)
+                    circleRadiusGPS = MIN_CIRCLE_RADIUS_GPS
+                    circleRadiusMeters = MIN_CIRCLE_RADIUS_METERS
+                    searchTimeS = 8
+                    taskGroup = droneName + "Con"
+                    # request nearby drones
+                    requestNearbyDronesConsensusDecision(circleCenterGPS=formattedWolfEstimateGPS, circleRadiusGPS=circleRadiusGPS, circleRadiusMeters=circleRadiusMeters, searchTimeS=searchTimeS,  taskGroup=taskGroup)
+                    # current Drones
+                    startConsensusDecision( circleCenterGPS=formattedWolfEstimateGPS, circleRadiusGPS=circleRadiusGPS, circleRadiusMeters=circleRadiusMeters, searchTimeS=searchTimeS, taskGroup=taskGroup )
 
 
             else:
@@ -566,10 +572,12 @@ def commandResponse(request):
         return False
 
     elif (messageType == "RequestConsensusDecision"):
-        if(Consensus_Decision_Behavior):
+        circleCenterGPS = consensusDecisionInfo.circleCenterGPS
+        isSearched = isAlreadySearched(circleCenterGPS, MIN_CIRCLE_RADIUS_GPS)
+        if(Consensus_Decision_Behavior or isSearched):
             return False # already doing consenus behavior
         # debugPrint("Do consensus decision")
-        circleCenterGPS = consensusDecisionInfo.circleCenterGPS
+
         circleRadiusGPS = consensusDecisionInfo.circleRadiusGPS
         circleRadiusMeters = consensusDecisionInfo.circleRadiusMeters
         searchTimeS = consensusDecisionInfo.searchTimeS
@@ -937,7 +945,7 @@ def allDronesAtWaypoint(wolfCommPublish, client):
         # Check if our global value has changed
         if (waypointIndexBeforeCheck == WAYPOINT_INDEX):    
             WAYPOINT_INDEX = WAYPOINT_INDEX + 1
-
+            cleanConsensusWaypointHistory()
             # Communicate to other drones in cluster new waypoint 
             wolfSignalWaypointPublisher(wolfCommPublish, client, str(Cluster), '', AT_SPIRAL_WAYPOINT_SIGNAL, WAYPOINT_INDEX)
 
@@ -949,7 +957,7 @@ def allDronesAtWaypoint(wolfCommPublish, client):
         # Check if our global value has changed
         if (waypointIndexBeforeCheck == WAYPOINT_INDEX):    
             WAYPOINT_INDEX = WAYPOINT_INDEX + 1
-
+            cleanConsensusWaypointHistory()
             # Communicate to other drones in cluster new waypoint 
             wolfSignalWaypointPublisher(wolfCommPublish, client, str(Cluster), '', AT_SPIRAL_WAYPOINT_SIGNAL, WAYPOINT_INDEX)
             # debugPrint("Made it to waypoint")
@@ -1073,6 +1081,8 @@ def startConsensusDecision( circleCenterGPS, circleRadiusGPS, circleRadiusMeters
     global In_Position_CD, Cur_Consensus_Iteration_Number;
     global Success_Det_Count, Fail_Det_Count
 
+    updateConsensusWaypointHistory(circleCenterGPS)
+
     Circle_Center_GPS = circleCenterGPS;
     Circle_Radius_GPS, Circle_Radius_Meters = circleRadiusGPS, circleRadiusMeters;
     Search_Time = searchTimeS;
@@ -1154,7 +1164,22 @@ def endConsensusDecision():
     # Start_Time, Search_Time = None, None;
     Task_Group = "";
     
+def updateConsensusWaypointHistory(waypoint):
+    global Consensus_Waypoint_History
+    Consensus_Waypoint_History.append([waypoint])
 
+def cleanConsensusWaypointHistory():
+    global Consensus_Waypoint_History
+    Consensus_Waypoint_History = []
+
+def isAlreadySearched(nextWaypoint, radius):
+    global Consensus_Waypoint_History
+    seperationRadius = radius / 2
+    for pastWaypoint in Consensus_Waypoint_History:
+        distance = calcHelper.calcDistanceBetweenGPS(waypoint, pastWaypoint)
+        if (distance < seperationRadius):
+            return True;
+    return False;
 
 def debugPrint( debugMessage):
     global DM_Drone_Name
