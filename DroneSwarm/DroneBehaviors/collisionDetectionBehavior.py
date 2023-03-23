@@ -168,7 +168,7 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
     # elif(("Left" in sensorName) and ("0" in imageContainer[0])):
     #     imageContainer = secondChoiceContainer
 
-    treeWidth = (600/100) + 2
+    treeWidth = (630/100) + 2.5
     # treeWidth = 1.75
     # velX,velY = getVelo(treeWidth, closestObjectDistance,DIRECTION_FACTOR)
 
@@ -182,14 +182,14 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
             # theta2 = (treeWidth/slightDeviation)
             theta = math.atan2(treeWidth,slightDeviation)
             # if(slightDeviation < 8):
-            theta = theta + 15
+            theta = theta + 20
             velY = theta * velocity.gnss.velocity.x_val
             velX = velocity.gnss.velocity.x_val
 
         else:
             theta = math.atan2(treeWidth,closestObjectDistance)
             # if(closestObjectDistance < 10):
-            theta = theta + 15
+            theta = theta + 20
             velY = theta * velocity.gnss.velocity.x_val
             velX = velocity.gnss.velocity.x_val
 
@@ -207,7 +207,7 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
             theta = math.atan2(treeWidth,slightDeviation)
             theta = theta * -1
             # if(slightDeviation < 7):
-            theta = theta - 15
+            theta = theta - 20
             velY = theta * velocity.gnss.velocity.x_val
             velX = velocity.gnss.velocity.x_val
 
@@ -215,7 +215,7 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
             theta = math.atan2(treeWidth,closestObjectDistance)
             theta = theta * -1
             # if(closestObjectDistance < 10):
-            theta = theta - 15
+            theta = theta - 20
             velY = theta * velocity.gnss.velocity.x_val
             velX = velocity.gnss.velocity.x_val
 
