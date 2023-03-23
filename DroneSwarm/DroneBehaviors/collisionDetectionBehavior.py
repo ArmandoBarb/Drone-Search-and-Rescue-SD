@@ -168,7 +168,7 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
     # elif(("Left" in sensorName) and ("0" in imageContainer[0])):
     #     imageContainer = secondChoiceContainer
 
-    treeWidth = (500/100) + 2
+    treeWidth = (600/100) + 2
     # treeWidth = 1.75
     # velX,velY = getVelo(treeWidth, closestObjectDistance,DIRECTION_FACTOR)
 
@@ -181,17 +181,19 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
             # print("Slight Deviation")
             # theta2 = (treeWidth/slightDeviation)
             theta = math.atan2(treeWidth,slightDeviation)
-            if(slightDeviation < 6):
-                theta = theta + 30
+            # if(slightDeviation < 8):
+            theta = theta + 15
             velY = theta * velocity.gnss.velocity.x_val
             velX = velocity.gnss.velocity.x_val
+
         else:
             theta = math.atan2(treeWidth,closestObjectDistance)
-            if(closestObjectDistance < 7):
-                theta = theta + 30
+            # if(closestObjectDistance < 10):
+            theta = theta + 15
             velY = theta * velocity.gnss.velocity.x_val
             velX = velocity.gnss.velocity.x_val
-           
+
+     
         # print("Its going Right")
         
     elif("Right" in sensorName):
@@ -204,18 +206,16 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
             # print("Slight Deviation")
             theta = math.atan2(treeWidth,slightDeviation)
             theta = theta * -1
-            if(slightDeviation < 7):
-                theta = theta - 30
-
+            # if(slightDeviation < 7):
+            theta = theta - 15
             velY = theta * velocity.gnss.velocity.x_val
-            velX = velocity.gnss.velocity.x_val       
+            velX = velocity.gnss.velocity.x_val
+
         else:
-            
             theta = math.atan2(treeWidth,closestObjectDistance)
             theta = theta * -1
-            if(closestObjectDistance < 8):
-                theta = theta - 30
-
+            # if(closestObjectDistance < 10):
+            theta = theta - 15
             velY = theta * velocity.gnss.velocity.x_val
             velX = velocity.gnss.velocity.x_val
 

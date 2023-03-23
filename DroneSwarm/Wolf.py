@@ -226,8 +226,8 @@ def wolfDroneController(droneName, droneCount, overseerCount):
         collisionAvoidance = False # set to true if need to do collision avoidance (open to better integration method)
         isChangeVelocity = True
         droneSpeed = getDroneSpeed(client, droneName)
-        threshold = droneSpeed * 2.5
-        slightDeviation = getDroneSpeed(client, droneName) * 2.5
+        threshold = droneSpeed * 2
+        slightDeviation = getDroneSpeed(client, droneName) 
 
         # # Check if threshold is under min
         # if (threshold < 5):
