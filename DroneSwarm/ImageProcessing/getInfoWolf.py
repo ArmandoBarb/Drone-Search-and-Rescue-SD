@@ -62,7 +62,7 @@ def getWolfGPSEstimate(client, responses, vehicle_name, xMin, yMin, xMax, yMax):
     width = responses[0].width
 
     if (bbw<4):
-        print("Target too small!!!!!! SKIP")
+        # print("Target too small!!!!!! SKIP")
         return None, None, None
 
     # print("\tBounding box width: "+ str(bbw))

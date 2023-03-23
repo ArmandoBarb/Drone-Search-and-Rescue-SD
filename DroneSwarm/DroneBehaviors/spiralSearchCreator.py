@@ -53,16 +53,16 @@ def spiralSearchCoordinateMaker(groupName, waypointDistance, spawnLocation, star
 def createWaypoints():
     # Creates waypoints for group 0 to move to
     waypointDistance = 0.0004
-    spawnLocation = [0.0001, -0.0001]
-    centerStartLocation = [-0.002245788215, 0.002245788215]
-    amountOfWaypoints = 4
+    spawnLocation = [0.0001, 0.0001]
+    centerStartLocation = [0, 0.0011228941075]
+    amountOfWaypoints = 5
     spiral0Filename = 'Constants/Group0Spiral.txt'
     spiralSearchCoordinateMaker(spiral0Filename, waypointDistance, spawnLocation, centerStartLocation, amountOfWaypoints)
 
     # Creates waypoints for group 1 to move to
     waypointDistance = 0.0004                                   # Distance between waypoints
-    spawnLocation = [-0.0001, -0.0001]
-    centerStartLocation = [0.002245788215, 0.002245788215]                     # Starting center of the spiral
-    amountOfWaypoints = 4                                       # Amount of edges
+    spawnLocation = [-0.0001, 0.0001]
+    centerStartLocation = [-0.0011228941075, 0.0011228941075]                     # Starting center of the spiral
+    amountOfWaypoints =  5                                       # Amount of edges
     spiral1Filename = 'Constants/Group1Spiral.txt'
     spiralSearchCoordinateMaker(spiral1Filename, waypointDistance, spawnLocation, centerStartLocation, amountOfWaypoints)

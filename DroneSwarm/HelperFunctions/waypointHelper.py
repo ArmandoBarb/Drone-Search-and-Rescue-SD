@@ -57,55 +57,60 @@ def pixelClustering(height, width, segRGB, sceneRGB):
 
     for i in range(height):
         for j in range(width):
-            if segRGB[i][j][0] <= 255 and \
-               segRGB[i][j][1] <= 255 and \
-               segRGB[i][j][2] <= 255 and \
-               segRGB[i][j][0] >= 200 and \
-               segRGB[i][j][1] >= 200 and \
-               segRGB[i][j][2] >= 200:
-                pixCount = pixCount + 1
+            try:
+                if segRGB[i][j][0] <= 255 and \
+                segRGB[i][j][1] <= 255 and \
+                segRGB[i][j][2] <= 255 and \
+                segRGB[i][j][0] >= 200 and \
+                segRGB[i][j][1] >= 200 and \
+                segRGB[i][j][2] >= 200:
+                    pixCount = pixCount + 1
 
-                isMatch = False
-                isClustered = False
-                pixel = [(i, j)]
+                    isMatch = False
+                    isClustered = False
+                    pixel = [(i, j)]
 
-                # found heat signature pixels
-                if not clusters:
-                    clusters.append(pixel)
-                else:
-                    clusterCount = 0
-                    # not empty case
-                    for cluster in clusters:
-                        sibilingExists = False
-                        for coord in cluster:
-                            # properly place the cluster among appropriate color
-                            imgPixel = segRGB[i][j][0]
-                            clusterPixel = segRGB[coord[0]][coord[1]][0]
-                            if imgPixel != clusterPixel:
-                                break
-                            else:
-                                isMatch = True
-
-                            # otherwise threshold and sort the coordinate
-                            if dist([i, j], [coord[0], coord[1]]) < 40:
-                                cluster.append(pixel[0])
-                                isClustered = True
-                                break
-                            else:
-                                # used for same heat signature for two animals
-                                # but they are far apart
-                                sibilingExists = checkSiblingClusterExists(clusterPixel, clusterCount, sceneRGB)
-                                if not sibilingExists:
-                                    isClustered = True
-                                    clusters.append(pixel)
-                                break
-
-                        clusterCount+=1
-                        if isClustered:
-                            break
-                    # no match for non-empty list
-                    if not isMatch:
+                    # found heat signature pixels
+                    if not clusters:
                         clusters.append(pixel)
+                    else:
+                        clusterCount = 0
+                        # not empty case
+                        for cluster in clusters:
+                            sibilingExists = False
+                            for coord in cluster:
+                                # properly place the cluster among appropriate color
+                                imgPixel = segRGB[i][j][0]
+                                clusterPixel = segRGB[coord[0]][coord[1]][0]
+                                if imgPixel != clusterPixel:
+                                    break
+                                else:
+                                    isMatch = True
+
+                                # otherwise threshold and sort the coordinate
+                                if dist([i, j], [coord[0], coord[1]]) < 40:
+                                    cluster.append(pixel[0])
+                                    isClustered = True
+                                    break
+                                else:
+                                    # used for same heat signature for two animals
+                                    # but they are far apart
+                                    sibilingExists = checkSiblingClusterExists(clusterPixel, clusterCount, sceneRGB)
+                                    if not sibilingExists:
+                                        isClustered = True
+                                        clusters.append(pixel)
+                                    break
+
+                            clusterCount+=1
+                            if isClustered:
+                                break
+                        # no match for non-empty list
+                        if not isMatch:
+                            clusters.append(pixel)
+            except:
+                print("error seg RGB")
+                print(type(segRGB[i][j][0]))
+                print(segRGB[i][j][0])
 
 def drawBB(sceneRGB):
     global heightArr

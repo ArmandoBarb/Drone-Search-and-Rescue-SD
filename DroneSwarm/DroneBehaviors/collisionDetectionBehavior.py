@@ -182,7 +182,7 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
             # theta2 = (treeWidth/slightDeviation)
             theta = math.atan2(treeWidth,slightDeviation)
             if(slightDeviation < 6):
-                theta = theta + 25
+                theta = theta + 30
             velY = theta * velocity.gnss.velocity.x_val
             velX = velocity.gnss.velocity.x_val
         else:
@@ -204,8 +204,8 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
             # print("Slight Deviation")
             theta = math.atan2(treeWidth,slightDeviation)
             theta = theta * -1
-            if(slightDeviation < 6):
-                theta = theta - 25
+            if(slightDeviation < 7):
+                theta = theta - 30
 
             velY = theta * velocity.gnss.velocity.x_val
             velX = velocity.gnss.velocity.x_val       
@@ -213,9 +213,8 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviati
             
             theta = math.atan2(treeWidth,closestObjectDistance)
             theta = theta * -1
-            if(closestObjectDistance < 7):
+            if(closestObjectDistance < 8):
                 theta = theta - 30
-
 
             velY = theta * velocity.gnss.velocity.x_val
             velX = velocity.gnss.velocity.x_val

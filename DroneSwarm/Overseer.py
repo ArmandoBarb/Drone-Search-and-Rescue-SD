@@ -273,6 +273,7 @@ def overseerInfraredDetection(droneName):
 
         # If we receive end command, end the loop
         if (End_Loop):
+            exit()
             debugPrint("Ending loop")
             return;
           
@@ -310,8 +311,8 @@ def overseerInfraredDetection(droneName):
 
             wolfDataList = overseerGetWolfData.getWolfDataOfCluster(Cluster)
             cleanWaypointHistory(wolfDataList)
-            for circle in circleList:
-                print(str(i) + ": " + "center, " + str(circle.avgCenter) + "radius, " + str(circle.radius))
+            # for circle in circleList:
+            #     print(str(i) + ": " + "center, " + str(circle.avgCenter) + "radius, " + str(circle.radius))
 
 
             for x in range(len(circleList)):

@@ -17,11 +17,6 @@ def runYolov5(client, responses, cameraName, vehicleName, confidanceMin):
 
     responseIndex = 0
 
-    if(cameraName=="front"):
-        responseIndex = 0
-    elif(cameraName=="right"):
-        responseIndex = 1
-
     # get response object with input image
     height, width, sceneRGB2 = getInfo.getHeightWidthArr(responses, responseIndex)
 
@@ -34,6 +29,8 @@ def runYolov5(client, responses, cameraName, vehicleName, confidanceMin):
     response = rospy.ServiceProxy(GPU_SERVICE, requestGPU)
     responseObject = response(str(responseString.decode('latin-1')), height, width)
     gpuLen = time.time() - gpuServiceTime
+    # print("gpuLen:       " + str(gpuLen) + "         999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999")
+    # print("Yolo still running")
     # print("gpuLen:       " + str(gpuLen) + "         999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999")
 
     # Set variables from response object
@@ -64,14 +61,14 @@ def runYolov5(client, responses, cameraName, vehicleName, confidanceMin):
     #ToDo: just pass loop index adn drone name
     # or in final build just overwite
     j=0
-    while os.path.exists(dataDir + "/" + ('%s' % j)+"newImg.jpg"):
+    while os.path.exists(dataDir + "/" + ('%s' % j)+cameraName+"newImg.jpg"):
         j+=1
 
     # TODO: CHANGE WITH SUCCESS BOOL FROM ROS
     if(success):
-        # confidence = responseObject.confidence
+        confidence = responseObject.confidence
         # if confidence is high enough use for GPS estimation
-        if(confidence > confidanceMin):
+        if(confidence >= confidanceMin):
             #print("Found a target!!!")
             validDetection=True
 
@@ -79,8 +76,8 @@ def runYolov5(client, responses, cameraName, vehicleName, confidanceMin):
             end_point = (xmax, ymax)
             newImag = cv2.rectangle(sceneRGB2, start_point, end_point, (0, 255, 0), 2)
             # save new image only with highest confidence detection
-            cv2.imwrite(dataDir + "/" + ('%s' % j)+"origImg.jpg", sceneRGB2)
-            cv2.imwrite(dataDir + "/" + ('%s' % j)+"newImg.jpg", newImag)
+            cv2.imwrite(dataDir + "/" + ('%s' % j)+cameraName+"origImg.jpg", sceneRGB2)
+            cv2.imwrite(dataDir + "/" + ('%s' % j)+cameraName+"newImg.jpg", newImag)
 
             #print("------------------------------------------------------------------------------------------------------------------")
             # use bb dimensions/location for GPS estimation
