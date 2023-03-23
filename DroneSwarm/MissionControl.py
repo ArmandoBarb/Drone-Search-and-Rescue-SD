@@ -49,8 +49,8 @@ if __name__ == '__main__': # Only runs if this is main processes
     createWaypoints()
 
     # Set drone counts
-    overseerCount = 2
-    wolfCount = 6
+    overseerCount = 1
+    wolfCount = 4
 
     # apply infrared to overseers
     client = airsim.MultirotorClient(LOCAL_IP)
@@ -71,6 +71,7 @@ if __name__ == '__main__': # Only runs if this is main processes
 
     # Stays in while until yolo is loaded on the gpu
     while (not responseObject.success):
+        time.sleep(1);
         rospy.wait_for_service(GPU_SERVICE)
         response = rospy.ServiceProxy(GPU_SERVICE, requestGPU)
         responseObject = response("", 0, 0)

@@ -14,8 +14,14 @@ def getInfrared(client, vehicleName):
 def getScene(client, vehicleName):
     # print(vehicleName)
     responses = client.simGetImages([
-        airsim.ImageRequest("front", airsim.ImageType.Scene, False, False),
-        airsim.ImageRequest("right", airsim.ImageType.Scene, False, False)], vehicle_name = vehicleName)
+        airsim.ImageRequest("front", airsim.ImageType.Scene, False, False)], vehicle_name = vehicleName)
+    # ,
+    #    airsim.ImageRequest("right", airsim.ImageType.Scene, False, False
+    return responses
+
+def getResponse(client, vehicleName, cameraName):
+    responses = client.simGetImages([
+        airsim.ImageRequest(cameraName, airsim.ImageType.Scene, False, False)], vehicle_name = vehicleName)
     return responses
 
 def getSegInfo(responses):

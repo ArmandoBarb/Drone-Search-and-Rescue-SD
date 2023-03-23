@@ -150,7 +150,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
 
     # Sets and connects to client and takes off drone
     client = takeOff(droneName)
-    client.moveToZAsync(z=-3, velocity=8, vehicle_name = droneName).join()
+    client.moveToZAsync(z=-4, velocity=8, vehicle_name = droneName).join()
 
     # start camera thread here
     t3 = Thread(target = wolfCameraDetection, args=(droneName))
@@ -169,6 +169,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
         # If we receive end command, end the loop
         if (End_Loop):
             debugPrint("Ending loop")
+            exit()
             break;
 
         # Checks if made it through all waypoints
@@ -307,7 +308,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
 
 
         # TODO: Make Airsim call with desired action
-        client.moveByVelocityZAsync(vector[0], vector[1], -8, duration = 0.5, yaw_mode=yaw_mode, vehicle_name=droneName)
+        client.moveByVelocityZAsync(vector[0], vector[1], -4, duration = 0.5, yaw_mode=yaw_mode, vehicle_name=droneName)
         
         # Add in artifical loop delay (How fast the loop runs dictates the drones reaction speed)
         
@@ -407,20 +408,42 @@ def wolfCameraDetection(droneName):
        
         start=time.time() # gather time data
 
-        getImageTime = time.time()
-        responses = getInfo.getScene(threadClient, droneName)
-        getImageLen = time.time() - getImageTime
-        # debugPrint("retrieve image length: " + str(getImageLen) + "       ++++++++++++++++++")
-
         cameraName="front"
 
-        if Line_Behavior:
-            cameraName="front"
-        elif Wolf_Search_Behavior or Consensus_Decision_Behavior:
-            cameraName="right"
+        response = None
+        repsonseF = None
+        responseR = None
 
-        # TODO: RUN with two cameras (front and right)
-        wolfEstimate = yolov5.runYolov5(threadClient, responses, cameraName, droneName, YOLO_CONFIDENCE)
+        # Switches camera for object detector depending on behavior
+        if Wolf_Search_Behavior:
+            cameraName="frontright"
+            responseF = getInfo.getResponse(threadClient, droneName, "front")
+            responseR = getInfo.getResponse(threadClient, droneName, "right")
+
+        elif Consensus_Decision_Behavior:
+            if (not In_Position_CD):
+                time.sleep(0.3)
+                continue;
+
+            cameraName="right"
+            response = getInfo.getResponse(threadClient, droneName, "right")
+
+        # If at spawn or in line, use front camera
+        else:
+            cameraName="front"
+            response = getInfo.getResponse(threadClient, droneName, "front")
+
+
+
+        if cameraName=="frontright":
+            cameraName="front"
+            wolfEstimate = yolov5.runYolov5(threadClient, responseF, cameraName, droneName, YOLO_CONFIDENCE)
+            # if front camera retrieves null detection, then run yolo on right camera
+            if(wolfEstimate[0]==None and wolfEstimate[1]==None):
+                cameraName="right"
+                wolfEstimate = yolov5.runYolov5(threadClient, responseR, cameraName, droneName, YOLO_CONFIDENCE)
+        else:
+            wolfEstimate = yolov5.runYolov5(threadClient, response, cameraName, droneName, YOLO_CONFIDENCE)
 
         if(wolfEstimate[0]!=None and wolfEstimate[1]!=None):
             # detection
@@ -477,10 +500,14 @@ def wolfCameraDetection(droneName):
                 # THis is Hardcoded need to replace
                 requestNearbyDronesConsensusDecision(circleCenterGPS, circleRadiusGPS, circleRadiusMeters, searchTimeS,  taskGroup)
 
-        time.sleep(1);
         end = time.time();
-        timeSpent += end-start;
+        loopLen = end-start
+        if (loopLen < 1):
+            time.sleep(1 - loopLen);
+        timeSpent += loopLen;
         i+=1
+    debugPrint("Actual loop size:" + str(i))
+    debugPrint("Expected loop size:" + str(LOOP_NUMBER))
 # startConsensusDecision( circleCenterGPS=targetP.gps_location, circleRadiusGPS=MIN_CIRCLE_RADIUS_GPS*2, circleRadiusMeters=MIN_CIRCLE_RADIUS_METERS*2, searchTimeS=100 );
     debugPrint(" CameraDetection: Average Loop Time: " + str(timeSpent / i))
     return;
@@ -1121,7 +1148,7 @@ def endConsensusDecision():
     global Start_Time, Spread_Time, Search_Time;
     global Task_Group;
     debugPrint("End consenus: " + str(Wolf_Search_Behavior) + " taskGroup: " + str(Task_Group))
-    # Consensus_Decision_Behavior = False;
+    Consensus_Decision_Behavior = False;
     # Circle_Center_GPS = None;
     # Circle_Radius_GPS, Circle_Radius_Meters = None, None;
     # Start_Time, Search_Time = None, None;

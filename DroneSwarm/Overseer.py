@@ -271,6 +271,7 @@ def overseerInfraredDetection(droneName):
 
         # If we receive end command, end the loop
         if (End_Loop):
+            exit()
             debugPrint("Ending loop")
             return;
           
