@@ -9,6 +9,7 @@ from ServiceRequestors.overseerGetWolfData import getWolfDataOfCluster
 
 AVOID_FACTOR = 0.01
 DIRECTION_FACTOR = 5
+WOLF_SLOW_DOWN = 3
 OVERSEER_DIRECTION_SPEED_UP = 16
 OVERSEER_DIRECTION_SLOW_DOWN = 5
 OVERSEER_TO_WOLF_GROUP_RADIUS = 0.0003
@@ -54,10 +55,22 @@ def waypointDirection(client, curDroneIndex, waypoint):
     xDifference = float(waypoint[0]) - wolfInfoArray[curDroneIndex].longitude
     yDifference = float(waypoint[1]) - wolfInfoArray[curDroneIndex].latitude
 
-    # If within certain distance of waypoint, don't move, return true for being at waypoint
-    if ((abs(xDifference) < 0.0001) and (abs(yDifference) < 0.0001)):
+    distance = sqrt(xDifference**2 + yDifference**2)
+
+    # If within certain distance of waypoint, don't move
+    if ((abs(xDifference) < 0.00005) and (abs(yDifference) < 0.00005)):
+
         finalVelocity = [0, 0]
         return finalVelocity, True
+
+    # Slow down when close
+    elif (distance < 0.0001):
+        # Gets normalized difference values and adds in directional factor
+        xNormalized = (xDifference / sqrt(xDifference**2 + yDifference**2))*WOLF_SLOW_DOWN
+        yNormalized = (yDifference / sqrt(xDifference**2 + yDifference**2))*WOLF_SLOW_DOWN
+
+        # Saves final weighted vector to final velocity
+        finalVelocity = [xNormalized, yNormalized]
 
     # Else move to waypoint
     else:

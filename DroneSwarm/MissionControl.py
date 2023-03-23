@@ -52,6 +52,7 @@ if __name__ == '__main__': # Only runs if this is main processes
     overseerCount = 1
     wolfCount = 4
 
+
     # apply infrared to overseers
     client = airsim.MultirotorClient(LOCAL_IP)
     clusterHelper.applyInfrared(client)
