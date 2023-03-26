@@ -21,6 +21,7 @@ import Constants.ros as ros
 # import drone behavior
 import DroneBehaviors.circleBehavior as circleBehavior;
 import DroneBehaviors.lineBehavior as lineBehavior
+import DroneBehaviors.lineBehaviorWolf as lineBehaviorWolf
 # TODO: Investigate if we need to use a Lock while writing or reading global variables
 from threading import Timer # Use for interval checks with minimal code
 from threading import Thread # USe for important code running constantly
@@ -41,6 +42,7 @@ from ImageProcessing import getInfo
 from ImageProcessing import yolov5
 import torch
 import HelperFunctions.calcHelper as calcHelper
+import HelperFunctions.airSimHelper as airSimHelper
 import DroneBehaviors.collisionDetectionBehavior as collisionDetectionBehavior
 
 # Environmental Variables
@@ -182,8 +184,8 @@ def wolfDroneController(droneName, droneCount, overseerCount):
     client.moveToZAsync(z=-3, velocity=8, vehicle_name = droneName).join()
 
     # start camera thread here
-    t3 = Thread(target = wolfCameraDetection, args=(droneName))
-    t3.start()
+    # t3 = Thread(target = wolfCameraDetection, args=(droneName))
+    # t3.start()
 
     # Globals for consensus
     global In_Position_WS, In_Position_CD, Start_Time
@@ -225,9 +227,9 @@ def wolfDroneController(droneName, droneCount, overseerCount):
         
         collisionAvoidance = False # set to true if need to do collision avoidance (open to better integration method)
         isChangeVelocity = True
-        droneSpeed = getDroneSpeed(client, droneName)
+        droneSpeed = airSimHelper.getDroneSpeed(client, droneName)
         threshold = droneSpeed * 2.5
-        slightDeviation = getDroneSpeed(client, droneName)*1.5 
+        slightDeviation = airSimHelper.getDroneSpeed(client, droneName)*1.5 
 
         # # Check if threshold is under min
         # if (threshold < 5):
@@ -350,7 +352,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
         elif (Line_Behavior): # Line_Behavior
             # Gets drones waypoint and vector movement
             newWaypoint = getNewWaypoint(droneName)
-            vector, curDroneAtWaypoint = lineBehavior.lineBehavior(client, int(droneName), newWaypoint)
+            vector, curDroneAtWaypoint = lineBehaviorWolf.lineBehavior(client, int(droneName), newWaypoint)
             vectorTemp = 0
 
             # Changes to necessary values
@@ -698,18 +700,6 @@ def wolfSignalPublisher(pub, client, cluster, taskGroup, command, IsWS):
     # Publishes to topic
     pub.publish(wolfCommMessage)
 
-# TODO: BRING INTO AIRSIM HELPER
-
-def getDroneSpeed(client, droneName):
-    velocity = client.getGpsData(vehicle_name = droneName)
-
-    velocityX = velocity.gnss.velocity.x_val
-    velocityY = velocity.gnss.velocity.y_val
-
-    speed = sqrt(velocityX**2 + velocityY**2)
-
-    return speed
-
 def wolfSignalPublisherGPS(pub, client, cluster, taskGroup, command, signalGPS, iterationNumber, result):
     # Creates droneMsg object and inserts values from AirSim apis
     wolfCommMessage = wolfCommunication()
@@ -861,7 +851,7 @@ def getNewWaypoint(droneName):
     if (WAYPOINT_INDEX >= 1):
         previousWaypoint = WAYPOINT_COORDS[WAYPOINT_INDEX-1]
         radius = 0.0001
-        currentWaypoint = subWaypointCalculator(currentWaypoint, previousWaypoint, radius, droneName)
+        currentWaypoint = lineBehaviorWolf.subWaypointCalculator(currentWaypoint, previousWaypoint, radius, droneName, Cluster)
 
     return currentWaypoint
 
@@ -879,66 +869,9 @@ def getLastWaypoint(droneName):
 
         previousWaypoint = WAYPOINT_COORDS[WAYPOINT_INDEX - 2]
         radius = 0.0001
-        currentWaypoint = subWaypointCalculator(currentWaypoint, previousWaypoint, radius, droneName)
+        currentWaypoint = lineBehaviorWolf.subWaypointCalculator(currentWaypoint, previousWaypoint, radius, droneName, Cluster)
 
     return currentWaypoint
-
-# TODO: MOVE TO LINE BEHAVIOR
-
-def subWaypointCalculator(currentWaypoint, previousWaypoint, radius, droneName):
-    global Cluster
-    # 0 is longitude, 1 is latitude
-    newWaypoint = []
-
-    # Finds vector between waypoints
-    waypointDiffX = float(currentWaypoint[0]) - float(previousWaypoint[0])
-    waypointDiffY = float(currentWaypoint[1]) - float(previousWaypoint[1])
-
-    # Gets normalized difference vector
-    vectorVal = sqrt(waypointDiffX**2 + waypointDiffY**2)
-    xDirection = (waypointDiffX/vectorVal) * radius
-    yDirection = (waypointDiffY/vectorVal) * radius
-
-    # Calculates horizontal and vertical changes
-    horizonalChange = xDirection - yDirection
-    verticalChange = xDirection + yDirection
-
-    # Get cluster and size information
-    wolfCluster = wolfService.getWolfDataOfClusterWCurWolf(Cluster)
-    clusterSize = len(wolfCluster)
-
-    # LANES       3  1  0  2  4
-    # DISTANCE    2  1  0  1  2
-    subwaypointList = []
-
-    # Calculates list of subwaypoint
-    # Append middle waypoint
-    subwaypointList.append(currentWaypoint)
-
-    distanceFromCenterLeft = 1
-    distanceFromCenterRight = 1
-    for lane in range(1, clusterSize):
-
-        # Odd go to the left of center
-        if (lane % 2 == 1):
-            newWaypointX = float(currentWaypoint[0]) + (horizonalChange * distanceFromCenterLeft)
-            newWaypointY = float(currentWaypoint[1]) + (verticalChange * distanceFromCenterLeft)
-            distanceFromCenterLeft = distanceFromCenterLeft + 1
-            newWaypoint = [newWaypointX, newWaypointY]
-            subwaypointList.append(newWaypoint)
-        # Even go to the right of center
-        elif (lane % 2 == 0):
-            newWaypointX = float(currentWaypoint[0]) - (horizonalChange * distanceFromCenterRight)
-            newWaypointY = float(currentWaypoint[1]) - (verticalChange * distanceFromCenterRight)
-            distanceFromCenterRight = distanceFromCenterRight + 1
-            newWaypoint = [newWaypointX, newWaypointY]
-            subwaypointList.append(newWaypoint)
-
-    # Gets lane and subwaypoint from calculated list
-    lane = int(droneName) % clusterSize
-    newWaypoint = subwaypointList[lane]
-
-    return newWaypoint
 
 # TODO: POTENTIALLY REDESIGN ASSIGNMENT
 # Reads values in SpiralSearch.txt and sets it to global variable
@@ -957,68 +890,11 @@ def readCoordFile(filename):
     global WAYPOINT_COORDS
     WAYPOINT_COORDS = newList
 
-# TODO: MOVE TO LINE BEHAVIOR
-
-def getSubwaypointList(currentWaypoint, previousWaypoint, radius):
-    global Cluster
-    # 0 is longitude, 1 is latitude
-
-    # Finds vector between waypoints
-    waypointDiffX = float(currentWaypoint[0]) - float(previousWaypoint[0])
-    waypointDiffY = float(currentWaypoint[1]) - float(previousWaypoint[1])
-
-    # Gets normalized difference vector
-    vectorVal = sqrt(waypointDiffX**2 + waypointDiffY**2)
-    xDirection = (waypointDiffX/vectorVal) * radius
-    yDirection = (waypointDiffY/vectorVal) * radius
-
-    # Calculates horizontal and vertical changes
-    horizonalChange = xDirection - yDirection
-    verticalChange = xDirection + yDirection
-
-    # Get cluster and size information
-    wolfCluster = wolfService.getWolfDataOfClusterWCurWolf(Cluster)
-    clusterSize = len(wolfCluster)
-
-    # LANES       3  1  0  2  4
-    # DISTANCE    2  1  0  1  2
-    subwaypointList = []
-
-    # Calculates list of subwaypoint
-    # Append middle waypoint
-    subwaypointList.append(currentWaypoint)
-
-    # Distance from center, example above subwaypoint list
-    distanceFromCenterLeft = 1
-    distanceFromCenterRight = 1
-    for lane in range(1, clusterSize):
-
-        # Odd go to the left of center
-        if (lane % 2 == 1):
-            newWaypointX = float(currentWaypoint[0]) + (horizonalChange * distanceFromCenterLeft)
-            newWaypointY = float(currentWaypoint[1]) + (verticalChange * distanceFromCenterLeft)
-            distanceFromCenterLeft = distanceFromCenterLeft + 1
-            newWaypoint = [newWaypointX, newWaypointY]
-            subwaypointList.append(newWaypoint)
-        # Even go to the right of center
-        elif (lane % 2 == 0):
-            newWaypointX = float(currentWaypoint[0]) - (horizonalChange * distanceFromCenterRight)
-            newWaypointY = float(currentWaypoint[1]) - (verticalChange * distanceFromCenterRight)
-            distanceFromCenterRight = distanceFromCenterRight + 1
-            newWaypoint = [newWaypointX, newWaypointY]
-            subwaypointList.append(newWaypoint)
-
-    # Gets lane and subwaypoint from calculated list
-    # str(subwaypointList)
-    # debugPrint(subwaypointList)
-    return subwaypointList
-
 # TODO: PUSH TO LINE BEHAVIOR, RETURN INDEX VALUE
 
 def allDronesAtWaypoint(wolfCommPublish, client):
     global WAYPOINT_INDEX
     global Cluster
-    global Task_Group
     wolfInfoArray = wolfService.getWolfState()
 
     currentWaypoint = WAYPOINT_COORDS[WAYPOINT_INDEX]
@@ -1031,7 +907,7 @@ def allDronesAtWaypoint(wolfCommPublish, client):
         previousWaypoint = WAYPOINT_COORDS[WAYPOINT_INDEX-1]
 
         # Gets list of subwaypoints
-        subWaypointList = getSubwaypointList(currentWaypoint, previousWaypoint, radius)
+        subWaypointList = lineBehaviorWolf.getSubwaypointList(currentWaypoint, previousWaypoint, radius, Cluster)
 
         # Get cluster and size information
         wolfCluster = wolfService.getWolfDataOfClusterWCurWolf(Cluster)
@@ -1167,7 +1043,7 @@ def wolfSearchBehaviorGetVector(wolfCommPublish, client, currentDroneData):
     maxCohSepSpeed = 3 * Speed_Factor
     maxSpeed = 8 * Speed_Factor
 
-    vectorR = lineBehavior.repulsion(client, int(DM_Drone_Name));
+    vectorR = lineBehaviorWolf.repulsion(client, int(DM_Drone_Name));
     vectorR = [vectorR[1], vectorR[0]]
     vector = circleBehavior.calcSpeedVector(currentDroneData=currentDroneData, targetGPS=Circle_Center_GPS, \
                 radius=radius, radiusM=radiusM, wolfData=wolfDataArray, \
