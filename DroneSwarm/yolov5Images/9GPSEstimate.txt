@@ -1,0 +1,5 @@
+          xmin        ymin         xmax        ymax  confidence  class    name
+0   867.031555  226.925934   882.216492  262.200836    0.312715      0  person
+1  1014.957153  121.071373  1023.803406  143.463150    0.257090      0  person
+	Max Confidence: 0.31271499395370483
+	Max Confidence Estimate:0.0016705382423980435 lat, -0.0020518641435970895 lon

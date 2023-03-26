@@ -498,12 +498,12 @@ def wolfCameraDetection(droneName, model):
         start=time.time() # gather time data
         # todo: mary add camera checkl nad yolo detector
         # TODO: remove
-        if (droneName != '0' and droneName != '1'):
-            time.sleep(1);
-            end = time.time();
-            timeSpent += end-start;
-            i+=1
-            continue;
+        # if (droneName != '0' and droneName != '1'):
+        #     time.sleep(1);
+        #     end = time.time();
+        #     timeSpent += end-start;
+        #     i+=1
+        #     continue;
 
         responses = getInfo.getScene(threadClient, droneName)
         wolfEstimate = yolov5.runYolov5(threadClient, responses, model, droneName, YOLO_CONFIDENCE)
