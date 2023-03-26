@@ -859,7 +859,6 @@ def getLastWaypoint(droneName):
 
     return currentWaypoint
 
-# TODO: POTENTIALLY REDESIGN ASSIGNMENT
 # Reads values in SpiralSearch.txt and sets it to global variable
 def readCoordFile(filename):
     file = open(filename, 'r')
