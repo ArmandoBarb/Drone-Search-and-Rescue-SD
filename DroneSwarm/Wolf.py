@@ -42,6 +42,7 @@ from ImageProcessing import getInfo
 from ImageProcessing import yolov5
 import torch
 import HelperFunctions.calcHelper as calcHelper
+import HelperFunctions.pathWaypoints as pathWaypoints
 import HelperFunctions.airSimHelper as airSimHelper
 import DroneBehaviors.collisionDetectionBehavior as collisionDetectionBehavior
 
@@ -352,7 +353,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
 
         elif (Line_Behavior): # Line_Behavior
             # Gets drones waypoint and vector movement
-            newWaypoint = getNewWaypoint(droneName)
+            newWaypoint = pathWaypoints.getNewWaypointWolf(droneName, WAYPOINT_INDEX, WAYPOINT_COORDS, Cluster)
             vector, curDroneAtWaypoint = lineBehaviorWolf.lineBehavior(client, int(droneName), newWaypoint)
             vectorTemp = 0
 
@@ -736,8 +737,8 @@ def wolfDataPublisher(pub, client, droneName):
 # Requests nearby drones to do search
 # NEEds to be tested
 def requestNearbyDronesWolfSearch(circleCenterGPS, circleRadiusGPS, circleRadiusMeters, spreadTimeS, searchTimeS,  taskGroup):
-    endWaypoint = getNewWaypoint(DM_Drone_Name)
-    startWaypoint = getLastWaypoint(DM_Drone_Name)
+    endWaypoint = pathWaypoints.getNewWaypointWolf(DM_Drone_Name, WAYPOINT_INDEX, WAYPOINT_COORDS, Cluster)
+    startWaypoint = pathWaypoints.getLastWaypointWolf(DM_Drone_Name, WAYPOINT_INDEX, WAYPOINT_COORDS, Cluster)
     startGPS = calcHelper.fixDegenerateCoordinate(startWaypoint)
     endGPS = calcHelper.fixDegenerateCoordinate(endWaypoint)
     isEmpty, clusterCenterGPS = wolfService.getWolfClusterCenterGPS(clusterName=Cluster)
@@ -784,8 +785,8 @@ def requestNearbyDronesWolfSearch(circleCenterGPS, circleRadiusGPS, circleRadius
 # TODO: MIGRATE OUT SOMEWHERE
 
 def requestNearbyDronesConsensusDecision(circleCenterGPS, circleRadiusGPS, circleRadiusMeters, searchTimeS,  taskGroup):
-    endWaypoint = getNewWaypoint(DM_Drone_Name)
-    startWaypoint = getLastWaypoint(DM_Drone_Name)
+    endWaypoint = pathWaypoints.getNewWaypointWolf(DM_Drone_Name, WAYPOINT_INDEX, WAYPOINT_COORDS, Cluster)
+    startWaypoint = pathWaypoints.getLastWaypointWolf(DM_Drone_Name, WAYPOINT_INDEX, WAYPOINT_COORDS, Cluster)
     startGPS = calcHelper.fixDegenerateCoordinate(startWaypoint)
     endGPS = calcHelper.fixDegenerateCoordinate(endWaypoint)
     isEmpty, clusterCenterGPS = wolfService.getWolfClusterCenterGPS(clusterName=Cluster)
@@ -823,41 +824,6 @@ def requestNearbyDronesConsensusDecision(circleCenterGPS, circleRadiusGPS, circl
                 assignedDroneNum += 1
             
             # print("Request bool:", requestStatus, "From drone", droneName)
-
-# TODO: MOVE TO HELPER
-
-# Function get drones subwaypoint based on index
-def getNewWaypoint(droneName):
-    # Created global waypoints
-    global WAYPOINT_INDEX
-    # print("DroneName: ", droneName, "Current waypoint index", WAYPOINT_INDEX)
-    currentWaypoint = WAYPOINT_COORDS[WAYPOINT_INDEX]
-
-    # Calculates subwaypoint if past first spawn waypoint
-    if (WAYPOINT_INDEX >= 1):
-        previousWaypoint = WAYPOINT_COORDS[WAYPOINT_INDEX-1]
-        radius = 0.0001
-        currentWaypoint = lineBehaviorWolf.subWaypointCalculator(currentWaypoint, previousWaypoint, radius, droneName, Cluster)
-
-    return currentWaypoint
-
-# TODO: MOVE TO HELPER
-
-# Grabs subwaypoint based on waypoints and droneName
-def getLastWaypoint(droneName):
-    # Created global waypoints
-    global WAYPOINT_INDEX
-    # print("DroneName: ", droneName, "Current waypoint index", WAYPOINT_INDEX)
-    if (WAYPOINT_INDEX < 2):
-        currentWaypoint = WAYPOINT_COORDS[0]
-    else:
-        currentWaypoint = WAYPOINT_COORDS[WAYPOINT_INDEX - 1]
-
-        previousWaypoint = WAYPOINT_COORDS[WAYPOINT_INDEX - 2]
-        radius = 0.0001
-        currentWaypoint = lineBehaviorWolf.subWaypointCalculator(currentWaypoint, previousWaypoint, radius, droneName, Cluster)
-
-    return currentWaypoint
 
 # Reads values in SpiralSearch.txt and sets it to global variable
 def readCoordFile(filename):
