@@ -453,6 +453,16 @@ def handleWolfSignal(data):
     if ((cluster != Cluster) and (cluster != EMPTY_CLUSTER)):
         return;
 
+    # Check if we got at spiral waypoint signal
+    if ((command == AT_SPIRAL_WAYPOINT_SIGNAL)):
+        # Clear current consensus 
+        cleanConsensusWaypointHistory()
+
+        # If our current waypoint index is less than the one we received, use the most up to data spiral index
+        spiralIndex = data.genericInt
+        if(WAYPOINT_INDEX < spiralIndex):
+            WAYPOINT_INDEX = spiralIndex
+
     if ((taskGroup != Task_Group) and (Task_Group != EMPTY_TASK_GROUP)):
         return;
 
@@ -474,15 +484,6 @@ def handleWolfSignal(data):
         if (Consensus_Decision_Behavior and iterationNum > Cur_Consensus_Iteration_Number ):
             updateConsensusDecisionCenter(signalGPS, iterationNum, result);
 
-    # Check if we got at spiral waypoint signal
-    if ((command == AT_SPIRAL_WAYPOINT_SIGNAL)):
-        # Clear current consensus 
-        cleanConsensusWaypointHistory()
-
-        # If our current waypoint index is less than the one we received, use the most up to data spiral index
-        spiralIndex = data.genericInt
-        if(WAYPOINT_INDEX < spiralIndex):
-            WAYPOINT_INDEX = spiralIndex
 
 def handleEnd(data):
     global End_Loop
