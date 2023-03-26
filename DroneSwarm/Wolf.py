@@ -383,7 +383,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
                     text = "Moving to waypoint took too long, moving to: " + str(WAYPOINT_INDEX + 1)
                     debugPrint(text)
                     cleanConsensusWaypointHistory()
-                    wolfSignalWaypointPublisher(wolfCommPublish, client, str(Cluster), '', AT_SPIRAL_WAYPOINT_SIGNAL, WAYPOINT_INDEX + 1)
+                    wolfSignalWaypointPublisher(wolfCommPublish, client, str(Cluster), "", AT_SPIRAL_WAYPOINT_SIGNAL, WAYPOINT_INDEX + 1)
 
                 # Otherwise we check the whole group
                 else:
