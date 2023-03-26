@@ -104,6 +104,8 @@ def lineBehavior(client, curDroneIndex, waypoint_coords):
     # Returns false because drone has not made it to waypoint
     return vector, atCurrentWaypoint
 
+# TODO: MOVE THIS TO LINE BEHAVIOR OVERSEER
+
 # Creates directional vector towards waypoint
 def overseerWaypoint(client, curDroneIndex, waypoint):
     # Gets data from all drones

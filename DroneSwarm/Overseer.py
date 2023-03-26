@@ -155,14 +155,6 @@ def overseerDroneController(droneName, overseerCount, wolfCount):
         if (WAYPOINT_INDEX == (len(WAYPOINT_COORDS) - 1)):
             break;
             # print(droneName, "Made it to end of waypoint spiral search")
-        # Get Airsim Data and procesess it here
-        # TODO: add infared image detector code here (if runtime is to long Seprate into thread that runs on intervals)
-            # getDataFromAirsim -> imageProcessing ->
-            # if Node detected calulate estimated node position ->
-            # update internal drone state
-        # print("Calling waypoint function")
-        # waypointData = waypointDetect(i, droneName, client)
-        # print("Doing waypoint Detect, Got: ", waypointData)
 
         # Publishes to (OverseerData) topic
         overseerDataPublisher(overseerDataPublish, client, droneName)

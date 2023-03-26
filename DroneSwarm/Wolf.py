@@ -28,7 +28,6 @@ from threading import Thread # USe for important code running constantly
 from std_msgs.msg import String
 from std_srvs.srv import Trigger, TriggerResponse
 from airsim_ros_pkgs.msg import droneData
-from airsim_ros_pkgs.msg import droneData
 from airsim_ros_pkgs.msg import requestLineBehavior
 from airsim_ros_pkgs.msg import requestWolfSearchBehavior
 from airsim_ros_pkgs.msg import requestConsensusDecisionBehavior
@@ -42,7 +41,6 @@ from ImageProcessing import getInfo
 from ImageProcessing import yolov5
 import torch
 import HelperFunctions.calcHelper as calcHelper
-import HelperFunctions.calcHelper as helper
 import DroneBehaviors.collisionDetectionBehavior as collisionDetectionBehavior
 
 # Environmental Variables
@@ -122,6 +120,8 @@ Collision_Mode_Time_Length = 1
 Drone_Max_Wait_Time_Start = time.time()
 Consensus_Waypoint_History = []
 # TODO: add tunning variables for behaviors (would be cool if we can train them)
+
+# TODO: COMMENT AND REVIEW
 
 # Main Process Start ----------------------------------------------
 def wolfDroneController(droneName, droneCount, overseerCount):
@@ -395,19 +395,15 @@ def wolfDroneController(droneName, droneCount, overseerCount):
         curDroneVelocity = [curDroneData.gnss.velocity.x_val, curDroneData.gnss.velocity.y_val]
 
         # Calculates acceleration based on previous collision detections
-        Speed_Factor = helper.accelCalculator(Speed_Factor, Previously_Had_Collision, SPEED_CHANGE, MIN_SPEED_FACTOR)
+        Speed_Factor = calcHelper.accelCalculator(Speed_Factor, Previously_Had_Collision, SPEED_CHANGE, MIN_SPEED_FACTOR)
 
         # Apply acceleration based on trees
         # vector = [vector[0] * Speed_Factor, vector[1] * Speed_Factor]
 
         # Calculates turning
-        vector = helper.turningCalculation(curDroneVelocity, vector, MAX_TURN_ANGLE)
+        vector = calcHelper.turningCalculation(curDroneVelocity, vector, MAX_TURN_ANGLE)
 
         if (isChangeVelocity):
-            # if(collisionAvoidance):
-                # client.moveByVelocityZAsync(vector[0], vector[1], -3, duration = 10, yaw_mode=yaw_mode, vehicle_name=droneName)
-            # else:
-                # client.moveByVelocityZAsync(vector[0], vector[1], -3, duration = 10,drivetrain =1,yaw_mode=airsim.YawMode(False,0), vehicle_name=droneName)
             client.moveByVelocityZAsync(vector[0], vector[1], -3, duration = 10, yaw_mode=yaw_mode, vehicle_name=droneName)
         
         # Add in artifical loop delay (How fast the loop runs dictates the drones reaction speed)
@@ -420,7 +416,6 @@ def wolfDroneController(droneName, droneCount, overseerCount):
             time.sleep(0.25 - loopTime)
 
         i+=1
-    # debugPrint("Ending Search and Rescue loop: ")
     debugPrint("Average Loop Time in seconds: " + str(timeSpent / i))
     # Wolf Drone search loop End
 
@@ -621,243 +616,6 @@ def wolfCameraDetection(droneName):
     return;
 
 
-def mocInfraredForConsensus(client, vehicle_name):
-    # client.simSetSegmentationObjectID('.*?FoxMasterAi.*?', 215, True);  # fox
-    # client.simSetSegmentationObjectID('.*?StagMasterAi.*?', 230, True); # stag
-    # client.simSetSegmentationObjectID('.*?DoeMasterAi.*?', 200, True);  # doe
-    # client.simSetSegmentationObjectID('.*?BrianMasterAi.*?', 255, True);# brian
-    # client.simSetSegmentationObjectID('.*?BP_MovedChar.*?', 255, True); # moving brian mesh
-
-    responses = client.simGetImages([
-        airsim.ImageRequest("front-center", airsim.ImageType.Infrared, False, False), 
-        airsim.ImageRequest("front-center", airsim.ImageType.Scene, False, False)], vehicle_name = vehicleName)
-
-    responseSeg = responses[0]
-
-    height = responses[0].height
-    width = responses[0].width
-
-    segArr = np.fromstring(responseSeg.image_data_uint8, dtype=np.uint8)
-    segRGB = segArr.reshape(height, width, 3)
-
-    # fox = 215
-    # stag = 230
-    # doe = 200
-
-    # Check for fox
-    pixCount = 0
-    foxClusters = []
-
-    for i in range(height):
-        for j in range(width):
-            if segRGB[i][j][0] == 215 and \
-               segRGB[i][j][1] == 215 and \
-               segRGB[i][j][2] == 215:
-                pixCount = pixCount + 1
-
-                isMatch = False
-                isClustered = False
-                pixel = [(i, j)]
-
-                # found heat signature pixels
-                if not foxClusters:
-                    foxClusters.append(pixel)
-                else:
-                    clusterCount = 0
-                    # not empty case
-                    for cluster in foxClusters:
-                        sibilingExists = False
-                        for coord in cluster:
-                            # properly place the cluster among appropriate color
-                            imgPixel = segRGB[i][j][0]
-                            clusterPixel = segRGB[coord[0]][coord[1]][0]
-                            if imgPixel != clusterPixel:
-                                break
-                            else:
-                                isMatch = True
-
-                            # otherwise threshold and sort the coordinate
-                            if clusterHelper.dist([i, j], [coord[0], coord[1]]) < 40:
-                                foxCluster.append(pixel[0])
-                                isClustered = True
-                                break
-                            else:
-                                # used for same heat signature for two animals
-                                # but they are far apart
-                                sibilingExists = clusterHelper.checkSiblingClusterExists(clusterPixel, clusterCount, segRGB, clusters)
-                                if not sibilingExists:
-                                    isClustered = True
-                                    foxClusters.append(pixel)
-                                break
-
-                        clusterCount+=1
-                        if isClustered:
-                            break
-                    # no match for non-empty list
-                    if not isMatch:
-                        foxClusters.append(pixel)
-
-    # Check for stag
-    pixCount = 0
-    stagClusters = []
-
-    for i in range(height):
-        for j in range(width):
-            if segRGB[i][j][0] == 230 and \
-               segRGB[i][j][1] == 230 and \
-               segRGB[i][j][2] == 230:
-                pixCount = pixCount + 1
-
-                isMatch = False
-                isClustered = False
-                pixel = [(i, j)]
-
-                # found heat signature pixels
-                if not stagClusters:
-                    stagClusters.append(pixel)
-                else:
-                    clusterCount = 0
-                    # not empty case
-                    for cluster in stagClusters:
-                        sibilingExists = False
-                        for coord in cluster:
-                            # properly place the cluster among appropriate color
-                            imgPixel = segRGB[i][j][0]
-                            clusterPixel = segRGB[coord[0]][coord[1]][0]
-                            if imgPixel != clusterPixel:
-                                break
-                            else:
-                                isMatch = True
-
-                            # otherwise threshold and sort the coordinate
-                            if clusterHelper.dist([i, j], [coord[0], coord[1]]) < 40:
-                                cluster.append(pixel[0])
-                                isClustered = True
-                                break
-                            else:
-                                # used for same heat signature for two animals
-                                # but they are far apart
-                                sibilingExists = clusterHelper.checkSiblingClusterExists(clusterPixel, clusterCount, segRGB, clusters)
-                                if not sibilingExists:
-                                    isClustered = True
-                                    stagClusters.append(pixel)
-                                break
-
-                        clusterCount+=1
-                        if isClustered:
-                            break
-                    # no match for non-empty list
-                    if not isMatch:
-                        stagClusters.append(pixel)
-
-    # Check for doe
-    pixCount = 0
-    doeClusters = []
-
-    for i in range(height):
-        for j in range(width):
-            if segRGB[i][j][0] == 200 and \
-               segRGB[i][j][1] == 200 and \
-               segRGB[i][j][2] == 200:
-                pixCount = pixCount + 1
-
-                isMatch = False
-                isClustered = False
-                pixel = [(i, j)]
-
-                # found heat signature pixels
-                if not doeClusters:
-                    doeClusters.append(pixel)
-                else:
-                    clusterCount = 0
-                    # not empty case
-                    for cluster in doeClusters:
-                        sibilingExists = False
-                        for coord in cluster:
-                            # properly place the cluster among appropriate color
-                            imgPixel = segRGB[i][j][0]
-                            clusterPixel = segRGB[coord[0]][coord[1]][0]
-                            if imgPixel != clusterPixel:
-                                break
-                            else:
-                                isMatch = True
-
-                            # otherwise threshold and sort the coordinate
-                            if clusterHelper.dist([i, j], [coord[0], coord[1]]) < 40:
-                                cluster.append(pixel[0])
-                                isClustered = True
-                                break
-                            else:
-                                # used for same heat signature for two animals
-                                # but they are far apart
-                                sibilingExists = clusterHelper.checkSiblingClusterExists(clusterPixel, clusterCount, segRGB, clusters)
-                                if not sibilingExists:
-                                    isClustered = True
-                                    doeClusters.append(pixel)
-                                break
-
-                        clusterCount+=1
-                        if isClustered:
-                            break
-                    # no match for non-empty list
-                    if not isMatch:
-                        doeClusters.append(pixel)
-                        
-     # Check for doe
-    pixCount = 0
-    peopleClusters = []
-
-    for i in range(height):
-        for j in range(width):
-            if segRGB[i][j][0] == 200 and \
-               segRGB[i][j][1] == 200 and \
-               segRGB[i][j][2] == 200:
-                pixCount = pixCount + 1
-
-                isMatch = False
-                isClustered = False
-                pixel = [(i, j)]
-
-                # found heat signature pixels
-                if not peopleClusters:
-                    peopleClusters.append(pixel)
-                else:
-                    clusterCount = 0
-                    # not empty case
-                    for cluster in peopleClusters:
-                        sibilingExists = False
-                        for coord in cluster:
-                            # properly place the cluster among appropriate color
-                            imgPixel = segRGB[i][j][0]
-                            clusterPixel = segRGB[coord[0]][coord[1]][0]
-                            if imgPixel != clusterPixel:
-                                break
-                            else:
-                                isMatch = True
-
-                            # otherwise threshold and sort the coordinate
-                            if clusterHelper.dist([i, j], [coord[0], coord[1]]) < 40:
-                                cluster.append(pixel[0])
-                                isClustered = True
-                                break
-                            else:
-                                # used for same heat signature for two animals
-                                # but they are far apart
-                                sibilingExists = clusterHelper.checkSiblingClusterExists(clusterPixel, clusterCount, segRGB, clusters)
-                                if not sibilingExists:
-                                    isClustered = True
-                                    peopleClusters.append(pixel)
-                                break
-
-                        clusterCount+=1
-                        if isClustered:
-                            break
-                    # no match for non-empty list
-                    if not isMatch:
-                        peopleClusters.append(pixel)
-
-    return 0
-
 # Theads END ===========================================
 
 # TODO: Functions need to Refatctor +++++++++++++++++++++++++++++++++++
@@ -940,6 +698,8 @@ def wolfSignalPublisher(pub, client, cluster, taskGroup, command, IsWS):
     # Publishes to topic
     pub.publish(wolfCommMessage)
 
+# TODO: BRING INTO AIRSIM HELPER
+
 def getDroneSpeed(client, droneName):
     velocity = client.getGpsData(vehicle_name = droneName)
 
@@ -995,6 +755,8 @@ def wolfDataPublisher(pub, client, droneName):
     # Publishes to topic
     pub.publish(droneMsg)
 
+# TODO: MIGRATE OUT SOMEWHERE
+
 # Requests nearby drones to do search
 # NEEds to be tested
 def requestNearbyDronesWolfSearch(circleCenterGPS, circleRadiusGPS, circleRadiusMeters, spreadTimeS, searchTimeS,  taskGroup):
@@ -1043,6 +805,8 @@ def requestNearbyDronesWolfSearch(circleCenterGPS, circleRadiusGPS, circleRadius
             if(requestStatus):
                 assignedDroneNum += 1
 
+# TODO: MIGRATE OUT SOMEWHERE
+
 def requestNearbyDronesConsensusDecision(circleCenterGPS, circleRadiusGPS, circleRadiusMeters, searchTimeS,  taskGroup):
     endWaypoint = getNewWaypoint(DM_Drone_Name)
     startWaypoint = getLastWaypoint(DM_Drone_Name)
@@ -1084,7 +848,7 @@ def requestNearbyDronesConsensusDecision(circleCenterGPS, circleRadiusGPS, circl
             
             # print("Request bool:", requestStatus, "From drone", droneName)
 
-
+# TODO: MOVE TO HELPER
 
 # Function get drones subwaypoint based on index
 def getNewWaypoint(droneName):
@@ -1100,6 +864,8 @@ def getNewWaypoint(droneName):
         currentWaypoint = subWaypointCalculator(currentWaypoint, previousWaypoint, radius, droneName)
 
     return currentWaypoint
+
+# TODO: MOVE TO HELPER
 
 # Grabs subwaypoint based on waypoints and droneName
 def getLastWaypoint(droneName):
@@ -1117,6 +883,7 @@ def getLastWaypoint(droneName):
 
     return currentWaypoint
 
+# TODO: MOVE TO LINE BEHAVIOR
 
 def subWaypointCalculator(currentWaypoint, previousWaypoint, radius, droneName):
     global Cluster
@@ -1173,7 +940,7 @@ def subWaypointCalculator(currentWaypoint, previousWaypoint, radius, droneName):
 
     return newWaypoint
 
-
+# TODO: POTENTIALLY REDESIGN ASSIGNMENT
 # Reads values in SpiralSearch.txt and sets it to global variable
 def readCoordFile(filename):
     file = open(filename, 'r')
@@ -1189,6 +956,8 @@ def readCoordFile(filename):
 
     global WAYPOINT_COORDS
     WAYPOINT_COORDS = newList
+
+# TODO: MOVE TO LINE BEHAVIOR
 
 def getSubwaypointList(currentWaypoint, previousWaypoint, radius):
     global Cluster
@@ -1243,6 +1012,8 @@ def getSubwaypointList(currentWaypoint, previousWaypoint, radius):
     # str(subwaypointList)
     # debugPrint(subwaypointList)
     return subwaypointList
+
+# TODO: PUSH TO LINE BEHAVIOR, RETURN INDEX VALUE
 
 def allDronesAtWaypoint(wolfCommPublish, client):
     global WAYPOINT_INDEX
