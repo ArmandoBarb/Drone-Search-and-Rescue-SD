@@ -58,6 +58,7 @@ WOLF_SEARCH_REQUEST_HELP_DISTANCE_MULTIPLE = configDrones.WOLF_SEARCH_REQUEST_HE
 CONSENSUS_DECISION_REQUEST_HELP_DISTANCE_MULTIPLE = configDrones.CONSENSUS_DECISION_REQUEST_HELP_DISTANCE_MULTIPLE
 MAX_CONSENSUS_ITERATION_NUMBER = configDrones.MAX_CONSENSUS_ITERATION_NUMBER
 CONSENSUS_THRESHOLD = configDrones.CONSENSUS_THRESHOLD
+CONSENSUS_ITERATION_LENGTH_SECONDS = configDrones.CONSENSUS_ITERATION_LENGTH_SECONDS
 YOLO_CONFIDENCE = configDrones.YOLO_CONFIDENCE
 MAX_COLLISION_TIME =configDrones.MAX_COLLISION_TIME
 MIN_COLLISION_TIME = configDrones.MIN_COLLISION_TIME
@@ -499,37 +500,28 @@ def wolfCameraDetection(droneName):
         if (timeDiff > MAX_TIME):
             debugPrint(" Images taken: " + str(i))
             return
-
-        # If we receive end command, end the loop
-        if (End_Loop):
+        elif (End_Loop):
             debugPrint(" Images taken: " + str(i))
             debugPrint("Ending loop")
             return
        
         start=time.time() # gather time data
 
-        cameraName="front"
-
-        response = None
-        repsonseF = None
-        responseR = None
+        cameraName = None
+        response, repsonseF, responseR = None, None, None
 
         # Switches camera for object detector depending on behavior
         if Wolf_Search_Behavior:
             cameraName="frontright"
             responseF = getInfo.getResponse(threadClient, droneName, "front")
             responseR = getInfo.getResponse(threadClient, droneName, "right")
-
         elif Consensus_Decision_Behavior:
             if (not In_Position_CD):
-                time.sleep(0.3)
+                time.sleep(0.3); # 
                 continue;
-
             cameraName="right"
             response = getInfo.getResponse(threadClient, droneName, "right")
-
-        # If at spawn or in line, use front camera
-        else:
+        else: # If at spawn or in line, use front camera
             cameraName="front"
             response = getInfo.getResponse(threadClient, droneName, "front")
 
@@ -548,21 +540,15 @@ def wolfCameraDetection(droneName):
             wolfEstimate, validDetection, passedConfidence = yolov5.runYolov5(threadClient, response, cameraName, droneName, YOLO_CONFIDENCE)
 
         if(passedConfidence):
-            # detection
             formattedWolfEstimateGPS = calcHelper.fixDegenerateCoordinate(wolfEstimate)
-            # debugPrint("\nGot a detection! : \n"+str(formattedWolfEstimateGPS))
-            # print("\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n")
 
             if(not Consensus_Decision_Behavior):
                 # detection with no consensus behavior
-                # assign consensus
-                # debugPrint("\nGot a detection yolo! : \n"+str(formattedWolfEstimateGPS))
-                # print("\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n")
                 isSearched = isAlreadySearched(formattedWolfEstimateGPS, MIN_CIRCLE_RADIUS_GPS)
                 if (not isSearched):
                     circleRadiusGPS = MIN_CIRCLE_RADIUS_GPS
                     circleRadiusMeters = MIN_CIRCLE_RADIUS_METERS
-                    searchTimeS = 15
+                    searchTimeS = CONSENSUS_ITERATION_LENGTH_SECONDS
                     taskGroup = droneName + "Con"
                     # request nearby drones
                     requestNearbyDronesConsensusDecision(circleCenterGPS=formattedWolfEstimateGPS, circleRadiusGPS=circleRadiusGPS, circleRadiusMeters=circleRadiusMeters, searchTimeS=searchTimeS,  taskGroup=taskGroup)
