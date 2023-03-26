@@ -33,6 +33,7 @@ from airsim_ros_pkgs.msg import wolfCommunication
 from ServiceRequestors.wolfGetWolfData import getWolfState
 import ServiceRequestors.overseerGetWolfData as overseerGetWolfData 
 import ServiceRequestors.instructWolf as instructWolf
+import DroneBehaviors.lineBehaviorOverseer as lineBehaviorOverseer
 from airsim_ros_pkgs.msg import GPS
 from ImageProcessing import getInfo
 from ImageProcessing import clustering
@@ -196,7 +197,7 @@ def overseerDroneController(droneName, overseerCount, wolfCount):
 
         outputForWaypoint = "Waypoint to move to: " + str(waypoint) + " END GPS: " + str(endGPS)
         # debugPrint(outputForWaypoint)
-        vector = overseerWaypoint(client, int(droneNum), waypoint)
+        vector = lineBehaviorOverseer.overseerWaypoint(client, int(droneNum), waypoint)
 
 
         # If all drones make it to the waypoint, more to next waypoint
