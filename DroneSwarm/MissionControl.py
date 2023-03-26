@@ -15,6 +15,7 @@ from Overseer import overseerDroneController
 from Wolf import wolfDroneController
 from ProximityWolf import startProximityWolf
 from ProximityOverseer import startProximityOverseer
+from YoloGPU import startYoloGPU
 from ctypes import Structure, c_int
 from multiprocessing.sharedctypes import Array
 import multiprocessing as mp
@@ -24,6 +25,7 @@ from DroneBehaviors.spiralSearchCreator import createWaypoints
 import Constants.configDrones as configDrones
 import Constants.ros as ros
 from HelperFunctions import clusterHelper
+from airsim_ros_pkgs.srv import requestGPU
 
 # Environmental Variables
 LOOP_NUMBER = configDrones.LOOP_NUMBER
@@ -34,39 +36,60 @@ COMMAND_TOPIC = ros.COMMAND_TOPIC
 COMMAND_RESULT_TOPIC = ros.COMMAND_RESULT_TOPIC
 SLAM_MERGE_TOPIC = ros.SLAM_MERGE_TOPIC
 
+# ros service
+GPU_SERVICE = ros.GPU_SERVICE
+
 # Main Process Start ----------------------------------------------
 # Main function for mission control
 print('Starting Mission Control')
 if __name__ == '__main__': # Only runs if this is main processes
     mp.set_start_method('fork') # windows specific. Change based on OS.
 
+    # Creates waypoints for each search group
     createWaypoints()
 
-    # overseerCount = mp.cpu_count() - 5
+    # Set drone counts
+    overseerCount = 1
+    wolfCount = 4
 
-    overseerCount = 2
-    wolfCount = 8
 
     # apply infrared to overseers
     client = airsim.MultirotorClient(LOCAL_IP)
     clusterHelper.applyInfrared(client)
 
-    # loading yolov5
-    cwd = os.getcwd()
-    yoloPT = os.path.join(str(cwd), 'best.pt')
-    model = torch.hub.load('ultralytics/yolov5', 'custom', path=yoloPT, trust_repo=True)
 
     # TODO: start all procecess for ros Nodes here
+
+    # Starts node for gpu yolo processing
+    mp.Process(target=startYoloGPU, args=()).start()
+    time.sleep(5);
+
+    # Does first check on if gpu is loaded
+    print("Checking if yolo loaded")
+    rospy.wait_for_service(GPU_SERVICE)
+    response = rospy.ServiceProxy(GPU_SERVICE, requestGPU)
+    responseObject = response("", 0, 0)
+
+    # Stays in while until yolo is loaded on the gpu
+    while (not responseObject.success):
+        time.sleep(1);
+        rospy.wait_for_service(GPU_SERVICE)
+        response = rospy.ServiceProxy(GPU_SERVICE, requestGPU)
+        responseObject = response("", 0, 0)
+
+    print("Loaded yolo")
+
     # Start wolf proximity subscriber and wolf nodes
     mp.Process(target=startProximityWolf, args=(wolfCount,)).start()
     time.sleep(1);
     for wolf in range(wolfCount): # str(x) = the vechical_name of the drone
         droneName = str(wolf)
-        mp.Process(target=wolfDroneController, args=(droneName,wolfCount,overseerCount, model)).start()
+        mp.Process(target=wolfDroneController, args=(droneName,wolfCount,overseerCount)).start()
 
     # Start overseer proximity subscriber and overseer nodes
 
     mp.Process(target=startProximityOverseer, args=(overseerCount,)).start()
+    time.sleep(1);
     for overseer in range(overseerCount):
         droneNum = str(overseer)
         droneName = "Overseer_" + droneNum

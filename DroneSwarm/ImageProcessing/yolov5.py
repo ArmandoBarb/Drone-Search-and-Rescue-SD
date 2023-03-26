@@ -5,35 +5,51 @@ from PIL import Image
 from ImageProcessing import getInfo
 from ImageProcessing import getInfoWolf
 import os
+import rospy
+from airsim_ros_pkgs.srv import requestGPU
+import rospy
+import Constants.ros as ros
+import time
+GPU_SERVICE = ros.GPU_SERVICE
 
-def runYolov5(client, responses, model, vehicleName, confidanceMin):
+def runYolov5(client, responses, cameraName, vehicleName, confidanceMin):
+    global GPU_SERVICE
+
+    responseIndex = 0
+
     # get response object with input image
-    height, width, sceneRGB2 = getInfo.getSegInfo(responses)
+    height, width, sceneRGB2 = getInfo.getHeightWidthArr(responses, responseIndex)
 
     # original image unedited
-    responseSeg = responses[0]
-    segArr = np.fromstring(responseSeg.image_data_uint8, dtype=np.uint8)
-    sceneRGB1 = segArr.reshape(height, width, 3)
+    responseString= responses[int(responseIndex)].image_data_uint8
 
-    #print("RESULTS yolov5:")
-    model.classes = [0] # detect only for person class (0)
-    results=model(sceneRGB2)
-    #results.print()
+    # Requests gpu service and sends over response string, gets response object
+    gpuServiceTime = time.time()
+    rospy.wait_for_service(GPU_SERVICE)
+    response = rospy.ServiceProxy(GPU_SERVICE, requestGPU)
+    responseObject = response(str(responseString.decode('latin-1')), height, width)
+    gpuLen = time.time() - gpuServiceTime
+    # print("gpuLen:       " + str(gpuLen) + "         999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999")
+    # print("Yolo still running")
+    # print("gpuLen:       " + str(gpuLen) + "         999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999")
 
-    # get the bounding boxes and confidence scores for single image
-    validDetection = False
-    resultsPandas = results.pandas().xyxy[0]
-    confidenceArr = resultsPandas.confidence
-    xminArr = resultsPandas.xmin
-    yminArr = resultsPandas.ymin
-    xmaxArr = resultsPandas.xmax
-    ymaxArr = resultsPandas.ymax
+    # Set variables from response object
+    success = responseObject.success
+    xmin = int(responseObject.xMin)
+    ymin = int(responseObject.yMin)
+    xmax = int(responseObject.xMax)
+    ymax = int(responseObject.yMax)
+    confidence = responseObject.confidence
 
     maxConfidence = 0
     maxConfidenceGPS = [None, None]
     detection = 0
     maxConfidenceDetection = 0
 
+    # cwd = os.getcwd()
+    # dataDir=os.path.join(str(cwd),'yolov5Images')
+    # isExist=os.path.exists(dataDir)
+    # dataDir = '/home/testuser/AirSim/PythonClient/multirotor/Drone-Search-and-Rescue-SD/DroneSwarm/yolov5Images'
     cwd = os.getcwd()
     dataDir=os.path.join(str(cwd),'yolov5Images')
     isExist=os.path.exists(dataDir)
@@ -42,69 +58,82 @@ def runYolov5(client, responses, model, vehicleName, confidanceMin):
         # make directory if not already there
         os.makedirs(dataDir)
 
+    cwd = os.getcwd()
+    dataDir_fail=os.path.join(str(cwd),'yolov5Images_fails')
+    isExist=os.path.exists(dataDir_fail)
+
+    if not isExist:
+        # make directory if not already there
+        os.makedirs(dataDir_fail)
+
     #ToDo: just pass loop index adn drone name
     # or in final build just overwite
     j=0
-    while os.path.exists(dataDir + "/" + ('%s' % j)+"yoloDetect.jpg"):
+    while os.path.exists(dataDir + "/" + ('%s' % j)+"w"+vehicleName+cameraName+"newImg.jpg"):
         j+=1
 
-    if(len(resultsPandas) > 0):
-        confidence = confidenceArr[0]
+    #ToDo: just pass loop index adn drone name
+    # or in final build just overwite
+    k=0
+    while os.path.exists(dataDir + "/" + ('%s' % k)+"w"+vehicleName+cameraName+"newImg.jpg"):
+        k+=1
+
+    validDetection = False
+    passedConfidence = False
+    # TODO: CHANGE WITH SUCCESS BOOL FROM ROS
+    if(success):
+        validDetection = True
+        confidence = responseObject.confidence
         # if confidence is high enough use for GPS estimation
-        if(confidence > confidanceMin):
+        if(confidence >= confidanceMin):
+            passedConfidence=True
+            
             #print("Found a target!!!")
-            validDetection=True
-            xmin, ymin, xmax, ymax = int(xminArr[0]), int(yminArr[0]), int(xmaxArr[0]), int(ymaxArr[0])
+
             start_point = (xmin, ymin)
             end_point = (xmax, ymax)
             newImag = cv2.rectangle(sceneRGB2, start_point, end_point, (0, 255, 0), 2)
             # save new image only with highest confidence detection
-            cv2.imwrite(dataDir + "/" + ('%s' % j)+"origImg.jpg", sceneRGB1)
-            cv2.imwrite(dataDir + "/" + ('%s' % j)+"newImg.jpg", newImag)
+            cv2.imwrite(dataDir + "/" + ('%s' % j)+"w"+vehicleName+cameraName+"origImg.jpg", sceneRGB2)
+            cv2.imwrite(dataDir + "/" + ('%s' % j)+"w"+vehicleName+cameraName+"newImg.jpg", newImag)
 
             #print("------------------------------------------------------------------------------------------------------------------")
             # use bb dimensions/location for GPS estimation
-            alt, lat, lon = getInfoWolf.getWolfGPSEstimate(client, responses, vehicleName, xmin, ymin, xmax, ymax)
+            alt, lat, lon = getInfoWolf.getWolfGPSEstimate(client, responses, vehicleName, cameraName, xmin, ymin, xmax, ymax)
             #print("\tWOLF ESTIMATE: "+str(alt)+" alt, " + str(lat) + " lat, " + str(lon) + " lon")
             maxConfidenceGPS[1]=lat
             maxConfidenceGPS[0]=lon
             #print("------------------------------------------------------------------------------------------------------------------")
 
             # write corresponding text file
-            with open(dataDir + "/" + ('%s' % j)+"GPSEstimate.txt", 'w') as f:
-                f.write(str(resultsPandas))
+            with open(dataDir + "/" + ('%s' % j)+"w"+vehicleName+cameraName+"GPSEstimate.txt", 'w') as f:
+                # f.write(str(resultsPandas))
                 f.write("\n\tMax Confidence: "+str(confidence))
                 f.write("\n\tMax Confidence Estimate:"+ str(lat) + " lat, " + str(lon) + " lon")
                 f.close()
 
-            # save yolov5 results image
-            results.ims # array of original images (as np array) passed to model for inference
-            results.render()  # updates results.ims with boxes and labels
+        else:
+            passedConfidence=False
+            start_point = (xmin, ymin)
+            end_point = (xmax, ymax)
+            newImag = cv2.rectangle(sceneRGB2, start_point, end_point, (0, 255, 0), 2)
+            # save new image only with highest confidence detection
+            cv2.imwrite(dataDir_fail + "/" + ('%s' % k)+"w"+vehicleName+cameraName+"origImg.jpg", sceneRGB2)
+            cv2.imwrite(dataDir_fail + "/" + ('%s' % k)+"w"+vehicleName+cameraName+"newImg.jpg", newImag)
 
-            cwd = os.getcwd()
-            dataDir=os.path.join(str(cwd),'yolov5Images')
-            #print('CWD: '+dataDir)
-            isExist=os.path.exists(dataDir)
+            #print("------------------------------------------------------------------------------------------------------------------")
+            # use bb dimensions/location for GPS estimation
+            alt, lat, lon = getInfoWolf.getWolfGPSEstimate(client, responses, vehicleName, cameraName, xmin, ymin, xmax, ymax)
+            #print("\tWOLF ESTIMATE: "+str(alt)+" alt, " + str(lat) + " lat, " + str(lon) + " lon")
+            maxConfidenceGPS[1]=lat
+            maxConfidenceGPS[0]=lon
+            #print("------------------------------------------------------------------------------------------------------------------")
 
-            if not isExist:
-                # make directory if not already there
-                os.makedirs(dataDir)
-                #print('Created: ' + dataDir)
-                
-            for im in results.ims:
-                pil_image = Image.fromarray(im).convert('RGB') 
-                open_cv_image = np.array(pil_image) 
-                # Convert RGB to BGR 
-                open_cv_image = open_cv_image[:, :, ::-1].copy()
+            # write corresponding text file
+            with open(dataDir_fail + "/" + ('%s' % k)+"w"+vehicleName+cameraName+"GPSEstimate.txt", 'w') as f:
+                # f.write(str(resultsPandas))
+                f.write("\n\tMax Confidence: "+str(confidence))
+                f.write("\n\tMax Confidence Estimate:"+ str(lat) + " lat, " + str(lon) + " lon")
+                f.close()
 
-                # TODO: Draw rectangles using bounding box dimensions array
-                cv2.imwrite(dataDir + "/" + ('%s' % j)+"yoloDetect.jpg", open_cv_image)
-                cv2.waitKey(1)
-
-
-    # print("GPS estimation cycle complete.")
-    # print("MAX CONFIDENCE ESTIMATE:"+ str(maxConfidenceGPS[1]) + " lat, " + str(maxConfidenceGPS[0]) + " lon")
-    # print("\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n")
- 
-
-    return maxConfidenceGPS
+    return maxConfidenceGPS, validDetection, passedConfidence

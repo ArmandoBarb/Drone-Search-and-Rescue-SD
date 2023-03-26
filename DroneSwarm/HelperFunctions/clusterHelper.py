@@ -40,7 +40,7 @@ def furthestCentroid(centroids, avgCentroidsX, avgCentroidsY):
 def applyInfrared(client):
     # set target color in segmentation
     client.simSetSegmentationObjectID("[\w]*", 0, True);
-    client.simSetSegmentationObjectID('.*?FoxMasterAi.*?', 255, True);  # fox
+    client.simSetSegmentationObjectID('.*?FoxMasterAi.*?', 215, True);  # fox
     client.simSetSegmentationObjectID('.*?StagMasterAi.*?', 230, True); # stag
     client.simSetSegmentationObjectID('.*?DoeMasterAi.*?', 200, True);  # doe
     client.simSetSegmentationObjectID('.*?BrianMasterAi.*?', 255, True);# brian

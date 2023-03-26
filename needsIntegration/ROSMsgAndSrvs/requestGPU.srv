@@ -1,0 +1,10 @@
+string responseString
+int32 height
+int32 width
+---
+bool success
+float32 xMin
+float32 yMin
+float32 xMax
+float32 yMax
+float32 confidence

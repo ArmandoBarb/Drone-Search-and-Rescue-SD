@@ -150,6 +150,130 @@ def calcVectorAngle(vector1, vector2):
     angleDegrees =  (angleRadians * 180) / math.pi;
     return angleDegrees;
 
+def unit_vector(vector):
+    """ Returns the unit vector of the vector.  """
+    return vector / np.linalg.norm(vector)
+
+def angle_between(v1, v2):
+    """ Returns the angle in radians between vectors 'v1' and 'v2'::
+
+            >>> angle_between((1, 0, 0), (0, 1, 0))
+            1.5707963267948966
+            >>> angle_between((1, 0, 0), (1, 0, 0))
+            0.0
+            >>> angle_between((1, 0, 0), (-1, 0, 0))
+            3.141592653589793
+    """
+    v1_u = unit_vector(v1)
+    v2_u = unit_vector(v2)
+    return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
+
+def radianCalculatorWNegatives(v1, v2):
+    x1 = v1[0]
+    x2 = v2[0]
+    y1 = v2[1]
+    y2 = v2[1]
+    degrees = math.atan2(x1*y2-y1*x2,x1*x2+y1*y2);
+
+    return degrees
+
+# Checks updated magnitude based on speed change threshold and vectors
+def calcUpdatedMagnitude(currentVector, desiredVector, maxIncreaseSpeed, maxDecreaseSpeed):
+    # Get magnitude of current and desired vector
+    currentVectorMagnitude = calcVectorMagnitude(currentVector)
+    currentDesiredMagnitude = calcVectorMagnitude(desiredVector)
+
+    # Set our calculated magnitude to our desired one by default
+    calculatedMagnitude = currentDesiredMagnitude
+
+    # Get the difference between magnitudes
+    magnitudeDifference = currentDesiredMagnitude - currentVectorMagnitude
+
+    # Handle speed up
+    if (magnitudeDifference > 0 and magnitudeDifference > maxIncreaseSpeed):
+        # print("Speeding up")
+        calculatedMagnitude = currentVectorMagnitude + maxIncreaseSpeed
+
+    # Handle slow down
+    elif (magnitudeDifference < 0 and abs(magnitudeDifference) > maxDecreaseSpeed):
+        # print("Slowing down")
+        calculatedMagnitude = currentVectorMagnitude - maxDecreaseSpeed
+
+    return calculatedMagnitude
+
+# Gets desired acceleration based on previous colllisions
+def accelCalculator(Current_Acceleration_Factor, Previously_Had_Collision, ACCELERATION_CHANGE, MIN_ACCELERATION_FACTOR):
+    # Previous acceleration
+    desiredAcceleration = 0
+    previousFactor = Current_Acceleration_Factor
+
+    # Decelerate if had previous collision and factor is greater than minumum
+    if (Previously_Had_Collision and previousFactor > MIN_ACCELERATION_FACTOR):
+        # print("No collision, speeding up")
+        desiredAcceleration = previousFactor - ACCELERATION_CHANGE
+
+    # Accelerate if we did not have a previous collision
+    elif (not Previously_Had_Collision and previousFactor <= (1 - ACCELERATION_CHANGE)):
+        # print("Previous collision, slowing down")
+        desiredAcceleration = previousFactor + ACCELERATION_CHANGE
+
+    # Else we use our previous acceleration
+    else:
+        desiredAcceleration = previousFactor
+
+    return desiredAcceleration
+
+
+
+def turningCalculation(currentVector, desiredVector, maxTurnAngle):
+    # Set final vector to our desired one by default
+    finalVector = desiredVector
+    currentMagnitude = calcVectorMagnitude(currentVector)
+    desiredMagnitude = calcVectorMagnitude(desiredVector)
+
+    # Calculates difference between vectors
+    calculatedRadianBetweenVectors = radianCalculatorWNegatives(desiredVector, currentVector)
+    calculatedVecDifDegrees = math.degrees(calculatedRadianBetweenVectors)
+
+    # print("Calculated turn:", calculatedVecDifDegrees)
+
+    # Handles turning current vector if dif is greater than max angle
+    if (abs(calculatedVecDifDegrees) > maxTurnAngle):
+        curXVector = currentVector[0]
+        curYVector = currentVector[1]
+
+        # If we have a negative degree, turn a negative angle
+        if (calculatedVecDifDegrees < 0):
+            maxTurnAngle = maxTurnAngle * -1
+
+        # Get rotate
+        cs = math.cos(maxTurnAngle)
+        sn = math.sin(maxTurnAngle)
+
+        # Rotates vector
+        rotatedXVector = curXVector * cs - curYVector * sn
+        rotatedYVector = curXVector * sn + curYVector * cs
+
+        # Rotate current vector a certain degree
+        rotatedCurrentVector = [rotatedXVector, rotatedYVector]
+
+        # Return rotated vector
+        finalVector = rotatedCurrentVector
+
+    # Calculate speed up and slowdown
+    speedChangeThreshold = 3
+    maxIncreaseSpeed = 3
+    maxDecreaseSpeed = 3
+    desiredMagnitude = calcUpdatedMagnitude(currentVector, desiredVector, maxIncreaseSpeed, maxDecreaseSpeed)
+    finalVectorMagnitude = calcVectorMagnitude(finalVector)
+    
+    # Set desired magnitude is greater than 0
+    if (desiredMagnitude > 0 and finalVectorMagnitude > 0):
+        finalVector = setVectorMagnitude(finalVector, desiredMagnitude)
+
+    # Turn is within max turn angle
+    return finalVector
+    
 
 # _a__
 # \  |
@@ -163,7 +287,7 @@ def calcRTriangleOpposite(hypothenus, angleD):
 def calcRTriangleAdjacent(hypothenus, angleD):
     return math.cos(math.radians(angleD)) * hypothenus;
 
-def calcNewConsenusGPS(wolfDataArray, gpsCenter, threshold):
+def calcNewConsenusGPS(wolfDataArray, gpsCenter, threshold, droneName):
     newConsenuGPS = GPS()
     newConsenuGPS.longitude = gpsCenter.longitude
     newConsenuGPS.latitude = gpsCenter.latitude
@@ -171,18 +295,19 @@ def calcNewConsenusGPS(wolfDataArray, gpsCenter, threshold):
 
     droneFail = 0
     droneSucc = 0
-    print("----------------------------------------")
+    droneNet = 0
+    print("wolf:" + str(droneName) + "----------------------------------------")
     for wolf in wolfDataArray:
         totalDet = wolf.successDetCount + wolf.failDetCount
         if(totalDet <= 0):
-            droneFail += 1
+            droneNet += 1
             continue; # wtf
 
         successRate = wolf.successDetCount / totalDet
         
         print("failDetCount: " + str(wolf.failDetCount) + " successDetCount: " + str(wolf.successDetCount))
-        print("threshold: " + str(successRate) + " successRate: " + str(successRate))
-        if(threshold <= successRate):
+        print("threshold: " + str(threshold) + " successRate: " + str(successRate))
+        if(threshold <= int(successRate)):
             droneSucc += 1
         else:
             droneFail += 1
@@ -197,10 +322,12 @@ def calcNewConsenusGPS(wolfDataArray, gpsCenter, threshold):
         
 
 
-    print("new Gps Consensus" + str(newConsenuGPS.longitude) + " , " + str(newConsenuGPS.latitude))
-    print("droneFail: " + str(droneFail) + " droneSucc: " + str(droneSucc))
-    print("----------------------------------------")
-    if (droneFail > droneSucc):
+    if (droneFail > droneSucc or  0 == (droneFail + droneSucc)):
+        print("droneFail: " + str(droneFail) + " droneSucc: " + str(droneSucc) + " droneNet: " + str(droneNet))
+        print("-----------------Fail-------------------")
         return False, newConsenuGPS
     else:
+        print("new Gps Consensus" + str(newConsenuGPS.longitude) + " , " + str(newConsenuGPS.latitude))
+        print("droneFail: " + str(droneFail) + " droneSucc: " + str(droneSucc) + " droneNet: " + str(droneNet))
+        print("----------------Pass-------------------")
         return True, newConsenuGPS
