@@ -168,11 +168,8 @@ def wolfDroneController(droneName, droneCount, overseerCount):
 
     # Start all threads here (if you have to make one somwhere else bring it up with the team)
     # Starts service listeners for commands
-    t = Thread(target = wolfServiceListeners, args=(droneName))
+    t = Thread(target = wolfRosListeners, args=(droneName))
     t.start()
-    # Starts topic listeners for signals and end command
-    t2 = Thread(target = wolfTopicListener)
-    t2.start()
 
     # Setup collision directory
     imgDir = collisionDetectionBehavior.setupCollisionDirectory(droneName)
@@ -434,16 +431,103 @@ def wolfDroneController(droneName, droneCount, overseerCount):
 # Main Process End ----------------------------------------------
 
 # Theads Start ===========================================
-def wolfServiceListeners(droneName):
+def wolfRosListeners(droneName):
     serviceName = WOLF_DRONE_SERVICE + droneName
     service = rospy.Service(serviceName, sendCommand, commandResponse)
-    rospy.spin()
-
-def wolfTopicListener():
     rospy.Subscriber(ros.END_LOOP_TOPIC, String, handleEnd)
     rospy.Subscriber(ros.WOLF_COMMUNICATION_TOPIC, wolfCommunication, handleWolfSignal)
     rospy.spin()
 
+# checks drone camera with yolo detection
+def wolfCameraDetection(droneName):
+    threadClient = airsim.MultirotorClient(LOCAL_IP)
+    debugPrint("Starting wolfCameraDetection loop")
+    i = 0
+    timeSpent = 0
+    runtime = time.time()
+
+    while (i < LOOP_NUMBER):
+        timeDiff = time.time() - runtime
+        if (timeDiff > MAX_TIME):
+            debugPrint(" Images taken: " + str(i))
+            return
+        elif (End_Loop):
+            debugPrint(" Images taken: " + str(i))
+            debugPrint("Ending loop")
+            return
+       
+        start=time.time() # gather time data
+
+        cameraName = None
+        response, repsonseF, responseR = None, None, None
+
+        # Retrieve image from airsim
+        if Wolf_Search_Behavior:
+            cameraName="frontright"
+            responseF = getInfo.getResponse(threadClient, droneName, "front")
+            responseR = getInfo.getResponse(threadClient, droneName, "right")
+        elif Consensus_Decision_Behavior:
+            if (not In_Position_CD):
+                time.sleep(0.3); # 
+                continue;
+            cameraName="right"
+            response = getInfo.getResponse(threadClient, droneName, "right")
+        else: # If at spawn or in line, use front camera
+            cameraName="front"
+            response = getInfo.getResponse(threadClient, droneName, "front")
+
+        # run yolo and estimate gps estimation
+        validDetection, passedConfidence, wolfEstimate= None, None, None
+        if cameraName=="frontright":
+            wolfEstimate, validDetection, passedConfidence = yolov5.runYolov5(threadClient, responseF, cameraName="front", vehicleName=droneName, confidanceMin=YOLO_CONFIDENCE)
+            # if front camera retrieves null detection, then run yolo on right camera
+            if(wolfEstimate[0]==None and wolfEstimate[1]==None):
+                wolfEstimate, validDetection, passedConfidence = yolov5.runYolov5(threadClient, responseR, cameraName="right", vehicleName=droneName, confidanceMin=YOLO_CONFIDENCE)
+        elif cameraName=="right":
+            wolfEstimate, validDetection, passedConfidence = yolov5.runYolov5(threadClient, response, cameraName="right", vehicleName=droneName, confidanceMin=YOLO_CONFIDENCE)
+        elif cameraName=="front":
+            wolfEstimate, validDetection, passedConfidence = yolov5.runYolov5(threadClient, response, cameraName="front", vehicleName=droneName, confidanceMin=YOLO_CONFIDENCE)
+
+        # handle image detection result
+        if(passedConfidence):
+            formattedWolfEstimateGPS = calcHelper.fixDegenerateCoordinate(wolfEstimate)
+
+            if(not Consensus_Decision_Behavior):
+                # detection with no consensus behavior
+                isSearched = isAlreadySearched(formattedWolfEstimateGPS, MIN_CIRCLE_RADIUS_GPS)
+                if (not isSearched):
+                    # request nearby drones
+                    requestNearbyDronesConsensusDecision(circleCenterGPS=formattedWolfEstimateGPS, circleRadiusGPS=MIN_CIRCLE_RADIUS_GPS, circleRadiusMeters=MIN_CIRCLE_RADIUS_METERS, \
+                        searchTimeS=CONSENSUS_ITERATION_LENGTH_SECONDS, taskGroup=(droneName + "Con"))
+                    # current Drone switch to consenus
+                    startConsensusDecision( circleCenterGPS=formattedWolfEstimateGPS, circleRadiusGPS=MIN_CIRCLE_RADIUS_GPS, circleRadiusMeters=MIN_CIRCLE_RADIUS_METERS, \
+                        searchTimeS=CONSENSUS_ITERATION_LENGTH_SECONDS, taskGroup=(droneName + "Con") )
+            else:
+                # detection update gps estimation
+                updateConsensusDecisionStatus(isSuccess=True, successEstimateGPS=formattedWolfEstimateGPS)
+
+        elif(validDetection):
+            if(Consensus_Decision_Behavior):
+                # no detection - currently consensus Behavior
+                updateConsensusDecisionStatus(isSuccess=False, successEstimateGPS=None)
+            # do nothing if not doing consenus
+
+        # mock detection
+        timeDiff = time.time() - runtime
+        # if(not(Consensus_Decision_Behavior)):
+        
+        end = time.time();
+        loopLen = end-start
+        if (loopLen < 1):
+            time.sleep(1 - loopLen);
+        timeSpent += loopLen;
+        i+=1
+    debugPrint(" CameraDetection: Average Loop Time: " + str(timeSpent / i))
+    return;
+
+
+# Theads END ===========================================
+# Ros handlers Start ++++++++++++++++++++++++++++++++++++
 def handleWolfSignal(data):
     # Grabs strings from data object
     cluster = data.cluster
@@ -497,125 +581,6 @@ def handleEnd(data):
     if (data.data == "e"):
         debugPrint("Triggered end")
         End_Loop = True
-
-# checks drone camera with yolo detection
-def wolfCameraDetection(droneName):
-    threadClient = airsim.MultirotorClient(LOCAL_IP)
-    debugPrint("Starting wolfCameraDetection loop")
-    i = 0
-    timeSpent = 0
-    runtime = time.time()
-
-    while (i < LOOP_NUMBER):
-        timeDiff = time.time() - runtime
-        if (timeDiff > MAX_TIME):
-            debugPrint(" Images taken: " + str(i))
-            return
-        elif (End_Loop):
-            debugPrint(" Images taken: " + str(i))
-            debugPrint("Ending loop")
-            return
-       
-        start=time.time() # gather time data
-
-        cameraName = None
-        response, repsonseF, responseR = None, None, None
-
-        # Switches camera for object detector depending on behavior
-        if Wolf_Search_Behavior:
-            cameraName="frontright"
-            responseF = getInfo.getResponse(threadClient, droneName, "front")
-            responseR = getInfo.getResponse(threadClient, droneName, "right")
-        elif Consensus_Decision_Behavior:
-            if (not In_Position_CD):
-                time.sleep(0.3); # 
-                continue;
-            cameraName="right"
-            response = getInfo.getResponse(threadClient, droneName, "right")
-        else: # If at spawn or in line, use front camera
-            cameraName="front"
-            response = getInfo.getResponse(threadClient, droneName, "front")
-
-
-        validDetection=False
-
-
-        if cameraName=="frontright":
-            cameraName="front"
-            wolfEstimate, validDetection, passedConfidence = yolov5.runYolov5(threadClient, responseF, cameraName, droneName, YOLO_CONFIDENCE)
-            # if front camera retrieves null detection, then run yolo on right camera
-            if(wolfEstimate[0]==None and wolfEstimate[1]==None):
-                cameraName="right"
-                wolfEstimate, validDetection, passedConfidence = yolov5.runYolov5(threadClient, responseR, cameraName, droneName, YOLO_CONFIDENCE)
-        else:
-            wolfEstimate, validDetection, passedConfidence = yolov5.runYolov5(threadClient, response, cameraName, droneName, YOLO_CONFIDENCE)
-
-        if(passedConfidence):
-            formattedWolfEstimateGPS = calcHelper.fixDegenerateCoordinate(wolfEstimate)
-
-            if(not Consensus_Decision_Behavior):
-                # detection with no consensus behavior
-                isSearched = isAlreadySearched(formattedWolfEstimateGPS, MIN_CIRCLE_RADIUS_GPS)
-                if (not isSearched):
-                    circleRadiusGPS = MIN_CIRCLE_RADIUS_GPS
-                    circleRadiusMeters = MIN_CIRCLE_RADIUS_METERS
-                    searchTimeS = CONSENSUS_ITERATION_LENGTH_SECONDS
-                    taskGroup = droneName + "Con"
-                    # request nearby drones
-                    requestNearbyDronesConsensusDecision(circleCenterGPS=formattedWolfEstimateGPS, circleRadiusGPS=circleRadiusGPS, circleRadiusMeters=circleRadiusMeters, searchTimeS=searchTimeS,  taskGroup=taskGroup)
-                    # current Drones
-                    startConsensusDecision( circleCenterGPS=formattedWolfEstimateGPS, circleRadiusGPS=circleRadiusGPS, circleRadiusMeters=circleRadiusMeters, searchTimeS=searchTimeS, taskGroup=taskGroup )
-
-
-            else:
-                # ToDo: use locl
-                global Success_Det_Count, Avg_Consensus_Decion_GPS
-                totalLon = Avg_Consensus_Decion_GPS.longitude * Success_Det_Count
-                totalLat = Avg_Consensus_Decion_GPS.latitude * Success_Det_Count
-                Success_Det_Count += 1
-                Avg_Consensus_Decion_GPS.longitude = (totalLon + formattedWolfEstimateGPS.longitude) / Success_Det_Count;
-                Avg_Consensus_Decion_GPS.latitude = (totalLat + formattedWolfEstimateGPS.latitude) / Success_Det_Count;
-
-        elif(validDetection):
-            if(Consensus_Decision_Behavior):
-                # no detection - currently consensus Behavior
-                global Fail_Det_Count
-                Fail_Det_Count += 1
-
-
-        # mock detection
-        timeDiff = time.time() - runtime
-        # if(not(Consensus_Decision_Behavior)):
-        if(False):
-            if(timeDiff > 18 and droneName == '1'):
-                # targetP is estimated gps position
-                targetP = threadClient.getMultirotorState(vehicle_name = "target")
-                circleCenterGPS = targetP.gps_location
-                circleRadiusGPS = MIN_CIRCLE_RADIUS_GPS
-                circleRadiusMeters = MIN_CIRCLE_RADIUS_METERS
-                searchTimeS = 100
-                taskGroup = droneName + "Con"
-                startConsensusDecision( circleCenterGPS=circleCenterGPS, circleRadiusGPS=circleRadiusGPS, circleRadiusMeters=circleRadiusMeters, searchTimeS=searchTimeS, taskGroup=taskGroup )
-                # ToDO addd function call to return list of availalbe drones
-                # THis is Hardcoded need to replace
-                requestNearbyDronesConsensusDecision(circleCenterGPS, circleRadiusGPS, circleRadiusMeters, searchTimeS,  taskGroup)
-
-        end = time.time();
-        loopLen = end-start
-        if (loopLen < 1):
-            time.sleep(1 - loopLen);
-        timeSpent += loopLen;
-        i+=1
-    debugPrint("Actual loop size:" + str(i))
-    debugPrint("Expected loop size:" + str(LOOP_NUMBER))
-# startConsensusDecision( circleCenterGPS=targetP.gps_location, circleRadiusGPS=MIN_CIRCLE_RADIUS_GPS*2, circleRadiusMeters=MIN_CIRCLE_RADIUS_METERS*2, searchTimeS=100 );
-    debugPrint(" CameraDetection: Average Loop Time: " + str(timeSpent / i))
-    return;
-
-
-# Theads END ===========================================
-
-# TODO: Functions need to Refatctor +++++++++++++++++++++++++++++++++++
 
 def commandResponse(request):
     global DM_Drone_Name
@@ -681,9 +646,9 @@ def commandResponse(request):
     
     return False
 
-
+# Ros handler functions end +++++++++++++++++++++++++++++++++++
+# Ros Publishers start +++++++++++++++++++++++++++++++++++
 # wolfCommunicationPublisher
-# signal
 def wolfSignalPublisher(pub, client, cluster, taskGroup, command, IsWS):
     # Creates droneMsg object and inserts values from AirSim apis
     wolfCommMessage = wolfCommunication()
@@ -739,6 +704,21 @@ def wolfDataPublisher(pub, client, droneName):
 
     # Publishes to topic
     pub.publish(droneMsg)
+# Ros Publishers End +++++++++++++++++++++++++++++++++++
+
+# TODO: Functions need to Refatctor +++++++++++++++++++++++++++++++++++
+
+# TODO: BRING INTO AIRSIM HELPER
+
+def getDroneSpeed(client, droneName):
+    velocity = client.getGpsData(vehicle_name = droneName)
+
+    velocityX = velocity.gnss.velocity.x_val
+    velocityY = velocity.gnss.velocity.y_val
+
+    speed = sqrt(velocityX**2 + velocityY**2)
+
+    return speed
 
 # TODO: MIGRATE OUT SOMEWHERE
 
@@ -978,7 +958,19 @@ def startConsensusDecision( circleCenterGPS, circleRadiusGPS, circleRadiusMeters
     In_Position_CD = False
     # debugPrint("start consenus decion")
     Consensus_Decision_Behavior = True;
-    Wolf_Search_Behavior = False; 
+    Wolf_Search_Behavior = False;
+
+def updateConsensusDecisionStatus(isSuccess, successEstimateGPS):
+    global Success_Det_Count, Fail_Det_Count, Avg_Consensus_Decion_GPS
+
+    if (isSuccess):
+        totalLon = Avg_Consensus_Decion_GPS.longitude * Success_Det_Count
+        totalLat = Avg_Consensus_Decion_GPS.latitude * Success_Det_Count
+        Success_Det_Count += 1
+        Avg_Consensus_Decion_GPS.longitude = (totalLon + successEstimateGPS.longitude) / Success_Det_Count;
+        Avg_Consensus_Decion_GPS.latitude = (totalLat + successEstimateGPS.latitude) / Success_Det_Count;
+    else:
+        Fail_Det_Count += 1
 
 def consensusDecisionBehaviorGetVector(currentDroneData):
     global Speed_Factor
