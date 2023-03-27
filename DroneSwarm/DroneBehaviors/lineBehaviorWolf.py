@@ -7,6 +7,9 @@ from ServiceRequestors.wolfGetWolfData import getWolfState
 import ServiceRequestors.overseerGetOverseerData as overseerGetOverseerData
 from ServiceRequestors.overseerGetWolfData import getWolfDataOfCluster
 import ServiceRequestors.wolfGetWolfData as wolfService
+import Constants.configDrones as configDrones
+import Constants.ros as ros
+from airsim_ros_pkgs.msg import wolfCommunication
 
 AVOID_FACTOR = 0.01
 DIRECTION_FACTOR = 5
@@ -16,6 +19,10 @@ OVERSEER_DIRECTION_SLOW_DOWN = 5
 OVERSEER_TO_WOLF_GROUP_RADIUS = 0.0003
 REPULSION_RADIUS = 0.0003
 Cluster = ""
+SEARCH_TASK_GROUP = ros.SEARCH_TASK_GROUP
+EMPTY_TASK_GROUP = ros.EMPTY_TASK_GROUP
+EMPTY_CLUSTER = ros.EMPTY_CLUSTER
+AT_SPIRAL_WAYPOINT_SIGNAL = ros.AT_SPIRAL_WAYPOINT_SIGNAL
 
 def repulsion(client, curDroneIndex):
     wolfInfoArray = getWolfState()        # Get droneWolfState state array from service
@@ -216,3 +223,80 @@ def getSubwaypointList(currentWaypoint, previousWaypoint, radius, droneCluster):
     # str(subwaypointList)
     # debugPrint(subwaypointList)
     return subwaypointList
+
+# wolfCommunicationPublisher
+def wolfSignalWaypointPublisher(pub, client, cluster, taskGroup, command, waypointIndex):
+    # Creates droneMsg object and inserts values from AirSim apis
+    wolfCommMessage = wolfCommunication()
+    wolfCommMessage.cluster = cluster
+    wolfCommMessage.taskGroup = taskGroup
+    wolfCommMessage.command = command
+    wolfCommMessage.genericInt = waypointIndex
+
+    # Publishes to topic
+    pub.publish(wolfCommMessage)
+
+def allDronesAtWaypoint(wolfCommPublish, client, WAYPOINT_INDEX, Cluster, WAYPOINT_COORDS):
+    # Gets wolf array
+    wolfInfoArray = wolfService.getWolfState()
+
+    currentWaypoint = WAYPOINT_COORDS[WAYPOINT_INDEX]
+    newWaypoint = currentWaypoint
+    waypointIndexBeforeCheck = WAYPOINT_INDEX
+
+    # Check if made it to spawn and drone has a cluster
+    if ((WAYPOINT_INDEX >= 1) and (Cluster != EMPTY_CLUSTER)):
+        radius = 0.0001
+        previousWaypoint = WAYPOINT_COORDS[WAYPOINT_INDEX-1]
+
+        # Gets list of subwaypoints
+        subWaypointList = getSubwaypointList(currentWaypoint, previousWaypoint, radius, Cluster)
+
+        # Get cluster and size information
+        wolfCluster = wolfService.getWolfDataOfClusterWCurWolf(Cluster)
+        clusterSize = len(wolfCluster)
+
+        # Checks if all wolf in cluster made it to waypoint
+        for wolf in wolfCluster:
+            # Gets wolfs subwaypoint based on lane
+            lane = int(wolf.droneName) % clusterSize
+            wolfSubwaypoint = subWaypointList[lane]
+
+            # Get difference between waypoint and drones actual location
+            distance = sqrt( ((wolf.longitude - float(wolfSubwaypoint[0])) ** 2) + ((wolf.latitude - float(wolfSubwaypoint[1])) ** 2))
+
+            # debugPrint(str(distance))
+            # If any of the drones are not near waypoint, return false
+            if (distance > 0.00015):
+                return False, WAYPOINT_INDEX
+    # Check that drones are spawned in an contain a cluster before moving on
+    elif((Cluster != EMPTY_CLUSTER) and (WAYPOINT_INDEX == 0)):
+        wolfCluster = wolfService.getWolfDataOfClusterWCurWolf(Cluster)
+
+        for wolf in wolfCluster:
+            xDifference = wolf.longitude - float(WAYPOINT_COORDS[WAYPOINT_INDEX][0])
+            yDifference = wolf.latitude - float(WAYPOINT_COORDS[WAYPOINT_INDEX][1])
+
+            # If any of the drones are out of bounds, return false
+            if ((abs(xDifference) > 0.0004) or (abs(yDifference) > 0.0004)):
+                return False, WAYPOINT_INDEX
+
+        # Check if our global value has changed
+        if (waypointIndexBeforeCheck == WAYPOINT_INDEX):    
+            WAYPOINT_INDEX = WAYPOINT_INDEX + 1
+            # Communicate to other drones in cluster new waypoint 
+            wolfSignalWaypointPublisher(wolfCommPublish, client, str(Cluster), EMPTY_TASK_GROUP, AT_SPIRAL_WAYPOINT_SIGNAL, WAYPOINT_INDEX)
+
+        return True, WAYPOINT_INDEX
+        # debugPrint("Drone spawned")
+
+    # If drone is in cluster and passed checks, increment waypoint
+    if ((Cluster != EMPTY_CLUSTER)):
+        # Check if our global value has changed
+        if (waypointIndexBeforeCheck == WAYPOINT_INDEX):    
+            WAYPOINT_INDEX = WAYPOINT_INDEX + 1
+            # Communicate to other drones in cluster new waypoint 
+            wolfSignalWaypointPublisher(wolfCommPublish, client, str(Cluster), EMPTY_TASK_GROUP, AT_SPIRAL_WAYPOINT_SIGNAL, WAYPOINT_INDEX)
+            # debugPrint("Made it to waypoint")
+
+    return True, WAYPOINT_INDEX
