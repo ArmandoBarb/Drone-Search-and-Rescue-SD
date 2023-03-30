@@ -13,74 +13,102 @@ import airsim
 AVOID_FACTOR = 0.01
 DIRECTION_FACTOR = 5
 WOLF_SLOW_DOWN = 3
-OVERSEER_DIRECTION_SPEED_UP = 16
-OVERSEER_DIRECTION_SLOW_DOWN = 5
+OVERSEER_DIRECTION_SPEED_UP = 8
+OVERSEER_DIRECTION_SLOW_DOWN = 2
+OVERSEER_POINT_ON_LINE_FACTOR = 5
 OVERSEER_TO_WOLF_GROUP_RADIUS = 0.0003
 REPULSION_RADIUS = 0.0003
+AT_WAYPOINT_RADIUS = 0.00015
 
-# Creates directional vector towards waypoint
-def overseerWaypoint(client, curDroneIndex, waypoint):
-    # Gets data from all drones
+# Directional vector towards next spiral waypoint
+def waypointDirection(client, curDroneIndex, waypoint):
+    # Gets data from overseers
     overseerInfoArray = overseerGetOverseerData.getOverseerState()
 
     # Gets x and y difference between drone and waypoint
     xDifference = float(waypoint[0]) - overseerInfoArray[curDroneIndex].longitude
     yDifference = float(waypoint[1]) - overseerInfoArray[curDroneIndex].latitude
 
-    # Get wolf data of cluster
-    clusterName = "Overseer_" + str(curDroneIndex)
-    cluster = getWolfDataOfCluster(clusterName)
-
+    distance = sqrt(xDifference**2 + yDifference**2)
 
     # If within certain distance of waypoint, don't move
-    if ((abs(xDifference) < 0.00005) and (abs(yDifference) < 0.00005) or (0 == len(cluster))):
+    if (distance < AT_WAYPOINT_RADIUS):
+
         finalVelocity = [0, 0]
+        print("At waypoint stopping")
+        return finalVelocity
+
+    # Slow down when close
+    elif (distance < AT_WAYPOINT_RADIUS * 2):
+        # Gets normalized difference values and adds in directional factor
+        xNormalized = (xDifference / sqrt(xDifference**2 + yDifference**2))*OVERSEER_DIRECTION_SLOW_DOWN
+        yNormalized = (yDifference / sqrt(xDifference**2 + yDifference**2))*OVERSEER_DIRECTION_SLOW_DOWN
+        print("Getting close slowing down")
+
+        # Saves final weighted vector to final velocity
+        finalVelocity = [xNormalized, yNormalized]
 
     # Else move to waypoint
     else:
-        directionFactor = DIRECTION_FACTOR
-
-
-        # Calculate average wolf drone cluster location
-        averageLongitude = 0
-        averageLatitude = 0
-        for drone in cluster:
-            averageLongitude += drone.longitude
-            averageLatitude += drone.latitude
-        averageLatitude = averageLatitude / len(cluster)
-        averageLongitude = averageLongitude / len(cluster)
-
-        # Calculate difference between overseer and cluster
-        curLongitude = overseerInfoArray[curDroneIndex].longitude
-        curLatitide = overseerInfoArray[curDroneIndex].latitude
-        distance = sqrt( (curLongitude - averageLongitude)**2 + (curLatitide - averageLatitude)**2 )
-        # print(clusterName, "distance from group", distance)
-
-        # If wolf cluster distance is closer to next waypoint, speed up overseer
-        overseerToWaypointDistance = sqrt( (xDifference)**2 + (yDifference)**2 )
-        groupToWaypointDistance = sqrt( (float(waypoint[0]) - averageLongitude)**2 + (float(waypoint[1]) - averageLatitude)**2 )
-        if (overseerToWaypointDistance > groupToWaypointDistance):
-            directionFactor = OVERSEER_DIRECTION_SPEED_UP
-            # print("OVERSEER", curDroneIndex, "Speeding up, wolfs average ahead")
-
-        elif (distance > OVERSEER_TO_WOLF_GROUP_RADIUS * 1.5):
-            directionFactor = 0
-
-        # If too close to group, speed up the overseer
-        elif (distance < OVERSEER_TO_WOLF_GROUP_RADIUS):
-            directionFactor = OVERSEER_DIRECTION_SPEED_UP
-            # print("OVERSEER", curDroneIndex, "Speeding up")
-
-        # If too far from group, slow down the overseer
-        elif (distance > OVERSEER_TO_WOLF_GROUP_RADIUS):
-            directionFactor = OVERSEER_DIRECTION_SLOW_DOWN
-            # print("OVERSEER", curDroneIndex, "Slowing down")
-
         # Gets normalized difference values and adds in directional factor
-        xNormalized = (xDifference / sqrt(xDifference**2 + yDifference**2))*directionFactor
-        yNormalized = (yDifference / sqrt(xDifference**2 + yDifference**2))*directionFactor
+        xNormalized = (xDifference / sqrt(xDifference**2 + yDifference**2))*OVERSEER_DIRECTION_SPEED_UP
+        yNormalized = (yDifference / sqrt(xDifference**2 + yDifference**2))*OVERSEER_DIRECTION_SPEED_UP
 
         # Saves final weighted vector to final velocity
         finalVelocity = [xNormalized, yNormalized]
 
     return finalVelocity
+
+# Pull towards center gps point
+def cohesionPointOnLine(client, curDroneIndex, pointOnLine):
+     # Gets data from overseers
+    overseerInfoArray = overseerGetOverseerData.getOverseerState()
+
+    # Gets x and y difference between drone and point on line
+    xDifference = float(pointOnLine[0]) - overseerInfoArray[curDroneIndex].longitude
+    yDifference = float(pointOnLine[1]) - overseerInfoArray[curDroneIndex].latitude
+
+    distance = sqrt(xDifference**2 + yDifference**2)
+
+    # If within certain distance of point on line, don't add to vector
+    if (distance < AT_WAYPOINT_RADIUS):
+
+        finalVelocity = [0, 0]
+        return finalVelocity
+
+    # Slow down when close
+    elif (distance < AT_WAYPOINT_RADIUS * 2):
+        # Gets normalized difference values and adds in directional factor
+        xNormalized = (xDifference / sqrt(xDifference**2 + yDifference**2))*OVERSEER_POINT_ON_LINE_FACTOR
+        yNormalized = (yDifference / sqrt(xDifference**2 + yDifference**2))*OVERSEER_POINT_ON_LINE_FACTOR
+
+        # Saves final weighted vector to final velocity
+        finalVelocity = [xNormalized, yNormalized]
+
+    # Else move to waypoint
+    else:
+        # Gets normalized difference values and adds in directional factor
+        xNormalized = (xDifference / sqrt(xDifference**2 + yDifference**2))*OVERSEER_POINT_ON_LINE_FACTOR
+        yNormalized = (yDifference / sqrt(xDifference**2 + yDifference**2))*OVERSEER_POINT_ON_LINE_FACTOR
+
+        # Saves final weighted vector to final velocity
+        finalVelocity = [xNormalized, yNormalized]
+
+    return finalVelocity
+
+
+# Creates directional vector towards waypoint
+def overseerWaypoint(client, curDroneIndex, pointOnLine, nextSpiralWaypoint):
+    # Calculates waypoint and cohesion velocity
+    velocityW = waypointDirection(client, curDroneIndex, nextSpiralWaypoint)
+    velocityC = cohesionPointOnLine(client, curDroneIndex, pointOnLine)
+
+    # Adds together velocity for waypoint and cohesion
+    finalVelocityX = velocityW[0] # + velocityC[0]
+    finalVelocityY = velocityW[1] # + velocityC[1]
+
+    # Vector movement
+    finalVelocity = [finalVelocityX, finalVelocityY]
+
+    return finalVelocity
+

@@ -27,7 +27,6 @@ from std_srvs.srv import Trigger, TriggerResponse
 from ServiceRequestors.instructWolf import sendLinebehaviorRequest
 from ServiceRequestors.overseerGetOverseerData import getOverseerState
 from ServiceRequestors.overseerGetWolfData import getOverseerGetWolfState
-from DroneBehaviors.lineBehavior import overseerWaypoint
 from airsim_ros_pkgs.msg import droneData
 from airsim_ros_pkgs.msg import wolfCommunication
 from ServiceRequestors.wolfGetWolfData import getWolfState
@@ -121,6 +120,9 @@ def overseerDroneController(droneName, overseerCount, wolfCount):
     client = takeOff(droneName)
     client.moveToZAsync(z=-40, velocity=8, vehicle_name = droneName).join()
 
+    client = takeOff("TestOverseer")
+    client.moveToZAsync(z=-10, velocity=8, vehicle_name = "TestOverseer").join()
+
     # thread for infared waypoint detection
     t1 = Thread(target = overseerInfraredDetection, args=({droneName}))
     t1.start()
@@ -169,7 +171,7 @@ def overseerDroneController(droneName, overseerCount, wolfCount):
         startWaypoint = getLastWaypoint(droneName)
         startGPS = calcHelper.fixDegenerateCoordinate(startWaypoint)
         endGPS = calcHelper.fixDegenerateCoordinate(endWaypoint)
-
+        # debugPrint("Start Longitude: " + str(startGPS.longitude) + "Start Latitude: " + str(startGPS.latitude) + "End Longitude: "+ str(endGPS.longitude) + "End Latitude: " + str(endGPS.latitude))
         isEmpty, clusterCenterGPS = overseerGetWolfData.getWolfClusterCenterGPS(droneName)
 
         waypoint = [0, 0]
@@ -180,15 +182,17 @@ def overseerDroneController(droneName, overseerCount, wolfCount):
             GPSOnLine = calcHelper.mapGPSPointOnLine(startGPS, endGPS, clusterCenterGPS)
             # debugPrint("GPSOnLine to add: " + str(GPSOnLine))
             # print("We in else")
-            dVector = calcHelper.calcVectorBetweenGPS(GPSOnLine, endGPS)
+            # dVector = calcHelper.calcVectorBetweenGPS(GPSOnLine, endGPS)
             # todo  DEAL WITH calcVectorBetweenGPS
-            dVector = [dVector[1], dVector[0]]
+            # dVector = [dVector[1], dVector[0]]
             # debugPrint("dVector to add: " + str(dVector))
             
-            vectorAdd = calcHelper.setVectorMagnitude(dVector, DISTANCE_LEAD_OVERSEER_GPS)
+            # vectorAdd = calcHelper.setVectorMagnitude(dVector, DISTANCE_LEAD_OVERSEER_GPS)
             # debugPrint("Vector to add: " + str(vectorAdd))
+            # debugPrint("Longitude: " + str(GPSOnLine.longitude) + "Latitude: " + str(GPSOnLine.latitude))
 
-            waypoint2 = [GPSOnLine.longitude + vectorAdd[0], GPSOnLine.latitude + vectorAdd[1]]
+            # waypoint2 = [GPSOnLine.longitude + vectorAdd[0], GPSOnLine.latitude + vectorAdd[1]]
+            waypoint2 = [GPSOnLine.longitude + 0, GPSOnLine.latitude + 0]
 
             outputForWaypoint = "Dynamic Waypoint " + str(waypoint2) + " Waypoint: " + str(waypoint)
             # debugPrint(outputForWaypoint)
@@ -197,13 +201,14 @@ def overseerDroneController(droneName, overseerCount, wolfCount):
 
         outputForWaypoint = "Waypoint to move to: " + str(waypoint) + " END GPS: " + str(endGPS)
         # debugPrint(outputForWaypoint)
-        vector = lineBehaviorOverseer.overseerWaypoint(client, int(droneNum), waypoint)
+        vector = lineBehaviorOverseer.overseerWaypoint(client, int(droneNum), waypoint, endWaypoint)
 
+        client.moveByVelocityZAsync(vector[1], vector[0], -40, duration = 1, vehicle_name=droneName)
+
+        client.moveByVelocityZAsync(vector[1], vector[0], -10, duration = 1, vehicle_name="TestOverseer")
 
         # If all drones make it to the waypoint, more to next waypoint
         allDronesAtWaypoint(droneName)
-
-        client.moveByVelocityZAsync(vector[1], vector[0], -40, duration = 1, vehicle_name=droneName)
 
         # TODO: Add in Overseer behavior
         # TODO: Creeping Line lead behavior
@@ -212,7 +217,7 @@ def overseerDroneController(droneName, overseerCount, wolfCount):
         # TODO: Make Airsim call with desired action
 
         # Add in artifical loop delay (How fast the loop runs dictates the drones reaction speed)
-        time.sleep(0.5)
+        # time.sleep(0.5)
         i+=1
         end = time.time()
         timeSpent += end-start
