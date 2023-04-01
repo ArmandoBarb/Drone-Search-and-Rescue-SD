@@ -9,6 +9,7 @@ from ServiceRequestors.overseerGetWolfData import getWolfDataOfCluster
 import ServiceRequestors.wolfGetWolfData as wolfService
 from math import sqrt
 import airsim
+import Constants.configDrones as configDrones
 
 AVOID_FACTOR = 0.01
 DIRECTION_FACTOR = 5
@@ -19,6 +20,9 @@ OVERSEER_POINT_ON_LINE_FACTOR = 5
 OVERSEER_TO_WOLF_GROUP_RADIUS = 0.0003
 REPULSION_RADIUS = 0.0003
 AT_WAYPOINT_RADIUS = 0.00015
+MAX_DIRECTION_FACTOR = 10
+COHESION_FACTOR = 0.00005
+MIN_CIRCLE_RADIUS_GPS = configDrones.MIN_CIRCLE_RADIUS_GPS
 
 # Directional vector towards next spiral waypoint
 def waypointDirection(client, curDroneIndex, waypoint):
@@ -35,7 +39,7 @@ def waypointDirection(client, curDroneIndex, waypoint):
     if (distance < AT_WAYPOINT_RADIUS):
 
         finalVelocity = [0, 0]
-        print("At waypoint stopping")
+        # print("At waypoint stopping")
         return finalVelocity
 
     # Slow down when close
@@ -43,7 +47,7 @@ def waypointDirection(client, curDroneIndex, waypoint):
         # Gets normalized difference values and adds in directional factor
         xNormalized = (xDifference / sqrt(xDifference**2 + yDifference**2))*OVERSEER_DIRECTION_SLOW_DOWN
         yNormalized = (yDifference / sqrt(xDifference**2 + yDifference**2))*OVERSEER_DIRECTION_SLOW_DOWN
-        print("Getting close slowing down")
+        # print("Getting close slowing down")
 
         # Saves final weighted vector to final velocity
         finalVelocity = [xNormalized, yNormalized]
@@ -68,31 +72,27 @@ def cohesionPointOnLine(client, curDroneIndex, pointOnLine):
     xDifference = float(pointOnLine[0]) - overseerInfoArray[curDroneIndex].longitude
     yDifference = float(pointOnLine[1]) - overseerInfoArray[curDroneIndex].latitude
 
+    # TODO: Add in difference between waypoint to get speed
+
+    # Get distance between point on line and overseer
     distance = sqrt(xDifference**2 + yDifference**2)
 
-    # If within certain distance of point on line, don't add to vector
-    if (distance < AT_WAYPOINT_RADIUS):
+    if (distance > MIN_CIRCLE_RADIUS_GPS):
+        print("Too far from waypoint. Distance is: ", distance)
 
-        finalVelocity = [0, 0]
-        return finalVelocity
+    # Factor for movement based on distance to point
+    directionFactor = distance / COHESION_FACTOR
+    # print("Our direction factor for cohesion is: ", directionFactor)
 
-    # Slow down when close
-    elif (distance < AT_WAYPOINT_RADIUS * 2):
-        # Gets normalized difference values and adds in directional factor
-        xNormalized = (xDifference / sqrt(xDifference**2 + yDifference**2))*OVERSEER_POINT_ON_LINE_FACTOR
-        yNormalized = (yDifference / sqrt(xDifference**2 + yDifference**2))*OVERSEER_POINT_ON_LINE_FACTOR
+    if (directionFactor > MAX_DIRECTION_FACTOR):
+        directionFactor = MAX_DIRECTION_FACTOR
 
-        # Saves final weighted vector to final velocity
-        finalVelocity = [xNormalized, yNormalized]
+    # Gets normalized difference values and adds in directional factor
+    xNormalized = (xDifference / sqrt(xDifference**2 + yDifference**2))*directionFactor
+    yNormalized = (yDifference / sqrt(xDifference**2 + yDifference**2))*directionFactor
 
-    # Else move to waypoint
-    else:
-        # Gets normalized difference values and adds in directional factor
-        xNormalized = (xDifference / sqrt(xDifference**2 + yDifference**2))*OVERSEER_POINT_ON_LINE_FACTOR
-        yNormalized = (yDifference / sqrt(xDifference**2 + yDifference**2))*OVERSEER_POINT_ON_LINE_FACTOR
-
-        # Saves final weighted vector to final velocity
-        finalVelocity = [xNormalized, yNormalized]
+    # Saves final weighted vector to final velocity
+    finalVelocity = [xNormalized, yNormalized]
 
     return finalVelocity
 
@@ -104,8 +104,8 @@ def overseerWaypoint(client, curDroneIndex, pointOnLine, nextSpiralWaypoint):
     velocityC = cohesionPointOnLine(client, curDroneIndex, pointOnLine)
 
     # Adds together velocity for waypoint and cohesion
-    finalVelocityX = velocityW[0] # + velocityC[0]
-    finalVelocityY = velocityW[1] # + velocityC[1]
+    finalVelocityX = velocityW[0] + velocityC[0]
+    finalVelocityY = velocityW[1] + velocityC[1]
 
     # Vector movement
     finalVelocity = [finalVelocityX, finalVelocityY]

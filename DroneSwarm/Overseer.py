@@ -182,21 +182,22 @@ def overseerDroneController(droneName, overseerCount, wolfCount):
             GPSOnLine = calcHelper.mapGPSPointOnLine(startGPS, endGPS, clusterCenterGPS)
             # debugPrint("GPSOnLine to add: " + str(GPSOnLine))
             # print("We in else")
-            # dVector = calcHelper.calcVectorBetweenGPS(GPSOnLine, endGPS)
+            dVector = calcHelper.calcVectorBetweenGPS(GPSOnLine, endGPS)
             # todo  DEAL WITH calcVectorBetweenGPS
-            # dVector = [dVector[1], dVector[0]]
+            dVector = [dVector[1], dVector[0]]
             # debugPrint("dVector to add: " + str(dVector))
             
-            # vectorAdd = calcHelper.setVectorMagnitude(dVector, DISTANCE_LEAD_OVERSEER_GPS)
+            vectorAdd = calcHelper.setVectorMagnitude(dVector, DISTANCE_LEAD_OVERSEER_GPS)
             # debugPrint("Vector to add: " + str(vectorAdd))
             # debugPrint("Longitude: " + str(GPSOnLine.longitude) + "Latitude: " + str(GPSOnLine.latitude))
 
-            # waypoint2 = [GPSOnLine.longitude + vectorAdd[0], GPSOnLine.latitude + vectorAdd[1]]
-            waypoint2 = [GPSOnLine.longitude + 0, GPSOnLine.latitude + 0]
+            waypoint2 = [GPSOnLine.longitude + vectorAdd[0], GPSOnLine.latitude + vectorAdd[1]]
+            # waypoint2 = [GPSOnLine.longitude + 0, GPSOnLine.latitude + 0]
 
-            outputForWaypoint = "Dynamic Waypoint " + str(waypoint2) + " Waypoint: " + str(waypoint)
-            # debugPrint(outputForWaypoint)
+            outputForWaypoint = "Dynamic Waypoint " + str(waypoint2) + " Waypoint: " + str(endWaypoint)
+            debugPrint(outputForWaypoint)
             waypoint = waypoint2
+            # waypoint = GPSOnLine
 
 
         outputForWaypoint = "Waypoint to move to: " + str(waypoint) + " END GPS: " + str(endGPS)
