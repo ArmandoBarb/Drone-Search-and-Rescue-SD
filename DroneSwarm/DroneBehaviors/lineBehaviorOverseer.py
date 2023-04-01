@@ -77,8 +77,8 @@ def cohesionPointOnLine(client, curDroneIndex, pointOnLine):
     # Get distance between point on line and overseer
     distance = sqrt(xDifference**2 + yDifference**2)
 
-    if (distance > MIN_CIRCLE_RADIUS_GPS):
-        print("Too far from waypoint. Distance is: ", distance)
+    # if (distance > MIN_CIRCLE_RADIUS_GPS):
+    #     print("Too far from waypoint. Distance is: ", distance)
 
     # Factor for movement based on distance to point
     directionFactor = distance / COHESION_FACTOR
