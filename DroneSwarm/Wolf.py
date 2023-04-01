@@ -5,6 +5,7 @@
 
 # imports
 import setup_path # If setup_path gives issue, comment out
+import cv2
 import airsim
 import rospy
 import time
@@ -44,6 +45,7 @@ import torch
 import HelperFunctions.calcHelper as calcHelper
 import HelperFunctions.calcHelper as helper
 import DroneBehaviors.collisionDetectionBehavior as collisionDetectionBehavior
+from ImageProcessing import data_collect_final as collect
 
 # Environmental Variables
 LOOP_NUMBER = configDrones.LOOP_NUMBER
@@ -513,100 +515,10 @@ def wolfCameraDetection(droneName):
        
         start=time.time() # gather time data
 
-        cameraName="front"
+        time.sleep(20)
+        collect.runDataCollect(threadClient, droneName)
 
-        response = None
-        repsonseF = None
-        responseR = None
-
-        # Switches camera for object detector depending on behavior
-        if Wolf_Search_Behavior:
-            cameraName="frontright"
-            responseF = getInfo.getResponse(threadClient, droneName, "front")
-            responseR = getInfo.getResponse(threadClient, droneName, "right")
-
-        elif Consensus_Decision_Behavior:
-            if (not In_Position_CD):
-                time.sleep(0.3)
-                continue;
-
-            cameraName="right"
-            response = getInfo.getResponse(threadClient, droneName, "right")
-
-        # If at spawn or in line, use front camera
-        else:
-            cameraName="front"
-            response = getInfo.getResponse(threadClient, droneName, "front")
-
-
-        validDetection=False
-
-
-        if cameraName=="frontright":
-            cameraName="front"
-            wolfEstimate, validDetection, passedConfidence = yolov5.runYolov5(threadClient, responseF, cameraName, droneName, YOLO_CONFIDENCE)
-            # if front camera retrieves null detection, then run yolo on right camera
-            if(wolfEstimate[0]==None and wolfEstimate[1]==None):
-                cameraName="right"
-                wolfEstimate, validDetection, passedConfidence = yolov5.runYolov5(threadClient, responseR, cameraName, droneName, YOLO_CONFIDENCE)
-        else:
-            wolfEstimate, validDetection, passedConfidence = yolov5.runYolov5(threadClient, response, cameraName, droneName, YOLO_CONFIDENCE)
-
-        if(passedConfidence):
-            # detection
-            formattedWolfEstimateGPS = calcHelper.fixDegenerateCoordinate(wolfEstimate)
-            # debugPrint("\nGot a detection! : \n"+str(formattedWolfEstimateGPS))
-            # print("\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n")
-
-            if(not Consensus_Decision_Behavior):
-                # detection with no consensus behavior
-                # assign consensus
-                # debugPrint("\nGot a detection yolo! : \n"+str(formattedWolfEstimateGPS))
-                # print("\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n")
-                isSearched = isAlreadySearched(formattedWolfEstimateGPS, MIN_CIRCLE_RADIUS_GPS)
-                if (not isSearched):
-                    circleRadiusGPS = MIN_CIRCLE_RADIUS_GPS
-                    circleRadiusMeters = MIN_CIRCLE_RADIUS_METERS
-                    searchTimeS = 15
-                    taskGroup = droneName + "Con"
-                    # request nearby drones
-                    requestNearbyDronesConsensusDecision(circleCenterGPS=formattedWolfEstimateGPS, circleRadiusGPS=circleRadiusGPS, circleRadiusMeters=circleRadiusMeters, searchTimeS=searchTimeS,  taskGroup=taskGroup)
-                    # current Drones
-                    startConsensusDecision( circleCenterGPS=formattedWolfEstimateGPS, circleRadiusGPS=circleRadiusGPS, circleRadiusMeters=circleRadiusMeters, searchTimeS=searchTimeS, taskGroup=taskGroup )
-
-
-            else:
-                # ToDo: use locl
-                global Success_Det_Count, Avg_Consensus_Decion_GPS
-                totalLon = Avg_Consensus_Decion_GPS.longitude * Success_Det_Count
-                totalLat = Avg_Consensus_Decion_GPS.latitude * Success_Det_Count
-                Success_Det_Count += 1
-                Avg_Consensus_Decion_GPS.longitude = (totalLon + formattedWolfEstimateGPS.longitude) / Success_Det_Count;
-                Avg_Consensus_Decion_GPS.latitude = (totalLat + formattedWolfEstimateGPS.latitude) / Success_Det_Count;
-
-        elif(validDetection):
-            if(Consensus_Decision_Behavior):
-                # no detection - currently consensus Behavior
-                global Fail_Det_Count
-                Fail_Det_Count += 1
-
-
-        # mock detection
         timeDiff = time.time() - runtime
-        # if(not(Consensus_Decision_Behavior)):
-        if(False):
-            if(timeDiff > 18 and droneName == '1'):
-                # targetP is estimated gps position
-                targetP = threadClient.getMultirotorState(vehicle_name = "target")
-                circleCenterGPS = targetP.gps_location
-                circleRadiusGPS = MIN_CIRCLE_RADIUS_GPS
-                circleRadiusMeters = MIN_CIRCLE_RADIUS_METERS
-                searchTimeS = 100
-                taskGroup = droneName + "Con"
-                startConsensusDecision( circleCenterGPS=circleCenterGPS, circleRadiusGPS=circleRadiusGPS, circleRadiusMeters=circleRadiusMeters, searchTimeS=searchTimeS, taskGroup=taskGroup )
-                # ToDO addd function call to return list of availalbe drones
-                # THis is Hardcoded need to replace
-                requestNearbyDronesConsensusDecision(circleCenterGPS, circleRadiusGPS, circleRadiusMeters, searchTimeS,  taskGroup)
 
         end = time.time();
         loopLen = end-start
