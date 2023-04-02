@@ -120,8 +120,8 @@ def overseerDroneController(droneName, overseerCount, wolfCount):
     client = takeOff(droneName)
     client.moveToZAsync(z=-40, velocity=8, vehicle_name = droneName).join()
 
-    client = takeOff("TestOverseer")
-    client.moveToZAsync(z=-10, velocity=8, vehicle_name = "TestOverseer").join()
+    # client = takeOff("TestOverseer")
+    # client.moveToZAsync(z=-10, velocity=8, vehicle_name = "TestOverseer").join()
 
     # thread for infared waypoint detection
     t1 = Thread(target = overseerInfraredDetection, args=({droneName}))
@@ -195,7 +195,7 @@ def overseerDroneController(droneName, overseerCount, wolfCount):
             # waypoint2 = [GPSOnLine.longitude + 0, GPSOnLine.latitude + 0]
 
             outputForWaypoint = "Dynamic Waypoint " + str(waypoint2) + " Waypoint: " + str(endWaypoint)
-            debugPrint(outputForWaypoint)
+            # debugPrint(outputForWaypoint)
             waypoint = waypoint2
             # waypoint = GPSOnLine
 
@@ -206,7 +206,7 @@ def overseerDroneController(droneName, overseerCount, wolfCount):
 
         client.moveByVelocityZAsync(vector[1], vector[0], -40, duration = 1, vehicle_name=droneName)
 
-        client.moveByVelocityZAsync(vector[1], vector[0], -10, duration = 1, vehicle_name="TestOverseer")
+        # client.moveByVelocityZAsync(vector[1], vector[0], -10, duration = 1, vehicle_name="TestOverseer")
 
         # If all drones make it to the waypoint, more to next waypoint
         allDronesAtWaypoint(droneName)
@@ -265,6 +265,7 @@ def overseerInfraredDetection(droneName):
     i = 0
     timeSpent = 0
     runtime = time.time()
+    # print("Our current drone name is: ", droneName)
     while (i < LOOP_NUMBER):
         timeDiff = time.time() - runtime
         if (timeDiff > MAX_TIME):
@@ -285,6 +286,8 @@ def overseerInfraredDetection(droneName):
 
         # cluster heat signatures from segmenation map
         clusters = clustering.pixelClustering(height, width, segRGB)
+
+        # print("Cluster len:", len(clusters))
         
         # if no detections then avoid unecessary calculations
         if len(clusters) > 0:
