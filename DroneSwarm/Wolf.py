@@ -43,6 +43,7 @@ import HelperFunctions.airSimHelper as airSimHelper
 # import service requesters
 import ServiceRequestors.wolfGetWolfData as wolfGetWolfData
 import ServiceRequestors.instructWolf as instructWolf
+import ServiceRequestors.checkGPU as checkGPU
 
 # Environmental Variables
 LOOP_NUMBER = configDrones.LOOP_NUMBER
@@ -166,6 +167,10 @@ def wolfDroneController(droneName, droneCount, overseerCount):
     nodeName = "Wolf" + droneName
     rospy.init_node(nodeName, anonymous = True)
     debugPrint("Node initiated")
+
+    # Wait until GPU is loaded
+    checkGPU.checkGPUStatus()
+    debugPrint("GPU Loaded")
 
     # Start all threads here (if you have to make one somwhere else bring it up with the team)
     # Starts service listeners for commands

@@ -39,6 +39,7 @@ from ImageProcessing import clustering
 from HelperFunctions import clusterHelper
 from HelperFunctions import algoHelper
 from HelperFunctions import calcHelper
+import ServiceRequestors.checkGPU as checkGPU
 import warnings
 import os
 
@@ -98,6 +99,10 @@ def overseerDroneController(droneName, overseerCount, wolfCount):
     # Create Node for Overseer
     nodeName = droneName
     rospy.init_node(nodeName, anonymous = True)
+
+    # Wait until GPU is loaded
+    checkGPU.checkGPUStatus()
+    debugPrint("GPU Loaded")
 
     # Get wolf cluster
 
