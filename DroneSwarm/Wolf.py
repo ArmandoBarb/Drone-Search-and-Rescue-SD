@@ -21,7 +21,6 @@ import Constants.configDrones as configDrones
 import Constants.ros as ros
 # import drone behavior
 import DroneBehaviors.circleBehavior as circleBehavior;
-import DroneBehaviors.lineBehavior as lineBehavior
 import DroneBehaviors.lineBehaviorWolf as lineBehaviorWolf
 import DroneBehaviors.collisionDetectionBehavior as collisionDetectionBehavior
 # TODO: Investigate if we need to use a Lock while writing or reading global variables
