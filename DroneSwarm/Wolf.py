@@ -515,7 +515,7 @@ def wolfCameraDetection(droneName):
        
         start=time.time() # gather time data
 
-        time.sleep(20)
+        #time.sleep(5)
         collect.runDataCollect(threadClient, droneName)
 
         timeDiff = time.time() - runtime
