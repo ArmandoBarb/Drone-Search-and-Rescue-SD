@@ -62,22 +62,7 @@ if __name__ == '__main__': # Only runs if this is main processes
 
     # Starts node for gpu yolo processing
     mp.Process(target=startYoloGPU, args=()).start()
-    time.sleep(5);
-
-    # Does first check on if gpu is loaded
-    print("Checking if yolo loaded")
-    rospy.wait_for_service(GPU_SERVICE)
-    response = rospy.ServiceProxy(GPU_SERVICE, requestGPU)
-    responseObject = response("", 0, 0)
-
-    # Stays in while until yolo is loaded on the gpu
-    while (not responseObject.success):
-        time.sleep(1);
-        rospy.wait_for_service(GPU_SERVICE)
-        response = rospy.ServiceProxy(GPU_SERVICE, requestGPU)
-        responseObject = response("", 0, 0)
-
-    print("Loaded yolo")
+    time.sleep(10);
 
     # Start wolf proximity subscriber and wolf nodes
     mp.Process(target=startProximityWolf, args=(wolfCount,)).start()
@@ -100,7 +85,7 @@ if __name__ == '__main__': # Only runs if this is main processes
     nodeName = "MissionControl"
     rospy.init_node(nodeName, anonymous = True)
 
-    name = input('Enter "End" to finish program?\n')
+    name = input('Enter "e" to finish program?\n')
     endTaskPublish = rospy.Publisher(ros.END_LOOP_TOPIC, String, latch=True, queue_size=1)
     if (name == "e"):
         endTaskPublish.publish("e")
