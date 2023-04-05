@@ -168,9 +168,9 @@ def wolfDroneController(droneName, droneCount, overseerCount):
     rospy.init_node(nodeName, anonymous = True)
     debugPrint("Node initiated")
 
-    # Wait until GPU is loaded
-    checkGPU.checkGPUStatus()
-    debugPrint("GPU Loaded")
+    # # Wait until GPU is loaded
+    # checkGPU.checkGPUStatus()
+    # debugPrint("GPU Loaded")
 
     # Start all threads here (if you have to make one somwhere else bring it up with the team)
     # Starts service listeners for commands
@@ -432,6 +432,10 @@ def wolfRosListeners(droneName):
 
 # checks drone camera with yolo detection
 def wolfCameraDetection(droneName):
+    # Wait until GPU is loaded
+    checkGPU.checkGPUStatus(droneName)
+    debugPrint("GPU Loaded")
+
     threadClient = airsim.MultirotorClient(LOCAL_IP)
     debugPrint("Starting wolfCameraDetection loop")
     i = 0

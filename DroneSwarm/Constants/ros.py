@@ -14,7 +14,11 @@ AT_SPIRAL_WAYPOINT_SIGNAL = "At_Spiral_Waypoint"
 # ros: services
 PROXIMITY_OVERSEER_SERVICE = "ProximityOverseerService"
 PROXIMITY_WOLF_SERVICE = "PromixityWolfService"
-GPU_SERVICE = "GPUService"
+GPU_SERVICE0 = "GPUService0"
+GPU_SERVICE1 = "GPUService1"
+GPU_SERVICE2 = "GPUService2"
+GPU_SERVICE3 = "GPUService3"
+
 # dynamic services : need tp apend value
 WOLF_DRONE_SERVICE = "wolf_service_"
 # task group name beginning

@@ -15,7 +15,7 @@ from Overseer import overseerDroneController
 from Wolf import wolfDroneController
 from ProximityWolf import startProximityWolf
 from ProximityOverseer import startProximityOverseer
-from YoloGPU import startYoloGPU
+# from YoloGPU import startYoloGPU
 from ctypes import Structure, c_int
 from multiprocessing.sharedctypes import Array
 import multiprocessing as mp
@@ -25,7 +25,11 @@ from DroneBehaviors.spiralSearchCreator import createWaypoints
 import Constants.configDrones as configDrones
 import Constants.ros as ros
 from HelperFunctions import clusterHelper
-from airsim_ros_pkgs.srv import requestGPU
+# from airsim_ros_pkgs.srv import requestGPU
+from YoloGPU0 import startYoloGPU0
+from YoloGPU1 import startYoloGPU1
+from YoloGPU2 import startYoloGPU2
+from YoloGPU3 import startYoloGPU3
 
 # Environmental Variables
 LOOP_NUMBER = configDrones.LOOP_NUMBER
@@ -37,7 +41,11 @@ COMMAND_RESULT_TOPIC = ros.COMMAND_RESULT_TOPIC
 SLAM_MERGE_TOPIC = ros.SLAM_MERGE_TOPIC
 
 # ros service
-GPU_SERVICE = ros.GPU_SERVICE
+# GPU_SERVICE = ros.GPU_SERVICE
+GPU_SERVICE0 = ros.GPU_SERVICE0
+GPU_SERVICE1 = ros.GPU_SERVICE1
+GPU_SERVICE2 = ros.GPU_SERVICE2
+GPU_SERVICE3 = ros.GPU_SERVICE3
 
 # Main Process Start ----------------------------------------------
 # Main function for mission control
@@ -60,9 +68,24 @@ if __name__ == '__main__': # Only runs if this is main processes
 
     # TODO: start all procecess for ros Nodes here
 
-    # Starts node for gpu yolo processing
-    mp.Process(target=startYoloGPU, args=()).start()
-    time.sleep(10);
+    # # Starts node for gpu yolo processing
+    # mp.Process(target=startYoloGPU, args=()).start()
+    # time.sleep(10);
+
+        # Starts node for gpu yolo processing
+    # mp.Process(target=startYoloGPU, args=(droneName)).start()
+
+    mp.Process(target=startYoloGPU0, args=()).start()
+    time.sleep(5);
+
+    # mp.Process(target=startYoloGPU1, args=()).start()
+    # time.sleep(5);
+
+    # mp.Process(target=startYoloGPU2, args=()).start()
+    # time.sleep(5);
+
+    # mp.Process(target=startYoloGPU3, args=()).start()
+    # time.sleep(5);
 
     # Start wolf proximity subscriber and wolf nodes
     mp.Process(target=startProximityWolf, args=(wolfCount,)).start()

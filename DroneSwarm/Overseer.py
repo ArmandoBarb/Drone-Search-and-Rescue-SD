@@ -100,9 +100,9 @@ def overseerDroneController(droneName, overseerCount, wolfCount):
     nodeName = droneName
     rospy.init_node(nodeName, anonymous = True)
 
-    # Wait until GPU is loaded
-    checkGPU.checkGPUStatus()
-    debugPrint("GPU Loaded")
+    # # Wait until GPU is loaded
+    # checkGPU.checkGPUStatus()
+    # debugPrint("GPU Loaded")
 
     # Get wolf cluster
 

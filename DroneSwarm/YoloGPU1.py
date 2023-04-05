@@ -11,23 +11,22 @@ import pandas
 #from airsim_ros_pkgs.msg import droneData
 #from airsim_ros_pkgs.srv import getDroneData, getDroneDataResponse
 # from std_srvs.srv import Trigger, TriggerResponse
-from airsim_ros_pkgs.srv import requestGPU
-
+from airsim_ros_pkgs.srv import requestGPU1
 
 global MODEL
 
 # Environmental Variables
 # ros: services
-GPU_SERVICE = ros.GPU_SERVICE
+GPU_SERVICE1 = ros.GPU_SERVICE1
 isModelLoaded = False
 
 # Main Process Start ----------------------------------------------
-def startYoloGPU():
+def startYoloGPU1():
     global isModelLoaded
     global MODEL
-    print("StartingYoloGPU")
+    print("StartingYoloGPU"+str(1))
     # Create node for "ProximityWolf"
-    nodeName = "YoloGPU"
+    nodeName = "YoloGPU"+str(1)
     rospy.init_node(nodeName, anonymous = True)
 
     # start yolo GPU
@@ -38,6 +37,7 @@ def startYoloGPU():
     try:
         print("Loading model")
         MODEL = torch.hub.load('ultralytics/yolov5', 'custom', path=yoloPT, trust_repo=True)
+        MODEL.cuda()
         print("Model loaded")
         isModelLoaded = True
     except:
@@ -51,10 +51,9 @@ def startYoloGPU():
 
 # Starts of gpu service for handling requests, requests are then done through the handleGPU function
 def startGPUService():
-    serviceName = GPU_SERVICE
-    service = rospy.Service(serviceName, requestGPU, handleGPU)
+    serviceName = GPU_SERVICE1
+    service = rospy.Service(serviceName, requestGPU1, handleGPU)
     rospy.spin()
-
 
 # # TODO: handle data retrieval for service calls
 def handleGPU(request):
