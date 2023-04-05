@@ -19,11 +19,11 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 #import matplotlib.pyplot as plt
 #import pandas as pd
 
-heightArr = []
-widthArr = []
+# heightArr = []
+# widthArr = []
 blue = (255, 0, 0)  # color of bounding box
 thickness = 1       # bounding box thickness
-pixCount = 0        # number of pixels within bounding box
+# pixCount = 0        # number of pixels within bounding box #why god
 droneName = ''
 
 # replacement for math.dist
@@ -32,9 +32,9 @@ def dist(P, Q):
     return (sum((pi - qi)**2 for pi, qi in zip(P, Q)))**0.5
 
 # list of pixel clusters (a list of lists)
-clusters = []
+# clusters = []
 
-def checkSiblingClusterExists(pixelRGB, currentCluster, sceneRGB):
+def checkSiblingClusterExists(pixelRGB, currentCluster, sceneRGB, clusters):
     if currentCluster==len(clusters):
         return False
     
@@ -47,8 +47,8 @@ def checkSiblingClusterExists(pixelRGB, currentCluster, sceneRGB):
 
 
 def pixelClustering(height, width, segRGB, sceneRGB):
-    global pixCount
-    global clusters
+    pixCount = 0
+    clusters = []
 
 
     for i in range(height):
@@ -99,7 +99,7 @@ def pixelClustering(height, width, segRGB, sceneRGB):
                             else:
                                 # used for same heat signature for two animals
                                 # but they are far apart
-                                sibilingExists = checkSiblingClusterExists(clusterPixel, clusterCount, segRGB)
+                                sibilingExists = checkSiblingClusterExists(clusterPixel, clusterCount, segRGB, clusters) # dose this have sideeffect
                                 if not sibilingExists:
                                     isClustered = True
                                     clusters.append(pixel)
@@ -112,10 +112,11 @@ def pixelClustering(height, width, segRGB, sceneRGB):
                     if not isMatch:
                         clusters.append(pixel)
 
-def drawBB(height, width, sceneRGB, sceneRGB2):
-    global heightArr
-    global widthArr
-    global clusters
+    return clusters, pixCount
+
+def drawBB(height, width, sceneRGB, sceneRGB2, clusters, pixCount):
+    heightArr = []
+    widthArr = []
 
     hArr = []
     wArr = []
@@ -157,13 +158,30 @@ def drawBB(height, width, sceneRGB, sceneRGB2):
         bbw = x1 - x0 # width
         start_point = (x0-math.floor(bbw*.10), y1) # top left corner (corrected offset)
         end_point = (x1, y0)                       # bottom right corner (corrected offset)
+
         sceneRGB = cv2.rectangle(sceneRGB, start_point, end_point, blue, thickness)
 
         hArr=heightArr
         wArr=widthArr
 
-        saveLabel(height, width, heightArr, widthArr, labelDir, j, f)
+        # save off label
+        if ((len(heightArr) != 0) and (pixCount >= 200)):
+            # calculate bb height
+            bbh = y1 - y0
 
+            # calculate x center and y center of bb
+            yC = ((y1 - y0) / 2) + y0
+            xC = ((x1 - x0) / 2) + x0
+            #xC = ((x1 - (x0-math.floor(bbw*.10))) / 2) + (x0-math.floor(bbw*.10))
+
+            # normalize bbox dimensions and centroids
+            normxC = xC/width   # divide by width
+            normyC = yC/height  # divide by height
+            normW = bbw/width   # divide by width
+            normH = bbh/height  # divide by height
+            f.write("0 " + str(normxC) + " " + str(normyC) + " " + str(normW*1.29) + " " + str(normH)+"\n")
+        #saveLabel(height, width, heightArr, widthArr, labelDir, j, f, pixCount)
+        
         # reset height and width arrays
         heightArr = []
         widthArr = []
@@ -178,12 +196,9 @@ def drawBB(height, width, sceneRGB, sceneRGB2):
     if(clusterLen!=0):
         saveImgs(sceneRGB2, sceneRGB, bbDir, imgDir, j)
 
-    pixCount = 0
-
     return sceneRGB
 
-def saveLabel(height, width, heightArr, widthArr, labelDir, j, f):
-
+def saveLabel(height, width, heightArr, widthArr, labelDir, j, f, pixCount):
     if ((len(heightArr) != 0) and (pixCount >= 200)):
         # calculate y centroids
         y0 = min(heightArr)
@@ -209,19 +224,18 @@ def saveLabel(height, width, heightArr, widthArr, labelDir, j, f):
         end_point2 = (x1, y0)   # bottom right corner
 
         # normalize bbox dimensions and centroids
-        props = preprocessing.normalize([np.array([xC, yC, bbw, bbh])])
-        normxC = xC/width  # divide by width
+        normxC = xC/width   # divide by width
         normyC = yC/height  # divide by height
-        normW = bbw/width # divide by width
-        normH = bbh/height # divide by height
+        normW = bbw/width   # divide by width
+        normH = bbh/height  # divide by height
         # print ("0" + str(props))
 
 
         # write yolo gt to text file
         f.write("0 " + str(normxC) + " " + str(normyC) + " " + str(normW) + " " + str(normH)+"\n")
 
-
 def saveImgs(sceneRGB2, sceneRGB, bbDir, imgDir, j):
+        print('SAVE PATH', imgDir)
         sceneSavePathOrig = os.path.join(str(imgDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.png")
         sceneSavePathBB = os.path.join(str(bbDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.png")
         
@@ -283,29 +297,29 @@ def processImageResponses(responses):
     segRGB = segArr.reshape(height, width, 3)
 
     # cluster animal heat signatures
-    pixelClustering(height, width, segRGB, sceneRGB)
+    clusters, pixCount = pixelClustering(height, width, segRGB, sceneRGB)
 
-    dataDir='/home/testuser/AirSim/PythonClient/multirotor/Drone-Search-and-Rescue-SD-1/DroneSwarm/DataCollection'
+    # dataDir='/home/testuser/AirSim/PythonClient/multirotor/Drone-Search-and-Rescue-SD-1/DroneSwarm/DataCollection'
 
-    bbDir = dataDir + '/bb'
-    imgDir = dataDir + '/images'
-    labelDir = dataDir + '/labels'
+    # bbDir = dataDir + '/bb'
+    # imgDir = dataDir + '/images'
+    # labelDir = dataDir + '/labels'
 
-    j=0
-    while os.path.exists(os.path.join(str(labelDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.txt")):
-        j+=1
+    # j=0
+    # while os.path.exists(os.path.join(str(labelDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.txt")):
+    #     j+=1
 
     # check for no gt
-    if len(clusters) == 0:
-        saveImgs(sceneRGB2, sceneRGB, bbDir, imgDir, j)
-        f = open(os.path.join(str(labelDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.txt"), 'w')
-        f.write("")
-        f.close()
+    # if len(clusters) == 0:
+    #     saveImgs(sceneRGB2, sceneRGB, bbDir, imgDir, j)
+    #     f = open(os.path.join(str(labelDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.txt"), 'w')
+    #     f.write("")
+    #     f.close()
 
     # drawing bounding box (uncomment and get rid of conditional if you want targets)
-    #sceneRGB = drawBB(height, width, sceneRGB, sceneRGB2)
+    sceneRGB = drawBB(height, width, sceneRGB, sceneRGB2, clusters, pixCount)
 
-    # time.sleep(1)
+    time.sleep(1)
 
 
 def runDataCollect(client, vehicle_name):
