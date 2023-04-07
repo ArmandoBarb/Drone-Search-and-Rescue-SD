@@ -12,13 +12,14 @@ import Constants.ros as ros
 import time
 GPU_SERVICE = ros.GPU_SERVICE
 
-def runYolov5(client, responses, cameraName, vehicleName, confidanceMin):
+def runYolov5(client, responses, dataDir_pass, dataDir_fail, cameraName, vehicleName, confidanceMin):
     global GPU_SERVICE
 
     responseIndex = 0
 
     # get response object with input image
     height, width, sceneRGB2 = getInfo.getHeightWidthArr(responses, responseIndex)
+    sceneRGB1 = np.copy(sceneRGB2)
 
     # original image unedited
     responseString= responses[int(responseIndex)].image_data_uint8
@@ -46,36 +47,16 @@ def runYolov5(client, responses, cameraName, vehicleName, confidanceMin):
     detection = 0
     maxConfidenceDetection = 0
 
-    # cwd = os.getcwd()
-    # dataDir=os.path.join(str(cwd),'yolov5Images')
-    # isExist=os.path.exists(dataDir)
-    # dataDir = '/home/testuser/AirSim/PythonClient/multirotor/Drone-Search-and-Rescue-SD/DroneSwarm/yolov5Images'
-    cwd = os.getcwd()
-    dataDir=os.path.join(str(cwd),'yolov5Images')
-    isExist=os.path.exists(dataDir)
-
-    if not isExist:
-        # make directory if not already there
-        os.makedirs(dataDir)
-
-    cwd = os.getcwd()
-    dataDir_fail=os.path.join(str(cwd),'yolov5Images_fails')
-    isExist=os.path.exists(dataDir_fail)
-
-    if not isExist:
-        # make directory if not already there
-        os.makedirs(dataDir_fail)
-
     #ToDo: just pass loop index adn drone name
     # or in final build just overwite
     j=0
-    while os.path.exists(dataDir + "/" + ('%s' % j)+"w"+vehicleName+cameraName+"newImg.jpg"):
+    while os.path.exists(dataDir_pass + "/" + ('%s' % j)+"w"+vehicleName+cameraName+"camImg.jpg"):
         j+=1
 
     #ToDo: just pass loop index adn drone name
     # or in final build just overwite
     k=0
-    while os.path.exists(dataDir + "/" + ('%s' % k)+"w"+vehicleName+cameraName+"newImg.jpg"):
+    while os.path.exists(dataDir_fail + "/" + ('%s' % k)+"w"+vehicleName+cameraName+"camImg.jpg"):
         k+=1
 
     validDetection = False
@@ -88,14 +69,14 @@ def runYolov5(client, responses, cameraName, vehicleName, confidanceMin):
         if(confidence >= confidanceMin):
             passedConfidence=True
             
-            #print("Found a target!!!")
+            print("High Confidence Detection!!!")
 
             start_point = (xmin, ymin)
             end_point = (xmax, ymax)
-            newImag = cv2.rectangle(sceneRGB2, start_point, end_point, (0, 255, 0), 2)
+            cv2.rectangle(sceneRGB2, start_point, end_point, (0, 255, 0), 2)
             # save new image only with highest confidence detection
-            cv2.imwrite(dataDir + "/" + ('%s' % j)+"w"+vehicleName+cameraName+"origImg.jpg", sceneRGB2)
-            cv2.imwrite(dataDir + "/" + ('%s' % j)+"w"+vehicleName+cameraName+"newImg.jpg", newImag)
+            cv2.imwrite(dataDir_pass + "/" + ('%s' % j)+"w"+vehicleName+cameraName+"camImg.jpg", sceneRGB1)
+            cv2.imwrite(dataDir_pass + "/" + ('%s' % j)+"w"+vehicleName+cameraName+"bbImg.jpg", sceneRGB2)
 
             #print("------------------------------------------------------------------------------------------------------------------")
             # use bb dimensions/location for GPS estimation
@@ -106,7 +87,7 @@ def runYolov5(client, responses, cameraName, vehicleName, confidanceMin):
             #print("------------------------------------------------------------------------------------------------------------------")
 
             # write corresponding text file
-            with open(dataDir + "/" + ('%s' % j)+"w"+vehicleName+cameraName+"GPSEstimate.txt", 'w') as f:
+            with open(dataDir_pass + "/" + ('%s' % j)+"w"+vehicleName+cameraName+"GPSEstimate.txt", 'w') as f:
                 # f.write(str(resultsPandas))
                 f.write("\n\tMax Confidence: "+str(confidence))
                 f.write("\n\tMax Confidence Estimate:"+ str(lat) + " lat, " + str(lon) + " lon")
@@ -114,12 +95,14 @@ def runYolov5(client, responses, cameraName, vehicleName, confidanceMin):
 
         else:
             passedConfidence=False
+            print("Low Confidence Detection!!!")
+
             start_point = (xmin, ymin)
             end_point = (xmax, ymax)
-            newImag = cv2.rectangle(sceneRGB2, start_point, end_point, (0, 255, 0), 2)
+            cv2.rectangle(sceneRGB2, start_point, end_point, (0, 255, 0), 2)
             # save new image only with highest confidence detection
-            cv2.imwrite(dataDir_fail + "/" + ('%s' % k)+"w"+vehicleName+cameraName+"origImg.jpg", sceneRGB2)
-            cv2.imwrite(dataDir_fail + "/" + ('%s' % k)+"w"+vehicleName+cameraName+"newImg.jpg", newImag)
+            cv2.imwrite(dataDir_fail + "/" + ('%s' % k)+"w"+vehicleName+cameraName+"camImg.jpg", sceneRGB1)
+            cv2.imwrite(dataDir_fail + "/" + ('%s' % k)+"w"+vehicleName+cameraName+"bbImg.jpg", sceneRGB2)
 
             #print("------------------------------------------------------------------------------------------------------------------")
             # use bb dimensions/location for GPS estimation
