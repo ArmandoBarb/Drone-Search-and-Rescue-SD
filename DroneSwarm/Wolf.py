@@ -438,6 +438,23 @@ def wolfCameraDetection(droneName):
     timeSpent = 0
     runtime = time.time()
 
+    cwd = os.getcwd()
+    cwd = os.path.join(cwd[:cwd.index("DroneSwarm")],'DroneSwarm')
+    dataDir_pass=os.path.join(str(cwd),'yolov5Images_pass')
+    
+    isExist=os.path.exists(dataDir_pass)
+
+    if not isExist:
+        # make directory if not already there
+        os.makedirs(dataDir_pass)
+
+    dataDir_fail=os.path.join(str(cwd),'yolov5Images_fails')
+    isExist=os.path.exists(dataDir_fail)
+
+    if not isExist:
+        # make directory if not already there
+        os.makedirs(dataDir_fail)
+
     while (i < LOOP_NUMBER):
         timeDiff = time.time() - runtime
         if (timeDiff > MAX_TIME):
@@ -471,14 +488,14 @@ def wolfCameraDetection(droneName):
         # run yolo and estimate gps estimation
         validDetection, passedConfidence, wolfEstimate= None, None, None
         if cameraName=="frontright":
-            wolfEstimate, validDetection, passedConfidence = yolov5.runYolov5(threadClient, responseF, cameraName="front", vehicleName=droneName, confidanceMin=YOLO_CONFIDENCE)
+            wolfEstimate, validDetection, passedConfidence = yolov5.runYolov5(threadClient, responseF, dataDir_pass, dataDir_fail, cameraName="front", vehicleName=droneName, confidanceMin=YOLO_CONFIDENCE)
             # if front camera retrieves null detection, then run yolo on right camera
             if(wolfEstimate[0]==None and wolfEstimate[1]==None):
-                wolfEstimate, validDetection, passedConfidence = yolov5.runYolov5(threadClient, responseR, cameraName="right", vehicleName=droneName, confidanceMin=YOLO_CONFIDENCE)
+                wolfEstimate, validDetection, passedConfidence = yolov5.runYolov5(threadClient, responseR, dataDir_pass, dataDir_fail, cameraName="right", vehicleName=droneName, confidanceMin=YOLO_CONFIDENCE)
         elif cameraName=="right":
-            wolfEstimate, validDetection, passedConfidence = yolov5.runYolov5(threadClient, response, cameraName="right", vehicleName=droneName, confidanceMin=YOLO_CONFIDENCE)
+            wolfEstimate, validDetection, passedConfidence = yolov5.runYolov5(threadClient, response, dataDir_pass, dataDir_fail, cameraName="right", vehicleName=droneName, confidanceMin=YOLO_CONFIDENCE)
         elif cameraName=="front":
-            wolfEstimate, validDetection, passedConfidence = yolov5.runYolov5(threadClient, response, cameraName="front", vehicleName=droneName, confidanceMin=YOLO_CONFIDENCE)
+            wolfEstimate, validDetection, passedConfidence = yolov5.runYolov5(threadClient, response, dataDir_pass, dataDir_fail, cameraName="front", vehicleName=droneName, confidanceMin=YOLO_CONFIDENCE)
 
         # handle image detection result
         if(passedConfidence):
