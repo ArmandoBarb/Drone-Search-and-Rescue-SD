@@ -3,6 +3,7 @@ import numpy as np
 import airsim
 import math
 from HelperFunctions import clusterHelper
+import os
 
 def getInfrared(client, vehicleName):
     # print(vehicleName)
@@ -34,6 +35,17 @@ def getSegInfo(responses):
     segRGB = segArr.reshape(height, width, 3)
 
     return height, width, segRGB
+
+def getSceneInfo(responses):
+    responseScene = responses[1]
+
+    height = responses[1].height
+    width = responses[1].width
+
+    sceneArr = np.fromstring(responseScene.image_data_uint8, dtype=np.uint8)
+    sceneRGB = sceneArr.reshape(height, width, 3)
+
+    return height, width, sceneRGB
 
 def getHeightWidthArr(responses, responseIndex):
     responseSeg = responses[responseIndex]
@@ -145,3 +157,44 @@ def getSearchCircles(intersectGroups, avgCentroids, r):
         searchRadii.append(rSearch)
 
     return searchRadii
+
+def getSceneImages(responses, folderName):
+    height, width, sceneRGB = getSceneInfo(responses)
+
+    cwd = os.getcwd()
+    cwd = os.path.join(cwd[:cwd.index("DroneSwarm")],'DroneSwarm')
+    savePath=os.path.join(str(cwd),folderName)
+
+    isExist=os.path.exists(savePath)
+
+    if not isExist:
+        os.makedirs(savePath)
+
+    k=0
+    while os.path.exists(savePath + "/" + ('%s' % k)+folderName+".jpg"):
+        k+=1
+
+    airsim.write_png(savePath + "/" + ('%s' % k)+folderName+".jpg", sceneRGB)
+
+def getInfraredGPSImages(responses, folderName, filteredCentroidsGPS):
+    height, width, sceneRGB = getSegInfo(responses)
+
+    cwd = os.getcwd()
+    cwd = os.path.join(cwd[:cwd.index("DroneSwarm")],'DroneSwarm')
+    savePath=os.path.join(str(cwd),folderName)
+
+    isExist=os.path.exists(savePath)
+
+    if not isExist:
+        os.makedirs(savePath)
+
+    k=0
+    while os.path.exists(savePath + "/" + ('%s' % k)+folderName+".jpg"):
+        k+=1
+
+    airsim.write_png(savePath + "/" + ('%s' % k)+folderName+".jpg", sceneRGB)
+
+    for centroid in filteredCentroidsGPS:
+        with open(savePath + "/" + ('%s' % k)+folderName+".txt", 'w') as f:
+            f.write("\n\tOverseer Estimate:"+ str(centroid[0]) + " lat, " + str(centroid[1]) + " lon")
+            f.close()

@@ -4,7 +4,7 @@ min_circle_radius_gps = 0.00008983152373552244
 
 LOOP_NUMBER = 100000
 MAX_TIME = 1000
-LOCAL_IP = "10.171.204.214"
+LOCAL_IP = "10.32.210.0"
 # collision start
 COLLISION_MODE_TIME_LENGTH = 1
 MAX_COLLISION_TIME = 3
@@ -16,7 +16,7 @@ SPEED_CHANGE = 0.1
 MIN_SPEED_FACTOR = 0.4
 # vector control end
 # linebehavior start
-DISTANCE_LEAD_OVERSEER_GPS = min_circle_radius_gps * 2
+DISTANCE_LEAD_OVERSEER_GPS = -min_circle_radius_gps * 2
 AVOID_FACTOR = 0.01
 DIRECTION_FACTOR = 5
 WOLF_SLOW_DOWN = 3

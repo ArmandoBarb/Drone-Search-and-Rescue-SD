@@ -189,8 +189,8 @@ def wolfDroneController(droneName, droneCount, overseerCount):
     client.moveToZAsync(z=-3, velocity=8, vehicle_name = droneName).join()
 
     # start camera thread here
-    t3 = threading.Thread(target = wolfCameraDetection, args=(droneName))
-    t3.start()
+    # t3 = threading.Thread(target = wolfCameraDetection, args=(droneName))
+    # t3.start()
 
     # Wolf Drone search loop Start
     i = 1

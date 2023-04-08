@@ -289,6 +289,10 @@ def overseerInfraredDetection(droneName):
         responses = getInfo.getInfrared(threadClient, droneName)
         height, width, segRGB = getInfo.getSegInfo(responses)
 
+        folderName = "Overseer"
+
+        getInfo.getSceneImages(responses, folderName)
+
         # cluster heat signatures from segmenation map
         clusters = clustering.pixelClustering(height, width, segRGB)
 
@@ -296,6 +300,7 @@ def overseerInfraredDetection(droneName):
         
         # if no detections then avoid unecessary calculations
         if len(clusters) > 0:
+
             # debugPrint("Got a detection!")
             # get centroids of each pixel cluster
             # this info will be in longitude and latitude form
@@ -312,6 +317,9 @@ def overseerInfraredDetection(droneName):
             radius = MIN_CIRCLE_RADIUS_GPS
             circleList = []
             centroidsGPS = filteredCentroidsGPS
+
+            getInfo.getInfraredGPSImages(responses, "OverseerGPS", filteredCentroidsGPS)
+
             for centroid in centroidsGPS:
                 circle = clustering.circle(radius, centroid, [centroid])
                 circleList = clustering.addCircle(circle, circleList)
@@ -347,8 +355,8 @@ def overseerInfraredDetection(droneName):
                     circleCenterGPS =  gpsDataObject
                     circleRadiusGPS = circleList[x].radius
                     circleRadiusMeters = (circleList[x].radius*MIN_CIRCLE_RADIUS_METERS)/MIN_CIRCLE_RADIUS_GPS
-                    spreadTimeS = 30
-                    searchTimeS = (circleList[x].radius*15)/MIN_CIRCLE_RADIUS_GPS
+                    spreadTimeS = 0
+                    searchTimeS = (circleList[x].radius*30)/MIN_CIRCLE_RADIUS_GPS
                     taskGroup = EMPTY_CLUSTER  # Let's wolf know it comes from an overseer
 
                     # IF TASK GROUP IS EMPTY, THE REQUEST IS FROM THE OVERSEER
