@@ -10,6 +10,7 @@ import math
 import torch
 import warnings
 import Constants.configDrones as configDrones
+from numpy import savetxt
 BATCH_NAME = configDrones.BATCH_NAME
 
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
@@ -46,75 +47,157 @@ def checkSiblingClusterExists(pixelRGB, currentCluster, sceneRGB, clusters):
     return False
 
 
-def pixelClustering(height, width, segRGB, sceneRGB):
-    pixCount = 0
-    clusters = []
+# def pixelClustering(height, width, segRGB, sceneRGB):
+#     pixCount = 0
+#     clusters = []
 
 
-    for i in range(height):
-        for j in range(width):
+#     for i in range(height):
+#         for j in range(width):
             
-            if segRGB[i][j][0] <= 255 and \
-               segRGB[i][j][1] <= 255 and \
-               segRGB[i][j][2] <= 255 and \
-               segRGB[i][j][0] >= 254 and \
-               segRGB[i][j][1] >= 254 and \
-               segRGB[i][j][2] >= 254:
-                pixCount = pixCount + 1
+#             if segRGB[i][j][0] <= 255 and \
+#                segRGB[i][j][1] <= 255 and \
+#                segRGB[i][j][2] <= 255 and \
+#                segRGB[i][j][0] >= 254 and \
+#                segRGB[i][j][1] >= 254 and \
+#                segRGB[i][j][2] >= 254:
+#                 pixCount = pixCount + 1
 
-                isMatch = False
-                isClustered = False
-                pixel = [(i, j)]
+#                 isMatch = False
+#                 isClustered = False
+#                 pixel = [(i, j)]
 
-                # found heat signature pixels
-                if not clusters:
-                    clusters.append(pixel)
-                else:
-                    clusterCount = 0
-                    # not empty case
-                    for cluster in clusters:
-                        sibilingExists = False
-                        for coord in cluster:
-                            # properly place the cluster among appropriate color
-                            imgPixel = segRGB[i][j][0]
-                            clusterPixel = segRGB[coord[0]][coord[1]][0]
-                            if imgPixel != clusterPixel:
-                                break
-                            else:
-                                isMatch = True
+#                 # found heat signature pixels
+#                 if not clusters:
+#                     clusters.append(pixel)
+#                 else:
+#                     clusterCount = 0
+#                     # not empty case
+#                     for cluster in clusters:
+#                         sibilingExists = False
+#                         for coord in cluster:
+#                             # properly place the cluster among appropriate color
+#                             imgPixel = segRGB[i][j][0]
+#                             clusterPixel = segRGB[coord[0]][coord[1]][0]
+#                             if imgPixel != clusterPixel:
+#                                 break
+#                             else:
+#                                 isMatch = True
+                            
+#                             # top = j>0 and j<height/3  and dist([i, j], [coord[0], coord[1]]) < 20 
+#                             # mid = j>height/3 and j<2*height/3 and dist([i, j], [coord[0], coord[1]]) < 60
+#                             # bottom =  j>2*height/3 and j<height and dist([i, j], [coord[0], coord[1]]) < 100
 
-                            # otherwise threshold and sort the coordinate
-                            if (dist([i, j], [coord[0], coord[1]]) < 100):
-                                # print("in dist([i, j], [coord[0], coord[1]]) < 40")
-                                # print("After dist([i, j], [coord[0], coord[1]]) < 40")
-                                # print("Cluster size: ", len(cluster))
-                                # print("Cluster list size: ", len(clusters))
-                                # print("RGB = ", [segRGB[i][j][0], segRGB[i][j][1], segRGB[i][j][2]])
-                                cluster.append(pixel[0])
-                                # print("---------------------------------")
-                                # print(cluster)
-                                # print("---------------------------------")
-                                isClustered = True
-                                break
-                            else:
-                                # used for same heat signature for two animals
-                                # but they are far apart
-                                sibilingExists = checkSiblingClusterExists(clusterPixel, clusterCount, segRGB, clusters) # dose this have sideeffect
-                                if not sibilingExists:
-                                    isClustered = True
-                                    clusters.append(pixel)
-                                break
+#                             # if (top or mid or bottom):
+                        
 
-                        clusterCount+=1
-                        if isClustered:
-                            break
-                    # no match for non-empty list
-                    if not isMatch:
-                        clusters.append(pixel)
+#                             # # otherwise threshold and sort the coordinate
+#                             if (dist([i, j], [coord[0], coord[1]]) < 100):
+#                             #     # print("in dist([i, j], [coord[0], coord[1]]) < 40")
+#                                 # print("After dist([i, j], [coord[0], coord[1]]) < 40")
+#                                 # print("Cluster size: ", len(cluster))
+#                                 # print("Cluster list size: ", len(clusters))
+#                                 # print("RGB = ", [segRGB[i][j][0], segRGB[i][j][1], segRGB[i][j][2]])
+#                                 cluster.append(pixel[0])
+#                                 # print("---------------------------------")
+#                                 # print(cluster)
+#                                 # print("---------------------------------")
+#                                 isClustered = True
+#                                 break
+#                             else:
+#                                 # used for same heat signature for two animals
+#                                 # but they are far apart
+#                                 sibilingExists = checkSiblingClusterExists(clusterPixel, clusterCount, segRGB, clusters) # dose this have sideeffect
+#                                 if not sibilingExists:
+#                                     isClustered = True
+#                                     clusters.append(pixel)
+#                                 break
 
-    return clusters, pixCount
+#                         clusterCount+=1
+#                         if isClustered:
+#                             break
+#                     # no match for non-empty list
+#                     if not isMatch:
+#                         clusters.append(pixel)
 
-def drawBB(height, width, sceneRGB, sceneRGB2, clusters, pixCount):
+#     return clusters, pixCount
+
+def makeBackgroundPixel(img, pixel, color):
+    x = pixel[0]
+    y = pixel[1]
+    
+    img[x][y][0] = color[0]
+    img[x][y][1] = color[1]
+    img[x][y][2] = color[2]
+
+def isValidPixel(pixel, height, width):
+    if 0 <= pixel[0] < height and  0 <= pixel[1] < width:
+        return True
+    else:
+        return False
+
+def isTargetPixel(img, pixel, color, printColor):
+    x = pixel[0]
+    y = pixel[1]
+
+    if img[x][y][0] == color[0] and \
+       img[x][y][1] == color[1] and \
+       img[x][y][2] == color[2]:
+       return True
+    else:
+        #if (printColor):
+            #print("fail Color: " + str(img[x][y][0]) + " : " + str(img[x][y][1]) + " : " + str(img[x][y][2]) )
+        return False
+
+def pixelClustering(height, width, segRGB):
+    img = segRGB.copy()
+    clusters = []
+    backgroundColor = np.array([0, 0, 0])
+    targetColor = np.array([255, 255, 255])
+
+    for x1 in range(height):
+        for y1 in range(width):
+            
+            # check for white pixels
+            if isTargetPixel(img, (x1, y1), targetColor, False):
+                cluster = []
+                # mark as background
+                makeBackgroundPixel(img, (x1, y1), backgroundColor)
+                cluster.append((x1, y1))
+
+                i = 0
+                
+                # check adjacency
+                while (len(cluster) > i):
+                    currentPixel = cluster[i]
+                    pixCount = 0
+                    for x in range(-1, 2):
+                        for y in range(-1, 2):
+                            # check center
+                            if x == 0 and y == 0: continue;
+                            
+            
+                            testPixel = (x + currentPixel[0], y + currentPixel[1])
+                            # check out of bounds
+                            if not isValidPixel(testPixel, height, width):
+                                #print("Failed at isValidPixel:" + str(testPixel)) 
+                                continue;
+                            if not isTargetPixel(img, testPixel, targetColor, True): 
+                                #print("Failed at isTargetPixel:" + str(testPixel)) 
+                                continue;
+
+
+                            makeBackgroundPixel(img, testPixel, backgroundColor)
+                            cluster.append(testPixel)
+                            pixCount += 1
+                    
+                    #print("length of cluster: " + str(len(cluster)) + " index: " + str(i) + " pixCount: " + str(pixCount))
+                    i += 1
+                clusters.append(cluster)
+
+    return clusters
+
+def drawBB(height, width, sceneRGB, sceneRGB2, clusters, segRGB):
     heightArr = []
     widthArr = []
 
@@ -165,7 +248,7 @@ def drawBB(height, width, sceneRGB, sceneRGB2, clusters, pixCount):
         wArr=widthArr
 
         # save off label
-        if ((len(heightArr) != 0) and (pixCount >= 200)):
+        if ((len(heightArr) != 0) and (len(cluster) >= 1)):
             # calculate bb height
             bbh = y1 - y0
 
@@ -194,7 +277,7 @@ def drawBB(height, width, sceneRGB, sceneRGB2, clusters, pixCount):
         f.close()
 
     if(clusterLen!=0):
-        saveImgs(sceneRGB2, sceneRGB, bbDir, imgDir, j)
+        saveImgs(sceneRGB2, sceneRGB, bbDir, imgDir, segRGB, j)
 
     return sceneRGB
 
@@ -234,13 +317,23 @@ def saveLabel(height, width, heightArr, widthArr, labelDir, j, f, pixCount):
         # write yolo gt to text file
         f.write("0 " + str(normxC) + " " + str(normyC) + " " + str(normW) + " " + str(normH)+"\n")
 
-def saveImgs(sceneRGB2, sceneRGB, bbDir, imgDir, j):
+def saveImgs(sceneRGB2, sceneRGB, bbDir, imgDir, segRGB, j):
         print('SAVE PATH', imgDir)
         sceneSavePathOrig = os.path.join(str(imgDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.png")
         sceneSavePathBB = os.path.join(str(bbDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.png")
+        sceneSavePathCSV = os.path.join(str(bbDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.csv")
         
         airsim.write_png(os.path.normpath(sceneSavePathOrig), sceneRGB2)
         airsim.write_png(os.path.normpath(sceneSavePathBB), sceneRGB)
+        (w, h, s) = segRGB.shape
+        new_img = np.zeros((h, w))
+        for i in range(h):
+            for j in range(w):
+                if segRGB[i][j][0] == 0:
+                    new_img[i, j] = 0
+                else:
+                    new_img[i, j] = 1
+        savetxt(os.path.normpath(sceneSavePathCSV), new_img, delimiter=',')
 
 def setupDirectories():
     dataDir='/home/testuser/AirSim/PythonClient/multirotor/Drone-Search-and-Rescue-SD-1/DroneSwarm/DataCollection'
@@ -297,7 +390,7 @@ def processImageResponses(responses):
     segRGB = segArr.reshape(height, width, 3)
 
     # cluster animal heat signatures
-    clusters, pixCount = pixelClustering(height, width, segRGB, sceneRGB)
+    clusters = pixelClustering(height, width, segRGB)
 
     # dataDir='/home/testuser/AirSim/PythonClient/multirotor/Drone-Search-and-Rescue-SD-1/DroneSwarm/DataCollection'
 
@@ -317,7 +410,7 @@ def processImageResponses(responses):
     #     f.close()
 
     # drawing bounding box (uncomment and get rid of conditional if you want targets)
-    sceneRGB = drawBB(height, width, sceneRGB, sceneRGB2, clusters, pixCount)
+    sceneRGB = drawBB(height, width, sceneRGB, sceneRGB2, clusters, segRGB)
 
     time.sleep(1)
 
