@@ -49,6 +49,8 @@ from ImageProcessing import data_collect_final as collect
 
 # Environmental Variables
 LOOP_NUMBER = configDrones.LOOP_NUMBER
+START_IMAGE_DELAY = configDrones.START_IMAGE_DELAY
+MAX_IMAGE_DETECTION_WAYPOINT_TIME = configDrones.MAX_IMAGE_DETECTION_WAYPOINT_TIME
 MAX_TIME = configDrones.MAX_TIME
 LOCAL_IP = configDrones.LOCAL_IP
 MIN_CIRCLE_RADIUS_GPS = configDrones.MIN_CIRCLE_RADIUS_GPS 
@@ -123,6 +125,8 @@ Previously_Had_Collision = False
 Collision_Mode_Time_Length = 1
 Drone_Max_Wait_Time_Start = time.time()
 Consensus_Waypoint_History = []
+At_Waypoint = False
+Drone_Waypoint_Image_Detection_Time = time.time()
 # TODO: add tunning variables for behaviors (would be cool if we can train them)
 
 # Main Process Start ----------------------------------------------
@@ -137,6 +141,8 @@ def wolfDroneController(droneName, droneCount, overseerCount):
     global Speed_Factor
     global Previously_Had_Collision
     global Collision_Mode_Time_Length
+    global At_Waypoint
+    global Drone_Waypoint_Image_Detection_Time
     depthImageCount = 0
 
     # loading yolov5
@@ -386,8 +392,16 @@ def wolfDroneController(droneName, droneCount, overseerCount):
                 # Otherwise we check the whole group
                 else:
                     allDronesAtWaypoint(wolfCommPublish, client)
+
+                # Don't do images after being at waypoint for certain time
+                waypointTimeDiff = time.time() - Drone_Waypoint_Image_Detection_Time
+                if (waypointTimeDiff > MAX_IMAGE_DETECTION_WAYPOINT_TIME):
+                    # debugPrint("At waypoint for too long, not taking images")
+                    At_Waypoint = True
             else:
                 Drone_Max_Wait_Time_Start = time.time();
+                Drone_Waypoint_Image_Detection_Time = time.time()
+                At_Waypoint = False
 
         # TODO: Apply turning to desired action
         # TODO: Overide other behaviors if collisionAvoidance is needed
@@ -410,7 +424,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
                 # client.moveByVelocityZAsync(vector[0], vector[1], -3, duration = 10, yaw_mode=yaw_mode, vehicle_name=droneName)
             # else:
                 # client.moveByVelocityZAsync(vector[0], vector[1], -3, duration = 10,drivetrain =1,yaw_mode=airsim.YawMode(False,0), vehicle_name=droneName)
-            client.moveByVelocityZAsync(vector[0], vector[1], -3, duration = 10, yaw_mode=yaw_mode, vehicle_name=droneName)
+            client.moveByVelocityZAsync(vector[0], vector[1], z=-3, duration = 10, yaw_mode=yaw_mode, vehicle_name=droneName)
         
         # Add in artifical loop delay (How fast the loop runs dictates the drones reaction speed)
         
@@ -515,8 +529,10 @@ def wolfCameraDetection(droneName):
        
         start=time.time() # gather time data
 
-        #time.sleep(5)
-        collect.runDataCollect(threadClient, droneName)
+        # data collection
+        timeDiff = time.time() - runtime
+        if (timeDiff > START_IMAGE_DELAY and not At_Waypoint):
+            collect.runDataCollect(threadClient, droneName)
 
         timeDiff = time.time() - runtime
 
