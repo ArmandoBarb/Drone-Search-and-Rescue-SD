@@ -4,6 +4,7 @@ import airsim
 import math
 from HelperFunctions import clusterHelper
 import os
+import cv2
 
 def getInfrared(client, vehicleName):
     # print(vehicleName)
@@ -176,8 +177,9 @@ def getSceneImages(responses, folderName):
 
     airsim.write_png(savePath + "/" + ('%s' % k)+folderName+".jpg", sceneRGB)
 
-def getInfraredGPSImages(responses, folderName, filteredCentroidsGPS):
-    height, width, sceneRGB = getSegInfo(responses)
+def getInfraredGPSImages(responses, folderName, filteredCentroidsGPS, clusters):
+    height, width, segRGB = getSegInfo(responses)
+    height, width, sceneRGB = getSceneInfo(responses)
 
     cwd = os.getcwd()
     cwd = os.path.join(cwd[:cwd.index("DroneSwarm")],'DroneSwarm')
@@ -189,12 +191,65 @@ def getInfraredGPSImages(responses, folderName, filteredCentroidsGPS):
         os.makedirs(savePath)
 
     k=0
-    while os.path.exists(savePath + "/" + ('%s' % k)+folderName+".jpg"):
+    while os.path.exists(savePath + "/" + ('%s' % k)+folderName+"infra.jpg"):
         k+=1
 
-    airsim.write_png(savePath + "/" + ('%s' % k)+folderName+".jpg", sceneRGB)
+    airsim.write_png(savePath + "/" + ('%s' % k)+folderName+"infra.jpg", segRGB)
+    airsim.write_png(savePath + "/" + ('%s' % k)+folderName+"scene.jpg", sceneRGB)
+    drawBB(height, width, sceneRGB, savePath + "/" + ('%s' % k)+folderName+"scene.jpg", clusters)
 
     for centroid in filteredCentroidsGPS:
         with open(savePath + "/" + ('%s' % k)+folderName+".txt", 'w') as f:
             f.write("\n\tOverseer Estimate:"+ str(centroid[0]) + " lat, " + str(centroid[1]) + " lon")
             f.close()
+
+def drawBB(height, width, sceneRGB, path, clusters):
+    heightArr = []
+    widthArr= []
+
+    hArr = []
+    wArr = []
+
+    clusterLen = len(clusters)
+
+    for cluster in clusters:
+        for coord in cluster:
+            if (coord[0] not in heightArr):
+                heightArr.append(coord[0])
+
+            if (coord[1] not in widthArr):
+                widthArr.append(coord[1])
+
+        # calculate centroids
+        if (len(heightArr) != 0):
+            # calculate y centroids
+            y0 = min(heightArr) # bottom right y
+            y1 = max(heightArr) # top left y
+
+            # calculate x centroids
+            x0 = min(widthArr) # top left x
+            x1 = max(widthArr) # bottom right x
+
+        # draw bounding box
+        bbw = x1 - x0 # width
+        start_point = (x0-math.floor(bbw*.10), y1) # top left corner (corrected offset)
+        end_point = (x1, y0)                       # bottom right corner (corrected offset)
+        sceneRGB = cv2.rectangle(sceneRGB, start_point, end_point, (255, 0, 0), 1)
+
+        hArr=heightArr
+        wArr=widthArr
+
+        # reset height and width arrays
+        heightArr = []
+        widthArr = []
+        
+        # print("Number of clusters: ", len(clusters))
+        # empty cluster list
+        clusters = []
+
+    if(clusterLen!=0):
+        airsim.write_png(path, sceneRGB)
+
+    pixCount = 0
+
+    return sceneRGB

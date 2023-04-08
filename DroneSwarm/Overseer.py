@@ -318,7 +318,7 @@ def overseerInfraredDetection(droneName):
             circleList = []
             centroidsGPS = filteredCentroidsGPS
 
-            getInfo.getInfraredGPSImages(responses, "OverseerGPS", filteredCentroidsGPS)
+            getInfo.getInfraredGPSImages(responses, "OverseerGPS", filteredCentroidsGPS, clusters)
 
             for centroid in centroidsGPS:
                 circle = clustering.circle(radius, centroid, [centroid])
