@@ -220,6 +220,7 @@ def drawBB(height, width, sceneRGB, sceneRGB2, clusters, segRGB):
     emptyGtLabelDir = dataDir + '/emptyLabels'
     emptyGtImgDir = dataDir + '/emptyImages'
     count = 0
+    hasValidClusters = False 
 
     j=0
     while os.path.exists(os.path.join(str(labelDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.txt")):
@@ -282,9 +283,7 @@ def drawBB(height, width, sceneRGB, sceneRGB2, clusters, segRGB):
             start_point = (deNormalize((normxC - normW/2), width), deNormalize((normyC - normH/2), height))
             end_point = (deNormalize((normxC + normW/2), width), deNormalize((normyC + normH/2), height))
             sceneRGB = cv2.rectangle(sceneRGB, start_point, end_point, blue, thickness)
-        else:
-            count += 1
-
+            hasValidClusters = True
 
         #saveLabel(height, width, heightArr, widthArr, labelDir, j, f, pixCount)
         
@@ -296,12 +295,9 @@ def drawBB(height, width, sceneRGB, sceneRGB2, clusters, segRGB):
         # empty cluster list
         clusters = []
 
-    if clusterLen == count:
-        f = open(os.path.join(str(emptyGtLabelDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.txt"), 'w')
-        f.write('')
+    if not hasValidClusters:
         f.close()
-        emptyGtPath = os.path.join(str(emptyGtImgDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.png")
-        airsim.write_png(os.path.normpath(emptyGtPath), sceneRGB)
+        os.remove(os.path.normpath(os.path.join(str(labelDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.txt")))
         return sceneRGB
 
     if(clusterLen!=0):
