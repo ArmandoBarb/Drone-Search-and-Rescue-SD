@@ -231,10 +231,10 @@ def drawBB(height, width, sceneRGB, sceneRGB2, clusters, segRGB):
     if(clusterLen!=0):
         f = open(os.path.join(str(labelDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.txt"), 'w')
     else:
-        f = open(os.path.join(str(emptyGtLabelDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.txt"), 'w')
+        f = open(os.path.join(str(emptyGtLabelDir), droneName + "wolf" +str(j) +BATCH_NAME+ "_EMPTY_"+"imgScene.txt"), 'w')
         f.write('')
         f.close()
-        emptyGtPath = os.path.join(str(emptyGtImgDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.png")
+        emptyGtPath = os.path.join(str(emptyGtImgDir), droneName + "wolf" +str(j) +BATCH_NAME+ "_EMPTY_" +"imgScene.png")
         airsim.write_png(os.path.normpath(emptyGtPath), sceneRGB)
         return sceneRGB
 
