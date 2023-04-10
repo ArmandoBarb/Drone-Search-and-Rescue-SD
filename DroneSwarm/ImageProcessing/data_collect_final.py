@@ -197,6 +197,14 @@ def pixelClustering(height, width, segRGB):
 
     return clusters
 
+def deNormalize(normalizedValue, newRange):
+    newValue = int(normalizedValue * newRange)
+    if (newValue >= newRange):
+        return (newRange - 1)
+    else:
+        return newValue
+    
+
 def drawBB(height, width, sceneRGB, sceneRGB2, clusters, segRGB):
     heightArr = []
     widthArr = []
@@ -209,6 +217,9 @@ def drawBB(height, width, sceneRGB, sceneRGB2, clusters, segRGB):
     bbDir = dataDir + '/bb'
     imgDir = dataDir + '/images'
     labelDir = dataDir + '/labels'
+    emptyGtLabelDir = dataDir + '/emptyLabels'
+    emptyGtImgDir = dataDir + '/emptyImages'
+    count = 0
 
     j=0
     while os.path.exists(os.path.join(str(labelDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.txt")):
@@ -218,6 +229,13 @@ def drawBB(height, width, sceneRGB, sceneRGB2, clusters, segRGB):
 
     if(clusterLen!=0):
         f = open(os.path.join(str(labelDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.txt"), 'w')
+    else:
+        f = open(os.path.join(str(emptyGtLabelDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.txt"), 'w')
+        f.write('')
+        f.close()
+        emptyGtPath = os.path.join(str(emptyGtImgDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.png")
+        airsim.write_png(os.path.normpath(emptyGtPath), sceneRGB)
+        return sceneRGB
 
     for cluster in clusters:
         for coord in cluster:
@@ -241,14 +259,12 @@ def drawBB(height, width, sceneRGB, sceneRGB2, clusters, segRGB):
         bbw = x1 - x0 # width
         start_point = (x0-math.floor(bbw*.10), y1) # top left corner (corrected offset)
         end_point = (x1, y0)                       # bottom right corner (corrected offset)
-
-        sceneRGB = cv2.rectangle(sceneRGB, start_point, end_point, blue, thickness)
-
+        #sceneRGB = cv2.rectangle(sceneRGB, start_point, end_point, blue, thickness)
         hArr=heightArr
         wArr=widthArr
 
         # save off label
-        if ((len(heightArr) != 0) and (len(cluster) >= 1)):
+        if ((len(heightArr) != 0) and (len(cluster) >= 30)):
             # calculate bb height
             bbh = y1 - y0
 
@@ -263,6 +279,13 @@ def drawBB(height, width, sceneRGB, sceneRGB2, clusters, segRGB):
             normW = bbw/width   # divide by width
             normH = bbh/height  # divide by height
             f.write("0 " + str(normxC) + " " + str(normyC) + " " + str(normW*1.29) + " " + str(normH)+"\n")
+            start_point = (deNormalize((normxC - normW/2), width), deNormalize((normyC - normH/2), height))
+            end_point = (deNormalize((normxC + normW/2), width), deNormalize((normyC + normH/2), height))
+            sceneRGB = cv2.rectangle(sceneRGB, start_point, end_point, blue, thickness)
+        else:
+            count += 1
+
+
         #saveLabel(height, width, heightArr, widthArr, labelDir, j, f, pixCount)
         
         # reset height and width arrays
@@ -272,6 +295,14 @@ def drawBB(height, width, sceneRGB, sceneRGB2, clusters, segRGB):
         # print("Number of clusters: ", len(clusters))
         # empty cluster list
         clusters = []
+
+    if clusterLen == count:
+        f = open(os.path.join(str(emptyGtLabelDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.txt"), 'w')
+        f.write('')
+        f.close()
+        emptyGtPath = os.path.join(str(emptyGtImgDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.png")
+        airsim.write_png(os.path.normpath(emptyGtPath), sceneRGB)
+        return sceneRGB
 
     if(clusterLen!=0):
         f.close()
@@ -321,19 +352,19 @@ def saveImgs(sceneRGB2, sceneRGB, bbDir, imgDir, segRGB, j):
         print('SAVE PATH', imgDir)
         sceneSavePathOrig = os.path.join(str(imgDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.png")
         sceneSavePathBB = os.path.join(str(bbDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.png")
-        sceneSavePathCSV = os.path.join(str(bbDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.csv")
+        #sceneSavePathCSV = os.path.join(str(bbDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.csv")
         
         airsim.write_png(os.path.normpath(sceneSavePathOrig), sceneRGB2)
         airsim.write_png(os.path.normpath(sceneSavePathBB), sceneRGB)
-        (w, h, s) = segRGB.shape
-        new_img = np.zeros((h, w))
-        for i in range(h):
-            for j in range(w):
-                if segRGB[i][j][0] == 0:
-                    new_img[i, j] = 0
-                else:
-                    new_img[i, j] = 1
-        savetxt(os.path.normpath(sceneSavePathCSV), new_img, delimiter=',')
+        # (w, h, s) = segRGB.shape
+        # new_img = np.zeros((h, w))
+        # for i in range(h):
+        #     for j in range(w):
+        #         if segRGB[i][j][0] == 0:
+        #             new_img[i, j] = 0
+        #         else:
+        #             new_img[i, j] = 1
+        # savetxt(os.path.normpath(sceneSavePathCSV), new_img, delimiter=',')
 
 def setupDirectories():
     dataDir='/home/testuser/AirSim/PythonClient/multirotor/Drone-Search-and-Rescue-SD-1/DroneSwarm/DataCollection'
