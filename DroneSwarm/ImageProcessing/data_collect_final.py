@@ -226,6 +226,10 @@ def drawBB(height, width, sceneRGB, sceneRGB2, clusters, segRGB):
     while os.path.exists(os.path.join(str(labelDir), droneName + "wolf" +str(j) +BATCH_NAME+ "imgScene.txt")):
         j+=1
 
+    b=0
+    while os.path.exists(os.path.join(str(emptyGtLabelDir), droneName + "wolf" +str(b) +BATCH_NAME+ "_EMPTY_"+"imgScene.txt")):
+        b+=1
+
     clusterLen = len(clusters)
 
     if(clusterLen!=0):
