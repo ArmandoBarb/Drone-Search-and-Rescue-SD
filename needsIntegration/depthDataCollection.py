@@ -7,60 +7,56 @@ import time
 from split_image import split_image
 # import Constants.configDrones as configDrones
 import math
+from contextlib import contextmanager
+import sys, os
 
-# drone size 1m x 1m
-def getDistanceXConeArray(client,vehicle_name):
+@contextmanager
+def suppress_stdout():
+    with open(os.devnull, "w") as devnull:
+        old_stdout = sys.stdout
+        sys.stdout = devnull
+        try:  
+            yield
+        finally:
+            sys.stdout = old_stdout
 
-    distanceXConeArray = [client.getDistanceSensorData(distance_sensor_name="Front",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Left(-5)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Right(5)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Left(-6.5)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Right(6.5)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Left(-8.5)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Right(8.5)",vehicle_name=vehicle_name).distance,]
+def parse_lidarData(data):
 
-    # for distance in distanceXConeArray:
-    #     print(distance)
+    np.set_printoptions(threshold=sys.maxsize)
 
-    return distanceXConeArray
+    # reshape array of floats to array of [X,Y,Z]
+    points = np.array(data.point_cloud, dtype=np.dtype('f4'))
+    points = np.reshape(points, (int(points.shape[0]/3), 3))
+       
+    return points
 
-def getDistanceCautionArray(client,vehicle_name):
+def getLidarSensorInfo(client,vehicle_name):
 
-    distanceCautionArray = [client.getDistanceSensorData(distance_sensor_name="Left(-8.5)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Right(8.5)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Close_Left",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Close_Right",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Up(5)",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Up(10)",vehicle_name=vehicle_name).distance]
+    lidarInfo = client.getLidarData()
+    parsedLidarInfo = parse_lidarData(lidarInfo)
 
-    # print(distanceCautionArray[2])
-    # print(distanceCautionArray[3])
+    # print(lidarInfo)
 
-    return distanceCautionArray
+    return parsedLidarInfo, lidarInfo.segmentation
 
-def getSideSensors(client,vehicle_name):
+def getVelo(client,vehicle_name,treeInfo,droneInfo,DIRECTION_FACTOR):
 
-    sideSensors = [client.getDistanceSensorData(distance_sensor_name="Left_Side",vehicle_name=vehicle_name).distance,
-                    client.getDistanceSensorData(distance_sensor_name="Right_Side",vehicle_name=vehicle_name).distance]
+    xDifference = float(droneInfo.gnss.geo_point.longitude) - treeInfo.geo_point.longitude
+    yDifference = float(droneInfo.gnss.geo_point.latitude) - treeInfo.geo_point.latitude
 
-    # print(sideSensors)
-
-    return sideSensors
-
-def getVelo(x,y,DIRECTION_FACTOR):
-
-    velY = math.sqrt((0 - 0)**2 + ((y)-0)**2)
-    velX = math.sqrt((x - 0)**2 + (0-0)**2)
-
-    velY = velY/DIRECTION_FACTOR
-    velX = velX/DIRECTION_FACTOR
+    velX = (xDifference / math.sqrt(xDifference**2 + yDifference**2))*DIRECTION_FACTOR
+    velY = (yDifference / math.sqrt(xDifference**2 + yDifference**2))*DIRECTION_FACTOR
 
     return velX,velY
 
-def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,DIRECTION_FACTOR):
+def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,DIRECTION_FACTOR,closestTree):
     i=0
     lowDepth = 0
+    tempSecondChoice = 0
     imageContainer = []
+    secondLowDepth = 0
+    secondChoiceContainer = []
+    velocity = client.getGpsData(vehicle_name = vehicle_name)
         # image collection loop:
         # we have to test out how many pictures it should take so the while loop can end
         # take images
@@ -78,85 +74,81 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,DIRECTION_FAC
     cv2.imwrite('DepthImage.png', depthCloce16)
 
     # we split the image into multiple parts(3 col 1 row)
-    split_image('DepthImage.png',1,3,False,False)
+    with suppress_stdout():
+        split_image('DepthImage.png',1,3,False,False)     
+               
     files = os.listdir(imgDir)
+    treeWidth = (256/100) + 2
 
-    # we find the average pixels in the image and we store it in the imageContainer
-    for images in files:
-        img = cv2.imread(images)
-        temp = np.average(img)
-        if(temp > lowDepth):
-            if(len(imageContainer) >= 1):
-                imageContainer.clear()
-            lowDepth = temp
-            imageContainer.append(images)
-    treeWidth = (242.7/100) + 1
+    # theta = math.atan2(treeWidth,closestObjectDistance)
+    # if(closestObjectDistance < 7):
+    #     theta = theta + 10
+    
+    # velY = theta * velocity.gnss.velocity.x_val
+    # velX = velocity.gnss.velocity.x_val
 
-    velX,velY = getVelo(treeWidth, closestObjectDistance,DIRECTION_FACTOR)
+    velX,velY = getVelo(client, vehicle_name, closestTree, velocity, DIRECTION_FACTOR)
+           
+    print("Vely",velY)
+    print("Velx",velX)
 
-    if(imageContainer[0].__contains__('0')):
-        velX = -velX
+    velX = velX * treeWidth
+    velY = velY * treeWidth
 
-    # if(closestObjectDistance < 5):
-    #     client.moveByVelocityZAsync(0,velX, 0, duration=DIRECTION_FACTOR,vehicle_name=vehicle_name)
-    # else:
     return [velY, velX]
 
-def repulsion(client,vehicle_name,DIRECTION_FACTOR):
+def getDistance(client,vehicle_name,treeInfo,droneInfo):
 
-    sideSensors = getSideSensors(client, vehicle_name)
+    xDifference = float(droneInfo.gnss.geo_point.longitude) - treeInfo.geo_point.longitude
+    yDifference = float(droneInfo.gnss.geo_point.latitude) - treeInfo.geo_point.latitude
 
-    if(sideSensors[0] < 0.8):
-        difference = 0.8-sideSensors[0]
-        print(difference)
-        velX,velY = getVelo(difference, 0, DIRECTION_FACTOR)
+    distance = math.sqrt(xDifference**2 + yDifference**2)
 
-    if(sideSensors[1] < 0.8):
-        difference = 0.8-sideSensors[1]
-        print(difference)
-        velX,velY = getVelo(difference, 0, DIRECTION_FACTOR)
-        velX = -velX
+    # print("Getting Distance to object!")
 
-    client.moveByVelocityZAsync(velY,velX, 0, duration=DIRECTION_FACTOR,vehicle_name=vehicle_name)
-
-def tweakDronePath(client,vehicle_name):
-    distanceCautionArray = getDistanceCautionArray(client, vehicle_name)
-
-    if(distanceCautionArray[2] < 2):
-        velX,velY = getVelo(distanceCautionArray[2], 0, 1)
-        client.moveByVelocityZAsync(velY,velX, 0, duration=1,vehicle_name=vehicle_name)
-
-
-    if(distanceCautionArray[3] < 2):
-        velX,velY = getVelo(distanceCautionArray[3], 0, 1)
-        velX = -velX
-        client.moveByVelocityZAsync(velY,velX, 0, duration=1,vehicle_name=vehicle_name)
-
+    return distance 
+    
 def collisionAvoidanceCheck(client, vehicle_name, threshhold):
     # tweakDronePath(client, vehicle_name)
     # repulsion(client, vehicle_name, DIRECTION_FACTOR)
-    distanceXConeArray = getDistanceXConeArray(client, vehicle_name)
-    closestObjectDistance = 50
+    image_type = airsim.ImageType.Scene
+    shortestDistance = 1000
+    closestTree = 0
+    trees = client.simGetDetections("1", image_type)
+    info = client.getGpsData(vehicle_name = vehicle_name)
+    # print("These are the trees")
+    # print(trees)
+    # print("-------------")
 
-    for distance in distanceXConeArray:
-        if(closestObjectDistance > distance):
-                closestObjectDistance = distance 
-
-    if (closestObjectDistance < threshhold):
-        return True, closestObjectDistance
+    if trees:
+        for tree in trees:
+            # print(tree)
+            distance = getDistance(client, vehicle_name,tree,info)
+            # print("This is distance")
+            # print(distance)
+            # print("-------------")
+            if(shortestDistance > distance):
+                closestTree = tree
+                shortestDistance = distance
+                # print("this is the shortest distance")
+                # print(shortestDistance)
+                # print("-------------")
+    
+    if (shortestDistance < 16):
+        return True, shortestDistance, closestTree
     else:
-        return False, None
+        return False, None , None
 
 def setupCollisionDirectory(vehicle_name):
     # directory to store pictures
-    imgDir = os.path.abspath("..\depthCollection"+str(vehicle_name))
+    imgDir = os.path.abspath("..\collisionDetectionImages"+str(vehicle_name))
 
     # check that directory exists
     isExist = os.path.exists(imgDir)
     if not isExist:
         # make directory if not already there
         os.mkdir(imgDir)
-        print('Created: ' + imgDir)
+        # print('Created: ' + imgDir)
 
     return imgDir
 
@@ -164,28 +156,28 @@ def start():
     vehicle_name = "0"
     # directory to store pictures
     DIRECTION_FACTOR = 5
-
+    image_type = airsim.ImageType.Scene
     imgDir = setupCollisionDirectory(vehicle_name)
-
     # set up client object to access multirotor drone
-    client = airsim.MultirotorClient("10.171.204.218")
+    client = airsim.MultirotorClient("192.168.56.1")
     client.confirmConnection()
     client.enableApiControl(True)
     client.armDisarm(True)
+    tree = "easy_treesign*"
+    client.simSetDetectionFilterRadius("1", image_type, 600) 
+    client.simAddDetectionFilterMeshName("1", image_type, tree) 
+    lidarPointsArray, Segmentation = getLidarSensorInfo(client,vehicle_name)
 
     while(1):
         vector = [0, 0]
-
         threshhold = 16
-        velY = 5
-        velX = 0
-        doCollision, closestObjectDistance = collisionAvoidanceCheck(client, vehicle_name, threshhold)
+        doCollision, closestObjectDistance, closestTree = collisionAvoidanceCheck(client, vehicle_name, threshhold)
+
         if(doCollision):
-            vector = collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,DIRECTION_FACTOR)
+            vector = collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,DIRECTION_FACTOR,closestTree)
         else:
-            vector = [5, 0]
+            vector = [-5, 0]
         
         client.moveByVelocityZAsync(vector[0], vector[1], -3, duration=1,vehicle_name=vehicle_name)
-
 
 start()
