@@ -171,8 +171,8 @@ def pixelClustering(height, width, segRGB):
                 while (len(cluster) > i):
                     currentPixel = cluster[i]
                     pixCount = 0
-                    for x in range(-1, 2):
-                        for y in range(-1, 2):
+                    for x in range(-3, 4): # 3 pixels gap
+                        for y in range(-3, 4):
                             # check center
                             if x == 0 and y == 0: continue;
                             
@@ -269,7 +269,7 @@ def drawBB(height, width, sceneRGB, sceneRGB2, clusters, segRGB):
         wArr=widthArr
 
         # save off label
-        if ((len(heightArr) != 0) and (len(cluster) >= 30)):
+        if ((len(heightArr) != 0) and (len(cluster) >= 20)):
             # calculate bb height
             bbh = y1 - y0
 
