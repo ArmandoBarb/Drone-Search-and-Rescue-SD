@@ -283,7 +283,8 @@ def drawBB(height, width, sceneRGB, sceneRGB2, clusters, segRGB):
             normyC = yC/height  # divide by height
             normW = bbw/width   # divide by width
             normH = bbh/height  # divide by height
-            f.write("0 " + str(normxC) + " " + str(normyC) + " " + str(normW*1.29) + " " + str(normH)+"\n")
+            #f.write("0 " + str(normxC) + " " + str(normyC) + " " + str(normW*1.29) + " " + str(normH)+"\n")
+            f.write("0 " + str(normxC) + " " + str(normyC) + " " + str(normW) + " " + str(normH)+"\n")
             start_point = (deNormalize((normxC - normW/2), width), deNormalize((normyC - normH/2), height))
             end_point = (deNormalize((normxC + normW/2), width), deNormalize((normyC + normH/2), height))
             sceneRGB = cv2.rectangle(sceneRGB, start_point, end_point, blue, thickness)
