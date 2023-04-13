@@ -14,12 +14,21 @@ GPU_SERVICE = ros.GPU_SERVICE
 
 def runYolov5(client, responses, dataDir_pass, dataDir_fail, cameraName, vehicleName, confidanceMin):
     global GPU_SERVICE
+    global counter
 
     responseIndex = 0
 
     # get response object with input image
     height, width, sceneRGB2 = getInfo.getHeightWidthArr(responses, responseIndex)
+    #print("post-shape: ", sceneRGB2)
     sceneRGB1 = np.copy(sceneRGB2)
+
+    j=0
+    while os.path.exists('/home/testuser/AirSim/PythonClient/multirotor/Drone-Search-and-Rescue-SD/DroneSwarm/testSceneRGB/' + str(j)+ 'testPreCorrupt' + '.png'):
+        j+=1
+
+    cv2.imwrite('/home/testuser/AirSim/PythonClient/multirotor/Drone-Search-and-Rescue-SD/DroneSwarm/testSceneRGB/' + str(j) + 'testPreCorrupt' + '.png', sceneRGB1)
+    
 
     # original image unedited
     responseString= responses[int(responseIndex)].image_data_uint8
