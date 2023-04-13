@@ -20,256 +20,124 @@ def suppress_stdout():
         finally:
             sys.stdout = old_stdout
 
-# drone size 1m x 1m
-def getDistanceXConeArray(client,vehicle_name):
+def setUpLidar(client,vehicle_name):
+    image_type = airsim.ImageType.Scene
+    tree = "new_tree*"
+    client.simSetDetectionFilterRadius("1", image_type, 1000) 
+    client.simAddDetectionFilterMeshName("1", image_type, tree) 
 
-    distanceXConeArray = [{"name": "LeftFront(-3)",'distance':client.getDistanceSensorData(distance_sensor_name="Front(-3)",vehicle_name=vehicle_name).distance},
-                    {"name": "RightFront(3)",'distance':client.getDistanceSensorData(distance_sensor_name="Front(3)",vehicle_name=vehicle_name).distance},
-                    {"name": "LeftFront(-2)",'distance':client.getDistanceSensorData(distance_sensor_name="Front(-2)",vehicle_name=vehicle_name).distance},
-                    {"name": "RightFront(2)",'distance':client.getDistanceSensorData(distance_sensor_name="Front(2)",vehicle_name=vehicle_name).distance},
-                    {"name": "LeftFront(-1)",'distance':client.getDistanceSensorData(distance_sensor_name="Front(-1)",vehicle_name=vehicle_name).distance},
-                    {"name": "RightFront(1)",'distance':client.getDistanceSensorData(distance_sensor_name="Front(1)",vehicle_name=vehicle_name).distance},
-                    {"name": "FronttUp(2.5)",'distance':client.getDistanceSensorData(distance_sensor_name="Up(2.5)",vehicle_name=vehicle_name).distance},
-                    {"name": "RightFront",'distance':client.getDistanceSensorData(distance_sensor_name="Front",vehicle_name=vehicle_name).distance},
-                    {"name": "Left(-5)",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-5)",vehicle_name=vehicle_name).distance},
-                    {"name": "Right(5)",'distance':client.getDistanceSensorData(distance_sensor_name="Right(5)",vehicle_name=vehicle_name).distance},
-                    {"name": "Left(-4)",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-4)",vehicle_name=vehicle_name).distance},
-                    {"name": "Right(4)",'distance':client.getDistanceSensorData(distance_sensor_name="Right(4)",vehicle_name=vehicle_name).distance},
-                    {"name": "Left_7",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-7)",vehicle_name=vehicle_name).distance},
-                    {"name": "Right_7",'distance':client.getDistanceSensorData(distance_sensor_name="Right(7)",vehicle_name=vehicle_name).distance},
-                    {"name": "Left_6",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-6)",vehicle_name=vehicle_name).distance},
-                    {"name": "Right_6",'distance':client.getDistanceSensorData(distance_sensor_name="Right(6)",vehicle_name=vehicle_name).distance},
-                    {"name": "Left_8",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-8)",vehicle_name=vehicle_name).distance},
-                    {"name": "Right_8",'distance':client.getDistanceSensorData(distance_sensor_name="Right(8)",vehicle_name=vehicle_name).distance},
-                    {"name": "Left_9",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-9)",vehicle_name=vehicle_name).distance},
-                    {"name": "Right_9",'distance':client.getDistanceSensorData(distance_sensor_name="Right(9)",vehicle_name=vehicle_name).distance},
-                    {"name": "Left_10",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-10)",vehicle_name=vehicle_name).distance},
-                    {"name": "Right_10",'distance':client.getDistanceSensorData(distance_sensor_name="Right(10)",vehicle_name=vehicle_name).distance},
-                    {"name": "Left_11",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-11)",vehicle_name=vehicle_name).distance},
-                    {"name": "Right_11",'distance':client.getDistanceSensorData(distance_sensor_name="Right(11)",vehicle_name=vehicle_name).distance},
-                    {"name": "Left_12",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-12)",vehicle_name=vehicle_name).distance},
-                    {"name": "Right_12",'distance':client.getDistanceSensorData(distance_sensor_name="Right(12)",vehicle_name=vehicle_name).distance},
-                    {"name": "Left_13",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-13)",vehicle_name=vehicle_name).distance},
-                    {"name": "Right_13",'distance':client.getDistanceSensorData(distance_sensor_name="Right(13)",vehicle_name=vehicle_name).distance},]
-    # for distance in distanceXConeArray:
-    #     print(distance)
+def parse_lidarData(data):
 
-    return distanceXConeArray
+    np.set_printoptions(threshold=sys.maxsize)
 
-def getSlightDeviation(client,vehicle_name):
+    # reshape array of floats to array of [X,Y,Z]
+    points = np.array(data.point_cloud, dtype=np.dtype('f4'))
+    points = np.reshape(points, (int(points.shape[0]/3), 3))
+       
+    return points
 
-    deviationArray = [{"name": "Left_33",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-33)",vehicle_name=vehicle_name).distance},
-                    {"name": "Right_33",'distance':client.getDistanceSensorData(distance_sensor_name="Right(33)",vehicle_name=vehicle_name).distance},
-                    {"name": "Left_32",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-32)",vehicle_name=vehicle_name).distance},
-                    {"name": "Right_32",'distance':client.getDistanceSensorData(distance_sensor_name="Right(32)",vehicle_name=vehicle_name).distance},
-                    {"name": "Left_31",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-31)",vehicle_name=vehicle_name).distance},
-                    {"name": "Right_31",'distance':client.getDistanceSensorData(distance_sensor_name="Right(31)",vehicle_name=vehicle_name).distance},
-                    {"name": "Left_30",'distance':client.getDistanceSensorData(distance_sensor_name="Left(-30)",vehicle_name=vehicle_name).distance},
-                    {"name": "Right_30",'distance':client.getDistanceSensorData(distance_sensor_name="Right(30)",vehicle_name=vehicle_name).distance},
-                    {"name": "RightSide(14)",'distance':client.getDistanceSensorData(distance_sensor_name="RightSide(14)",vehicle_name=vehicle_name).distance},
-                    {"name": "LeftSide(-14)",'distance':client.getDistanceSensorData(distance_sensor_name="LeftSide(-14)",vehicle_name=vehicle_name).distance},
-                    {"name": "RightSide(15)",'distance':client.getDistanceSensorData(distance_sensor_name="RightSide(15)",vehicle_name=vehicle_name).distance},
-                    {"name": "LeftSide(-15)",'distance':client.getDistanceSensorData(distance_sensor_name="LeftSide(-15)",vehicle_name=vehicle_name).distance},
-                    {"name": "RightSide(16)",'distance':client.getDistanceSensorData(distance_sensor_name="RightSide(16)",vehicle_name=vehicle_name).distance},
-                    {"name": "LeftSide(-16)",'distance':client.getDistanceSensorData(distance_sensor_name="LeftSide(-16)",vehicle_name=vehicle_name).distance},
-                    {"name": "RightSide(17)",'distance':client.getDistanceSensorData(distance_sensor_name="RightSide(17)",vehicle_name=vehicle_name).distance},
-                    {"name": "LeftSide(-17)",'distance':client.getDistanceSensorData(distance_sensor_name="LeftSide(-17)",vehicle_name=vehicle_name).distance},
-                    {"name": "RightSide(18)",'distance':client.getDistanceSensorData(distance_sensor_name="RightSide(18)",vehicle_name=vehicle_name).distance},
-                    {"name": "LeftSide(-18)",'distance':client.getDistanceSensorData(distance_sensor_name="LeftSide(-18)",vehicle_name=vehicle_name).distance},
-                    {"name": "RightSide(19)",'distance':client.getDistanceSensorData(distance_sensor_name="RightSide(19)",vehicle_name=vehicle_name).distance},
-                    {"name": "LeftSide(-19)",'distance':client.getDistanceSensorData(distance_sensor_name="LeftSide(-19)",vehicle_name=vehicle_name).distance},]
+def getVelo(treeInfo,droneInfo,DIRECTION_FACTOR):
 
-    return deviationArray
+    xDifference = float(droneInfo.gnss.geo_point.longitude) - treeInfo.geo_point.longitude
+    yDifference = float(droneInfo.gnss.geo_point.latitude) - treeInfo.geo_point.latitude
 
-def getSideSensors(client,vehicle_name):
-
-    sideSensors = [ {"name": "Side(75)",'distance':client.getDistanceSensorData(distance_sensor_name="Side(75)",vehicle_name=vehicle_name).distance},
-                    {"name": "Side(-75)",'distance':client.getDistanceSensorData(distance_sensor_name="Side(-75)",vehicle_name=vehicle_name).distance},
-                    {"name": "Side(76)",'distance':client.getDistanceSensorData(distance_sensor_name="Side(76)",vehicle_name=vehicle_name).distance},
-                    {"name": "Side(-76)",'distance':client.getDistanceSensorData(distance_sensor_name="Side(-76)",vehicle_name=vehicle_name).distance},
-                    {"name": "Side(77)",'distance':client.getDistanceSensorData(distance_sensor_name="Side(77)",vehicle_name=vehicle_name).distance},
-                    {"name": "Side(-77)",'distance':client.getDistanceSensorData(distance_sensor_name="Side(-77)",vehicle_name=vehicle_name).distance},
-                    {"name": "Side(78)",'distance':client.getDistanceSensorData(distance_sensor_name="Side(78)",vehicle_name=vehicle_name).distance},
-                    {"name": "Side(-78)",'distance':client.getDistanceSensorData(distance_sensor_name="Side(-78)",vehicle_name=vehicle_name).distance},
-                    {"name": "Side(79)",'distance':client.getDistanceSensorData(distance_sensor_name="Side(79)",vehicle_name=vehicle_name).distance},
-                    {"name": "Side(-79)",'distance':client.getDistanceSensorData(distance_sensor_name="Side(-79)",vehicle_name=vehicle_name).distance},
-                    {"name": "Side(80)",'distance':client.getDistanceSensorData(distance_sensor_name="Side(80)",vehicle_name=vehicle_name).distance},
-                    {"name": "Side(-80)",'distance':client.getDistanceSensorData(distance_sensor_name="Side(-80)",vehicle_name=vehicle_name).distance},
-                    ]
-
-    # print(sideSensors)
-
-    return sideSensors
-
-def getVelo(x,y,DIRECTION_FACTOR):
-
-    velY = math.sqrt((0 - 0)**2 + ((y)-0)**2)
-    velX = math.sqrt((x - 0)**2 + (0-0)**2)
-
-    velY = velY/DIRECTION_FACTOR
-    velX = velX/DIRECTION_FACTOR
+    velX = (xDifference / math.sqrt(xDifference**2 + yDifference**2))*DIRECTION_FACTOR
+    velY = (yDifference / math.sqrt(xDifference**2 + yDifference**2))*DIRECTION_FACTOR
 
     return velX,velY
 
-def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,slightDeviation,DIRECTION_FACTOR,slightFlag,sensorName):
+def getLidarSensorInfo(client,vehicle_name):
+
+    lidarInfo = client.getLidarData()
+    parsedLidarInfo = parse_lidarData(lidarInfo)
+
+    # print(lidarInfo)
+
+    return parsedLidarInfo, lidarInfo.segmentation
+
+def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,DIRECTION_FACTOR,closestTree):
     i=0
     lowDepth = 0
     tempSecondChoice = 0
     imageContainer = []
     secondLowDepth = 0
     secondChoiceContainer = []
-        # image collection loop:
-        # we have to test out how many pictures it should take so the while loop can end
-        # take images
-        # ImageRequest(name, image_type, pixel_as_float, compress)
-    response = client.simGetImages([airsim.ImageRequest("0", airsim.ImageType.DepthVis, True)],vehicle_name)
-    responseDepth = response[0]
+    velocity = client.getGpsData(vehicle_name = vehicle_name)
+    #     # image collection loop:
+    #     # we have to test out how many pictures it should take so the while loop can end
+    #     # take images
+    #     # ImageRequest(name, image_type, pixel_as_float, compress)
+    # response = client.simGetImages([airsim.ImageRequest("0", airsim.ImageType.DepthVis, True)],vehicle_name)
+    # responseDepth = response[0]
 
-    depth = np.array(responseDepth.image_data_float,dtype=np.float32)
-    depth = depth.reshape(responseDepth.height,responseDepth.width)
-    depth = np.array(depth*255,dtype=np.uint8)
-    depthClose = depth * 1000
-    depthCloce16 = np.clip(depthClose,0,65535)
+    # depth = np.array(responseDepth.image_data_float,dtype=np.float32)
+    # depth = depth.reshape(responseDepth.height,responseDepth.width)
+    # depth = np.array(depth*255,dtype=np.uint8)
+    # depthClose = depth * 1000
+    # depthCloce16 = np.clip(depthClose,0,65535)
 
-    os.chdir(imgDir)
-    cv2.imwrite('DepthImage.png', depthCloce16)
+    # os.chdir(imgDir)
+    # cv2.imwrite('DepthImage.png', depthCloce16)
 
-    # we split the image into multiple parts(3 col 1 row)
-    with suppress_stdout():
-        split_image('DepthImage.png',1,3,False,False)     
+    # # we split the image into multiple parts(3 col 1 row)
+    # with suppress_stdout():
+    #     split_image('DepthImage.png',1,3,False,False)     
                
-    files = os.listdir(imgDir)
-
-    # we find the average pixels in the image and we store it in the imageContainer
-    # for images in files:
-    #     if(not(i == 0)):
-    #         img = cv2.imread(images)
-    #         temp = np.average(img)
-    #         if(temp > lowDepth):
-    #             secondtemp = lowDepth
-    #             if(secondtemp > secondLowDepth):
-    #                 secondLowDepth = secondtemp
-    #                 secondChoiceContainer.clear()
-    #                 secondChoiceContainer.append(imageContainer[0])
-    #             if(len(imageContainer) >= 1):
-    #                 imageContainer.clear()
-    #             lowDepth = temp
-    #             imageContainer.append(images)
-    #         elif(temp > secondLowDepth ):
-    #             secondLowDepth = temp
-    #             secondChoiceContainer.clear()
-    #             secondChoiceContainer.append(imageContainer[0])
-    #     i+=1
-
-    # if(("Right" in sensorName) and ("2" in imageContainer[0])):
-    #     imageContainer = secondChoiceContainer
-    # elif(("Front" in sensorName) and ("1" in imageContainer[0])):
-    #     imageContainer = secondChoiceContainer
-    # elif(("Left" in sensorName) and ("0" in imageContainer[0])):
-    #     imageContainer = secondChoiceContainer
-
-    treeWidth = (242.7/100) + 2
+    # files = os.listdir(imgDir)
+    treeWidth = (356/100) + 2
     # treeWidth = 1.75
     # velX,velY = getVelo(treeWidth, closestObjectDistance,DIRECTION_FACTOR)
 
-    if("Left" in sensorName):
-        # if (vehicle_name == '0'):
-        #     print("Got a detection, picking left image: ", vehicle_name)
-        velocity = client.getGpsData(vehicle_name = vehicle_name)
-        
-        if(slightFlag):
-            # print("Slight Deviation")
-            # theta2 = (treeWidth/slightDeviation)
-            theta = math.atan2(treeWidth,slightDeviation)
-            if(slightDeviation < 6):
-                theta = theta + 15
-            velY = theta * velocity.gnss.velocity.x_val
-            velX = velocity.gnss.velocity.x_val
-        else:
-            theta = math.atan2(treeWidth,closestObjectDistance)
-            if(closestObjectDistance < 7):
-                theta = theta + 15
-            velY = theta * velocity.gnss.velocity.x_val
-            velX = velocity.gnss.velocity.x_val
+    velX,velY = getVelo(closestTree, velocity, DIRECTION_FACTOR)
            
-        print("Its going Right")
-        
-    elif("Right" in sensorName):
-        # if (vehicle_name == '0'):
-        #     print("Got a detection, picking right image: ", vehicle_name)
-        velocity = client.getGpsData(vehicle_name = vehicle_name)
+    # print("Vely",velY)
+    # print("Velx",velX)
 
-        # math to find the x and y values to find the vectors
-        if(slightFlag):
-            # print("Slight Deviation")
-            theta = math.atan2(treeWidth,slightDeviation)
-            theta = theta * -1
-            if(slightDeviation < 6):
-                theta = theta - 15
-
-            velY = theta * velocity.gnss.velocity.x_val
-            velX = velocity.gnss.velocity.x_val       
-        else:
-            
-            theta = math.atan2(treeWidth,closestObjectDistance)
-            theta = theta * -1
-            if(closestObjectDistance < 7):
-                theta = theta - 15
-
-
-            velY = theta * velocity.gnss.velocity.x_val
-            velX = velocity.gnss.velocity.x_val
-
-        print("Its going left")
+    velX = velX * treeWidth
+    velY = velY * treeWidth
 
     return [velY, velX]
 
-def repulsion(client,vehicle_name,DIRECTION_FACTOR):
+def getDistance(client,vehicle_name,treeInfo,droneInfo):
 
-    sideSensors = getSideSensors(client, vehicle_name)
+    xDifference = float(droneInfo.gnss.geo_point.longitude) - treeInfo.geo_point.longitude
+    yDifference = float(droneInfo.gnss.geo_point.latitude) - treeInfo.geo_point.latitude
 
-    if(sideSensors[0] < 0.8):
-        difference = 0.8-sideSensors[0]
-        # print(difference)
-        velX,velY = getVelo(difference, 0, DIRECTION_FACTOR)
+    distance = math.sqrt(xDifference**2 + yDifference**2)
 
-    if(sideSensors[1] < 0.8):
-        difference = 0.8-sideSensors[1]
-        # print(difference)
-        velX,velY = getVelo(difference, 0, DIRECTION_FACTOR)
-        velX = -velX
+    # print("Getting Distance to object!")
 
-    client.moveByVelocityZAsync(velY,velX, 0, duration=DIRECTION_FACTOR,vehicle_name=vehicle_name)
+    return distance 
 
-def collisionAvoidanceCheck(client, vehicle_name, threshhold,slightThresh):
+def collisionAvoidanceCheck(client, vehicle_name, threshhold):
     # tweakDronePath(client, vehicle_name)
     # repulsion(client, vehicle_name, DIRECTION_FACTOR)
-    distanceXConeArray = getDistanceXConeArray(client, vehicle_name)
-    extremeSensors = getSlightDeviation(client, vehicle_name)
-    closestObjectDistance = 50
-    tempSlightDeviation = 50
-    tempSide = 50
-    slightFlag = False
-    sideFlag = False
-        
-    for distance in distanceXConeArray:
-        if(closestObjectDistance > distance['distance']):
-                sensorName = distance['name']
-                closestObjectDistance = distance['distance']
-
-    for distance in extremeSensors:
-        if(tempSlightDeviation > distance['distance']):
-                sensorName = distance['name']
-                tempSlightDeviation = distance['distance']
-
-    # print("Slight :", tempSlightDeviation , "Closest Object:", closestObjectDistance)
+    image_type = airsim.ImageType.Scene
+    shortestDistance = 1000
+    closestTree = 0
+    trees = client.simGetDetections("1", image_type)
+    info = client.getGpsData(vehicle_name = vehicle_name)
     
-    if (closestObjectDistance < threshhold):
-        return True, closestObjectDistance,None,False,sensorName 
-    elif((slightThresh > tempSlightDeviation)):
-        return True,None,tempSlightDeviation,True, sensorName
+    if trees:
+        for tree in trees:
+            # print(tree)
+            distance = getDistance(client, vehicle_name,tree,info)
+            # print("This is distance")
+            # print(distance)
+            # print("-------------")
+            if(shortestDistance > distance):
+                closestTree = tree
+                shortestDistance = distance
+                print("this is the shortest distance")
+                print(shortestDistance)
+                print("-------------")
+
+        # print("Slight :", tempSlightDeviation , "Closest Object:", closestObjectDistance)
+    
+    if (shortestDistance < 8):
+        return True, shortestDistance, closestTree
     else:
-        return False, None , None , None ,None
+        return False, None , None
 
 def setupCollisionDirectory(vehicle_name):
     # directory to store pictures
@@ -288,24 +156,23 @@ def start():
     vehicle_name = "0"
     # directory to store pictures
     DIRECTION_FACTOR = 5
-
-    imgDir = setupCollisionDirectory(vehicle_name)
-
+    imgDir = setupCollisionDirectory(vehicle_name)                   
     # set up client object to access multirotor drone
-    client = airsim.MultirotorClient("10.171.204.218")
+    client = airsim.MultirotorClient("10.171.204.221")
     client.confirmConnection()
     client.enableApiControl(True)
     client.armDisarm(True)
+    setUpLidar(client,vehicle_name)   
 
     while(1):
         vector = [0, 0]
-
         threshhold = 16
         velY = 5
         velX = 0
-        doCollision, closestObjectDistance = collisionAvoidanceCheck(client, vehicle_name, threshhold)
+        doCollision, closestObjectDistance, closestTree = collisionAvoidanceCheck(client, vehicle_name, threshhold)
+
         if(doCollision):
-            vector = collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,DIRECTION_FACTOR)
+            vector = collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,DIRECTION_FACTOR,closestTree)
         else:
             vector = [5, 0]
         
