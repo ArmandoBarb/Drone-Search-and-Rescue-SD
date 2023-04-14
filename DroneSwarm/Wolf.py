@@ -255,7 +255,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
 
                 Collision_Mode_Time_Length = totalTime
 
-            yaw_mode = airsim.YawMode(is_rate=True, yaw_or_rate=(10))
+            yaw_mode = airsim.YawMode(is_rate=True, yaw_or_rate=(0))
             colTime = time.time()
             vector = collisionDetectionBehavior.collisionAlgo(client,imgDir,droneName,closestObjectDistance,COLLISION_DIRECTION_FACTOR,closestTree)
             endTime = time.time() - colTime
@@ -276,7 +276,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
             vector = consensusDecisionBehaviorGetVector(currentDroneData);
 
             yawDegrees = circleBehavior.calcYaw(currentGPS=currentDroneData.gps_location, targetGPS=Circle_Center_GPS);
-            yawDegrees = yawDegrees - 90
+            yawDegrees = yawDegrees - 80
             yaw_mode  = airsim.YawMode(is_rate=False, yaw_or_rate=(yawDegrees));
 
             # check if time to end consensus Desension
@@ -335,7 +335,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
             vector = wolfSearchBehaviorGetVector(wolfCommPublish, client, currentDroneData);
             
             yawDegrees = circleBehavior.calcYaw(currentGPS=currentDroneData.gps_location, targetGPS=Circle_Center_GPS);
-            yawDegrees = yawDegrees - 90
+            yawDegrees = yawDegrees - 80
             
             yaw_mode  = airsim.YawMode(is_rate=False, yaw_or_rate=(yawDegrees));
 

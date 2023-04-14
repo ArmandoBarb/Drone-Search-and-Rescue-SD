@@ -84,7 +84,7 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,DIRECTION_FAC
     #     split_image('DepthImage.png',1,3,False,False)     
                
     # files = os.listdir(imgDir)
-    treeWidth = (356/100) + 2
+    treeWidth = (556/100) + 2
     # treeWidth = 1.75
     # velX,velY = getVelo(treeWidth, closestObjectDistance,DIRECTION_FACTOR)
 
@@ -129,12 +129,13 @@ def collisionAvoidanceCheck(client, vehicle_name, threshhold):
                 closestTree = tree
                 shortestDistance = distance
                 print("this is the shortest distance")
+                print(vehicle_name)
                 print(shortestDistance)
                 print("-------------")
 
         # print("Slight :", tempSlightDeviation , "Closest Object:", closestObjectDistance)
     
-    if (shortestDistance < 8):
+    if (shortestDistance < 7.5):
         return True, shortestDistance, closestTree
     else:
         return False, None , None
