@@ -7,6 +7,7 @@ import os
 import torch
 import numpy as np
 import pandas
+import cv2
 #from std_msgs.msg import String
 #from airsim_ros_pkgs.msg import droneData
 #from airsim_ros_pkgs.srv import getDroneData, getDroneDataResponse
@@ -32,7 +33,7 @@ def startYoloGPU():
 
     # start yolo GPU
     cwd = os.getcwd()
-    yoloPT = os.path.join(str(cwd), 'best_coco.pt')
+    yoloPT = os.path.join(str(cwd), 'noiseModel.pt')
 
     # Model is loaded global to be used by service functions
     try:
@@ -87,7 +88,17 @@ def handleGPU(request):
         width = request.width
 
         segArr = np.fromstring(responseString, dtype=np.uint8)
+
         sceneRGB1 = segArr.reshape(height, width, 3)
+        sceneRGB1.astype(float) # fix jank
+        #print("pre-shape: ", sceneRGB1.shape)
+        j=0
+        while os.path.exists('/home/testuser/AirSim/PythonClient/multirotor/Drone-Search-and-Rescue-SD/DroneSwarm/testSceneRGB/' + str(j)+ 'testPostCorrupt' + '.png'):
+            j+=1
+
+        # cv2.imwrite('/home/testuser/AirSim/PythonClient/multirotor/Drone-Search-and-Rescue-SD/DroneSwarm/testSceneRGB/' + str(j) + 'testPostCorrupt' + '.png', sceneRGB1)
+        # sceneRGB1 = cv2.imread('/home/testuser/AirSim/PythonClient/multirotor/Drone-Search-and-Rescue-SD/DroneSwarm/testSceneRGB/' + str(j) + 'testPostCorrupt' + '.png')[..., ::-1]
+        sceneRGB1 = sceneRGB1[..., ::-1]
 
         #print("RESULTS yolov5:")
         MODEL.classes = [0] # detect only for person class (0)
