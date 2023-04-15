@@ -6,10 +6,11 @@ import math
 import time
 from ImageProcessing import getInfo 
 
-def getWolfGPSEstimate(client, responses, vehicle_name, cameraName, xMin, yMin, xMax, yMax):
-    gps_al, gps_lat, gps_lon = getInfo.getDroneGPS(vehicle_name, client)
+def getWolfGPSEstimate(client, responses, vehicle_name, cameraName, xMin, yMin, xMax, yMax, gps):
     responseScene = responses[0]
-
+    gps_al = gps[0] 
+    gps_lat = gps[1] 
+    gps_lon = gps[2]
     x=responseScene.camera_orientation.x_val
     y=responseScene.camera_orientation.y_val
     z=responseScene.camera_orientation.z_val
