@@ -3,6 +3,8 @@ import numpy as np
 import airsim
 import math
 from HelperFunctions import clusterHelper
+import os
+import cv2
 
 def getInfrared(client, vehicleName):
     # print(vehicleName)
@@ -145,3 +147,48 @@ def getSearchCircles(intersectGroups, avgCentroids, r):
         searchRadii.append(rSearch)
 
     return searchRadii
+
+# def xyConvert(lat, lon):
+#     λ = 0
+#     φ_zero = 0
+#     φ = 0
+#     r = 0
+
+#     x = r*(λ*math.cos(φ_zero))
+#     y = r*φ
+#     return (x, y)
+
+def getDetectionMap(wolfPos, predPos):
+    path = '/home/testuser/AirSim/PythonClient/multirotor/Drone-Search-and-Rescue-SD/DroneSwarm/detectionMaps/' + 'detections' + '.png' 
+    positionGT = (0.00031441032653474997, -2.6949458421474215e-05)
+    FUDGE_FACTOR = 1000000
+
+    if os.path.exists(path):
+        detectMap = cv2.imread(path)
+    else:
+        detectionMap = np.zeros((2000, 2000, 3))
+        cv2.imwrite(path, detectionMap)
+        detectMap = cv2.imread(path)
+
+    # # make x and y conversions happen
+    # wolfPos = xyConvert(wolfPos[0], wolfLat[1])
+    # predPos = xyConvert(predPos[0], predPos[1])
+    # positionGT = xyConvert(positionGT[0], positionGT[1])
+
+    print("wolf_x " + str(int(wolfPos[0]*FUDGE_FACTOR)) + ", wolf_y " + str(int(wolfPos[1]*FUDGE_FACTOR)))
+    # print("wolf_x " + str(int(wolfPos[0]*FUDGE_FACTOR)) + ", wolf_y " + str(int(wolfPos[1]*FUDGE_FACTOR)))
+    # print("wolf_x " + str(int(wolfPos[0]*FUDGE_FACTOR)) + ", wolf_y " + str(int(wolfPos[1]*FUDGE_FACTOR)))
+
+    # draw line between wolf and prediction
+    cv2.line(detectMap, (int(wolfPos[0]*FUDGE_FACTOR), abs(int(wolfPos[1]*FUDGE_FACTOR))), (int(predPos[0]*FUDGE_FACTOR), abs(int(predPos[1]*FUDGE_FACTOR))), (255, 255, 0), 2) 
+
+    # draw vehicle postion
+    cv2.circle(detectMap, (int(wolfPos[0]*FUDGE_FACTOR), abs(int(wolfPos[1]*FUDGE_FACTOR))), 2, (255, 0, 0), 2)
+
+    # draw predicted gps postion for wolf
+    cv2.circle(detectMap, (int(predPos[0]*FUDGE_FACTOR), abs(int(predPos[1]*FUDGE_FACTOR))), 2, (0, 0, 255), 2)
+
+    # draw ground truth postion
+    cv2.circle(detectMap, (int(positionGT[0]*FUDGE_FACTOR + 2000/2), abs(int(positionGT[1]*FUDGE_FACTOR + 2000/2))), 2, (0, 255, 0), 2)
+
+    cv2.imwrite(path, detectMap)

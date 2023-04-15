@@ -12,7 +12,7 @@ import Constants.ros as ros
 import time
 GPU_SERVICE = ros.GPU_SERVICE
 
-def runYolov5(client, responses, dataDir_pass, dataDir_fail, cameraName, vehicleName, confidanceMin):
+def runYolov5(client, responses, dataDir_pass, dataDir_fail, cameraName, vehicleName, confidanceMin, gps):
     global GPU_SERVICE
     global counter
 
@@ -23,11 +23,11 @@ def runYolov5(client, responses, dataDir_pass, dataDir_fail, cameraName, vehicle
     #print("post-shape: ", sceneRGB2)
     sceneRGB1 = np.copy(sceneRGB2)
 
-    j=0
-    while os.path.exists('/home/testuser/AirSim/PythonClient/multirotor/Drone-Search-and-Rescue-SD/DroneSwarm/testSceneRGB/' + str(j)+ 'testPreCorrupt' + '.png'):
-        j+=1
+    # j=0
+    # while os.path.exists('/home/testuser/AirSim/PythonClient/multirotor/Drone-Search-and-Rescue-SD/DroneSwarm/testSceneRGB/' + str(j)+ 'testPreCorrupt' + '.png'):
+    #     j+=1
 
-    cv2.imwrite('/home/testuser/AirSim/PythonClient/multirotor/Drone-Search-and-Rescue-SD/DroneSwarm/testSceneRGB/' + str(j) + 'testPreCorrupt' + '.png', sceneRGB1)
+    # cv2.imwrite('/home/testuser/AirSim/PythonClient/multirotor/Drone-Search-and-Rescue-SD/DroneSwarm/testSceneRGB/' + str(j) + 'testPreCorrupt' + '.png', sceneRGB1)
     
 
     # original image unedited
@@ -89,7 +89,11 @@ def runYolov5(client, responses, dataDir_pass, dataDir_fail, cameraName, vehicle
 
             #print("------------------------------------------------------------------------------------------------------------------")
             # use bb dimensions/location for GPS estimation
-            alt, lat, lon = getInfoWolf.getWolfGPSEstimate(client, responses, vehicleName, cameraName, xmin, ymin, xmax, ymax)
+            alt, lat, lon = getInfoWolf.getWolfGPSEstimate(client, responses, vehicleName, cameraName, xmin, ymin, xmax, ymax, gps)
+
+            # wolf gps visualized
+            getInfo.getDetectionMap((gps[1], gps[2]), (lat, lon))
+
             #print("\tWOLF ESTIMATE: "+str(alt)+" alt, " + str(lat) + " lat, " + str(lon) + " lon")
             maxConfidenceGPS[1]=lat
             maxConfidenceGPS[0]=lon
@@ -115,7 +119,7 @@ def runYolov5(client, responses, dataDir_pass, dataDir_fail, cameraName, vehicle
 
             #print("------------------------------------------------------------------------------------------------------------------")
             # use bb dimensions/location for GPS estimation
-            alt, lat, lon = getInfoWolf.getWolfGPSEstimate(client, responses, vehicleName, cameraName, xmin, ymin, xmax, ymax)
+            alt, lat, lon = getInfoWolf.getWolfGPSEstimate(client, responses, vehicleName, cameraName, xmin, ymin, xmax, ymax, gps)
             #print("\tWOLF ESTIMATE: "+str(alt)+" alt, " + str(lat) + " lat, " + str(lon) + " lon")
             maxConfidenceGPS[1]=lat
             maxConfidenceGPS[0]=lon

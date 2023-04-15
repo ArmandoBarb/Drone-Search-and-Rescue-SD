@@ -92,9 +92,9 @@ def handleGPU(request):
         sceneRGB1 = segArr.reshape(height, width, 3)
         sceneRGB1.astype(float) # fix jank
         #print("pre-shape: ", sceneRGB1.shape)
-        j=0
-        while os.path.exists('/home/testuser/AirSim/PythonClient/multirotor/Drone-Search-and-Rescue-SD/DroneSwarm/testSceneRGB/' + str(j)+ 'testPostCorrupt' + '.png'):
-            j+=1
+        # j=0
+        # while os.path.exists('/home/testuser/AirSim/PythonClient/multirotor/Drone-Search-and-Rescue-SD/DroneSwarm/testSceneRGB/' + str(j)+ 'testPostCorrupt' + '.png'):
+        #     j+=1
 
         # cv2.imwrite('/home/testuser/AirSim/PythonClient/multirotor/Drone-Search-and-Rescue-SD/DroneSwarm/testSceneRGB/' + str(j) + 'testPostCorrupt' + '.png', sceneRGB1)
         # sceneRGB1 = cv2.imread('/home/testuser/AirSim/PythonClient/multirotor/Drone-Search-and-Rescue-SD/DroneSwarm/testSceneRGB/' + str(j) + 'testPostCorrupt' + '.png')[..., ::-1]
