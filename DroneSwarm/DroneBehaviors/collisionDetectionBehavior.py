@@ -128,10 +128,10 @@ def collisionAvoidanceCheck(client, vehicle_name, threshhold):
             if(shortestDistance > distance):
                 closestTree = tree
                 shortestDistance = distance
-                print("this is the shortest distance")
-                print(vehicle_name)
-                print(shortestDistance)
-                print("-------------")
+                # print("this is the shortest distance")
+                # print(vehicle_name)
+                # print(shortestDistance)
+                # print("-------------")
 
         # print("Slight :", tempSlightDeviation , "Closest Object:", closestObjectDistance)
     
