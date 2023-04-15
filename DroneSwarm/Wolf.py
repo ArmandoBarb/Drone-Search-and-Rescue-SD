@@ -192,6 +192,9 @@ def wolfDroneController(droneName, droneCount, overseerCount):
     t3 = threading.Thread(target = wolfCameraDetection, args=(droneName))
     t3.start()
 
+    # Used to set up collision detection
+    collisionDetectionBehavior.setUpLidar(client, droneName)
+
     # Wolf Drone search loop Start
     i = 1
     debugPrint("Starting Search and Rescue loop")
@@ -224,40 +227,37 @@ def wolfDroneController(droneName, droneCount, overseerCount):
         isChangeVelocity = True
         droneSpeed = airSimHelper.getDroneSpeed(client, droneName)
         threshold = droneSpeed * 2.5
-        slightDeviation = airSimHelper.getDroneSpeed(client, droneName)*1.5 
 
         # # Check if threshold is under min
         # if (threshold < 5):
         #     threshold = 5
-        
-        collisionAvoidance = False # set to true if need to do collision avoidance (open to better integration method)
-        collisionAvoidance, closestObjectDistance,slightDeviationDistance, slightFlag,sensorName = collisionDetectionBehavior.collisionAvoidanceCheck(client, droneName, threshold,slightDeviation)
+            
+        doCollision, closestObjectDistance, closestTree = collisionDetectionBehavior.collisionAvoidanceCheck(client, droneName, threshold)
         timeDiff = time.time() - Collision_Mode_Time
-        if(collisionAvoidance):
+        if(doCollision):
             # debugPrint("Doing collision")
             Previously_Had_Collision = True
             Collision_Mode_Time = time.time()
             
             # distanceForTimeCalc = 0
             # if (closestObjectDistance < slightDeviationDistance):
-            if(slightFlag):
-                distanceForTimeCalc = slightDeviationDistance
-            else:
-                distanceForTimeCalc = closestObjectDistance
+            distanceForTimeCalc = closestObjectDistance
             # else:
             #     distanceForTimeCalc = slightDeviationDistance
 
-            totalTime = distanceForTimeCalc / droneSpeed
-            if (totalTime > MAX_COLLISION_TIME):
-                totalTime = MAX_COLLISION_TIME
-            elif (totalTime < MIN_COLLISION_TIME):
-                totalTime = MIN_COLLISION_TIME
+            if(droneSpeed != 0):
+                totalTime = distanceForTimeCalc / droneSpeed
 
-            Collision_Mode_Time_Length = totalTime
+                if (totalTime > MAX_COLLISION_TIME):
+                    totalTime = MAX_COLLISION_TIME
+                elif (totalTime < MIN_COLLISION_TIME):
+                    totalTime = MIN_COLLISION_TIME
 
-            yaw_mode = airsim.YawMode(is_rate=True, yaw_or_rate=(10));
+                Collision_Mode_Time_Length = totalTime
+
+            yaw_mode = airsim.YawMode(is_rate=True, yaw_or_rate=(0))
             colTime = time.time()
-            vector = collisionDetectionBehavior.collisionAlgo(client,imgDir,droneName,closestObjectDistance,slightDeviationDistance,droneSpeed,slightFlag,sensorName)
+            vector = collisionDetectionBehavior.collisionAlgo(client,imgDir,droneName,closestObjectDistance,COLLISION_DIRECTION_FACTOR,closestTree)
             endTime = time.time() - colTime
             depthImageCount += 1
             # text = "Collision avoidance time: " + str(Collision_Mode_Time_Length) + " Depth image count: " + str(depthImageCount) + "Collision algo time: " + str(endTime)
@@ -276,7 +276,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
             vector = consensusDecisionBehaviorGetVector(currentDroneData);
 
             yawDegrees = circleBehavior.calcYaw(currentGPS=currentDroneData.gps_location, targetGPS=Circle_Center_GPS);
-            yawDegrees = yawDegrees - 90
+            yawDegrees = yawDegrees - 80
             yaw_mode  = airsim.YawMode(is_rate=False, yaw_or_rate=(yawDegrees));
 
             # check if time to end consensus Desension
@@ -335,7 +335,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
             vector = wolfSearchBehaviorGetVector(wolfCommPublish, client, currentDroneData);
             
             yawDegrees = circleBehavior.calcYaw(currentGPS=currentDroneData.gps_location, targetGPS=Circle_Center_GPS);
-            yawDegrees = yawDegrees - 90
+            yawDegrees = yawDegrees - 80
             
             yaw_mode  = airsim.YawMode(is_rate=False, yaw_or_rate=(yawDegrees));
 
