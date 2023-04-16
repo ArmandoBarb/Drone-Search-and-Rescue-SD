@@ -26,6 +26,7 @@ import Constants.configDrones as configDrones
 import Constants.ros as ros
 from HelperFunctions import clusterHelper
 from airsim_ros_pkgs.srv import requestGPU
+from ImageProcessing import getInfo
 
 # Environmental Variables
 LOOP_NUMBER = configDrones.LOOP_NUMBER
@@ -44,6 +45,9 @@ GPU_SERVICE = ros.GPU_SERVICE
 print('Starting Mission Control')
 if __name__ == '__main__': # Only runs if this is main processes
     mp.set_start_method('fork') # windows specific. Change based on OS.
+
+    # clear detection map image
+    getInfo.clearImg()
 
     # Creates waypoints for each search group
     createWaypoints()

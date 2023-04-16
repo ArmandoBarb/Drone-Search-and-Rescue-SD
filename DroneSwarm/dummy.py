@@ -10,7 +10,7 @@ import warnings
 
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
 
-vehicle_name = '0'
+vehicle_name = 'DUMMY'
 
 # set up client object to access multirotor drone
 client = airsim.MultirotorClient('10.171.204.219')

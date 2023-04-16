@@ -15,6 +15,7 @@ def getWolfGPSEstimate(client, responses, vehicle_name, cameraName, xMin, yMin, 
     y=responseScene.camera_orientation.y_val
     z=responseScene.camera_orientation.z_val
     w=responseScene.camera_orientation.w_val
+    print("camera xyzw = " + str(x) + '_' + str(y) + '_' + str(z) + '_' + str(w))
 
     # print('Camera Orientation: ', str(responseScene.camera_orientation))
     
@@ -99,7 +100,7 @@ def getWolfGPSEstimate(client, responses, vehicle_name, cameraName, xMin, yMin, 
     width = responses[0].width
 
     if (bbw<4):
-        # print("Target too small!!!!!! SKIP")
+        print("Target too small!!!!!! SKIP")
         return None, None, None
 
     # print("\tBounding box width: "+ str(bbw))
@@ -117,10 +118,10 @@ def getWolfGPSEstimate(client, responses, vehicle_name, cameraName, xMin, yMin, 
 
     # adjust expected width depending on target distance to center of image
     target_width = 0.24
-    target_depth = 0.24
-    target_height = 0.9
+    # target_depth = 0.24
+    # target_height = 0.9
 
-    ratio_to_height = target_width/target_height
+    # ratio_to_height = target_width/target_height
 
     # convert pixels to inches
     # calculate focal length using FOV (horizontal FOV supported in settings.json)
@@ -139,7 +140,7 @@ def getWolfGPSEstimate(client, responses, vehicle_name, cameraName, xMin, yMin, 
     # extimated_distance_to_brian =  (focal_length_px * known_target_width_meters) / (target_width_px)
     distance_to_target = (foci_distance*(target_width+target_width*normalized_center_to_centroid_dist*.5))/(bbw)
 
-    al = gps_al-distance_to_target
+    # al = gps_al-distance_to_target
 
     # # signed center to centroid pixel distance
     # dist_x  = xC-center_x
@@ -161,9 +162,9 @@ def getWolfGPSEstimate(client, responses, vehicle_name, cameraName, xMin, yMin, 
     # print("\tFoci distance: "+str(foci_distance)+" m")
     # print("\tDistance to target: "+str(distance_to_target)+" m")
 
-    known_alt = float(0.624383807182312)
-    known_lat = float(0.0005601330693765801)
-    known_lon = float(-0.0004435136425839287)
+    # known_alt = float(0.624383807182312)
+    # known_lat = float(0.0005601330693765801)
+    # known_lon = float(-0.0004435136425839287)
 
     # print("\tEstimated target location: "+str(al)+" alt, " + str(lat) + " lat, " + str(lon) + " lon")
 

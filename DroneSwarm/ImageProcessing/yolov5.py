@@ -9,7 +9,10 @@ import rospy
 from airsim_ros_pkgs.srv import requestGPU
 import rospy
 import Constants.ros as ros
+import Constants.configDrones as configDrones
 import time
+
+# Environmental Variables
 GPU_SERVICE = ros.GPU_SERVICE
 
 def runYolov5(client, responses, dataDir_pass, dataDir_fail, cameraName, vehicleName, confidanceMin, gps):
@@ -92,7 +95,7 @@ def runYolov5(client, responses, dataDir_pass, dataDir_fail, cameraName, vehicle
             alt, lat, lon = getInfoWolf.getWolfGPSEstimate(client, responses, vehicleName, cameraName, xmin, ymin, xmax, ymax, gps)
 
             # wolf gps visualized
-            getInfo.getDetectionMap((gps[1], gps[2]), (lat, lon))
+            getInfo.getDetectionMap((gps[1], gps[2]), (lat, lon), j, vehicleName)
 
             #print("\tWOLF ESTIMATE: "+str(alt)+" alt, " + str(lat) + " lat, " + str(lon) + " lon")
             maxConfidenceGPS[1]=lat
