@@ -56,7 +56,7 @@ def spiralSearchCoordinateMaker(groupName, waypointDistance, spawnLocation, star
 
 def createWaypoints():
     # Creates waypoints for group 0 to move to
-    waypointDistance = 0.0004
+    waypointDistance = 0.0003
     spawnLocation = [0.0001, 0.0001]
     centerStartLocation = SPIRAL_LOCATION_1
     amountOfWaypoints = 5

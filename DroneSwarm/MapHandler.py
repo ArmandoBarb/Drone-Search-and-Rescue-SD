@@ -25,7 +25,8 @@ DETECTION_OUTPUT_SERIES = configDrones.DETECTION_OUTPUT_SERIES
 GPS_GT = configDrones.GPS_GT
 ZOOM_FACTOR = configDrones.ZOOM_FACTOR
 MAX_PIX_COUNT = configDrones.MAX_PIX_COUNT
-SPIRAL_LOCATION_1 = configDrones.SPIRAL_LOCATION_1
+SPIRAL_LOCATION_1 = [configDrones.SPIRAL_LOCATION_1[1], configDrones.SPIRAL_LOCATION_1[0]]
+
 
 # Environmental Variables
 # ros: topics
@@ -75,9 +76,41 @@ def clearImg():
     if os.path.exists(path):
         os.remove(path)
     print("Remove image and recreate-------------------------------------------------------------------------------------------------------------------")
-    image = np.zeros((MAX_PIX_COUNT, MAX_PIX_COUNT, 3))
+
+    positionMapCenter = SPIRAL_LOCATION_1
+    pixCount = MAX_PIX_COUNT
+    FUDGE_FACTOR = ZOOM_FACTOR
+
+    # calculate lat and lon offset
+    LAT_OFFSET = (pixCount/2) - positionMapCenter[0]*FUDGE_FACTOR
+    LON_OFFSET = (pixCount/2) - positionMapCenter[1]*FUDGE_FACTOR  
+
+    image = np.zeros((pixCount, pixCount, 3))
+
+    # add waypoints
+    waypointList = readCoordFile()
+    for waypoint in waypointList:
+        lon = float(waypoint[0])
+        lat = float(waypoint[1])
+        cv2.circle(image, (int(lat*FUDGE_FACTOR + LAT_OFFSET), abs(int(lon*FUDGE_FACTOR + LON_OFFSET))), 3, (0, 140, 140), 2)
+
     cv2.imwrite(path, image)
     time.sleep(3);
+
+def readCoordFile():
+    filename = 'Constants/Group0Spiral.txt'
+    file = open(filename, 'r')
+    f = file.readlines()
+    i = 0
+
+    # Creates an array for the coordinates and strips the newlines
+    waypointList = []
+    for line in f:
+        newLine = line.strip()
+        newLine = newLine.split(' ')
+        waypointList.append(newLine)
+
+    return waypointList
 
 def updateResponseQ(data, args):
     with god:
@@ -89,25 +122,20 @@ def updateResponseQ(data, args):
             if os.path.exists(path):
                 detectMap = cv2.imread(path)
             else:
-                print("Start hadnling queue create new image++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
                 detectionMap = np.zeros((pixCount, pixCount, 3))
                 cv2.imwrite(path, detectionMap)
                 detectMap = cv2.imread(path)
 
             # handle queue
             timeDiff = time.time() - START_TIME
-            print("Start while ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" + str(timeDiff));
             while (len(BATCH_DETECTIONS) > 0):
                 dataStored = BATCH_DETECTIONS.pop(0)
                 updateMapHandler(dataStored, detectMap)
-            print("end while ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
 
             BATCH_TIME = time.time()
             cv2.imwrite(path, detectMap);
-            print("imwrite complete");
 
 def updateMapHandler(data, detectMap):
-    print("In map handler")
     global PREVIOUS_GPS_POSITIONS
     # Gets the update type from the data
     updateMapType = data.updateType
@@ -118,13 +146,11 @@ def updateMapHandler(data, detectMap):
 
     # Add true target position
     if (updateMapType == FINAL_TARGET_POSITION):
-        print("GOT FINAL TARGET")
         targetPositionTuple = GPSToTuple(data.targetPosition)
         handleTargetPosition(finalTargetPosition=targetPositionTuple, detectMap=detectMap)
 
     # Add gps prediction
     elif (updateMapType == NEW_GPS_PREDICTION):
-        print("NEW GPS PREDICTION")
         # Gets necessary variables
         wolfPositionTuple = GPSToTuple(data.wolfPosition)
         predictedPosition = GPSToTuple(data.targetPosition)
@@ -141,7 +167,6 @@ def updateMapHandler(data, detectMap):
 
     # Add drone position
     elif (updateMapType == UPDATE_DRONE_POSITION):
-        print("UPDATING DRONE POSITION")
         # Gets necessary variables
         wolfPositionTuple = GPSToTuple(data.wolfPosition)
         vehicleName = data.wolfNumber
