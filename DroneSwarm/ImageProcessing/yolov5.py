@@ -21,7 +21,7 @@ FINAL_TARGET_POSITION = ros.FINAL_TARGET_POSITION
 NEW_GPS_PREDICTION = ros.NEW_GPS_PREDICTION
 UPDATE_DRONE_POSITION =  ros.UPDATE_DRONE_POSITION
 
-def runYolov5(client, responses, dataDir_pass, dataDir_fail, cameraName, vehicleName, confidanceMin, gps, updateMapPublisher):
+def runYolov5(responses, dataDir_pass, dataDir_fail, vehicleName, confidanceMin, gps, updateMapPublisher):
     global GPU_SERVICE
     global counter
 
@@ -68,13 +68,13 @@ def runYolov5(client, responses, dataDir_pass, dataDir_fail, cameraName, vehicle
     #ToDo: just pass loop index adn drone name
     # or in final build just overwite
     j=0
-    while os.path.exists(dataDir_pass + "/" + ('%s' % j)+"w"+vehicleName+cameraName+"camImg.jpg"):
+    while os.path.exists(dataDir_pass + "/" + ('%s' % j)+"w"+vehicleName+"camImg.jpg"):
         j+=1
 
     #ToDo: just pass loop index adn drone name
     # or in final build just overwite
     k=0
-    while os.path.exists(dataDir_fail + "/" + ('%s' % k)+"w"+vehicleName+cameraName+"camImg.jpg"):
+    while os.path.exists(dataDir_fail + "/" + ('%s' % k)+"w"+vehicleName+"camImg.jpg"):
         k+=1
 
     validDetection = False
@@ -93,12 +93,12 @@ def runYolov5(client, responses, dataDir_pass, dataDir_fail, cameraName, vehicle
             end_point = (xmax, ymax)
             cv2.rectangle(sceneRGB2, start_point, end_point, (0, 255, 0), 2)
             # save new image only with highest confidence detection
-            cv2.imwrite(dataDir_pass + "/" + ('%s' % j)+"w"+vehicleName+cameraName+"camImg.jpg", sceneRGB1)
-            cv2.imwrite(dataDir_pass + "/" + ('%s' % j)+"w"+vehicleName+cameraName+"bbImg.jpg", sceneRGB2)
+            cv2.imwrite(dataDir_pass + "/" + ('%s' % j)+"w"+vehicleName+"camImg.jpg", sceneRGB1)
+            cv2.imwrite(dataDir_pass + "/" + ('%s' % j)+"w"+vehicleName+"bbImg.jpg", sceneRGB2)
 
             #print("------------------------------------------------------------------------------------------------------------------")
             # use bb dimensions/location for GPS estimation
-            alt, lat, lon = getInfoWolf.getWolfGPSEstimate(client, responses, vehicleName, cameraName, xmin, ymin, xmax, ymax, gps)
+            alt, lat, lon = getInfoWolf.getWolfGPSEstimate(responses, xmin, ymin, xmax, ymax, gps)
 
             # Got a detection
             # wolf gps visualized
@@ -128,7 +128,7 @@ def runYolov5(client, responses, dataDir_pass, dataDir_fail, cameraName, vehicle
             #print("------------------------------------------------------------------------------------------------------------------")
 
             # write corresponding text file
-            with open(dataDir_pass + "/" + ('%s' % j)+"w"+vehicleName+cameraName+"GPSEstimate.txt", 'w') as f:
+            with open(dataDir_pass + "/" + ('%s' % j)+"w"+vehicleName+"GPSEstimate.txt", 'w') as f:
                 # f.write(str(resultsPandas))
                 f.write("\n\tMax Confidence: "+str(confidence))
                 f.write("\n\tMax Confidence Estimate:"+ str(lat) + " lat, " + str(lon) + " lon")
@@ -142,19 +142,19 @@ def runYolov5(client, responses, dataDir_pass, dataDir_fail, cameraName, vehicle
             end_point = (xmax, ymax)
             cv2.rectangle(sceneRGB2, start_point, end_point, (0, 255, 0), 2)
             # save new image only with highest confidence detection
-            cv2.imwrite(dataDir_fail + "/" + ('%s' % k)+"w"+vehicleName+cameraName+"camImg.jpg", sceneRGB1)
-            cv2.imwrite(dataDir_fail + "/" + ('%s' % k)+"w"+vehicleName+cameraName+"bbImg.jpg", sceneRGB2)
+            cv2.imwrite(dataDir_fail + "/" + ('%s' % k)+"w"+vehicleName+"camImg.jpg", sceneRGB1)
+            cv2.imwrite(dataDir_fail + "/" + ('%s' % k)+"w"+vehicleName+"bbImg.jpg", sceneRGB2)
 
             #print("------------------------------------------------------------------------------------------------------------------")
             # use bb dimensions/location for GPS estimation
-            alt, lat, lon = getInfoWolf.getWolfGPSEstimate(client, responses, vehicleName, cameraName, xmin, ymin, xmax, ymax, gps)
+            alt, lat, lon = getInfoWolf.getWolfGPSEstimate(responses, xmin, ymin, xmax, ymax, gps)
             #print("\tWOLF ESTIMATE: "+str(alt)+" alt, " + str(lat) + " lat, " + str(lon) + " lon")
             maxConfidenceGPS[1]=lat
             maxConfidenceGPS[0]=lon
             #print("------------------------------------------------------------------------------------------------------------------")
 
             # write corresponding text file
-            with open(dataDir_fail + "/" + ('%s' % k)+"w"+vehicleName+cameraName+"GPSEstimate.txt", 'w') as f:
+            with open(dataDir_fail + "/" + ('%s' % k)+"w"+vehicleName+"GPSEstimate.txt", 'w') as f:
                 # f.write(str(resultsPandas))
                 f.write("\n\tMax Confidence: "+str(confidence))
                 f.write("\n\tMax Confidence Estimate:"+ str(lat) + " lat, " + str(lon) + " lon")

@@ -82,6 +82,7 @@ def getCentroids(clusters, client, vehicleName, height, width):
     target_height = 1.3
 
     # get drone gps info for geospatial conversion
+    # TODO do this when image is on
     gps_al, gps_lat, gps_lon = getDroneGPS(vehicleName, client)
 
     for cluster in clusters:
@@ -102,6 +103,7 @@ def getCentroids(clusters, client, vehicleName, height, width):
             x0 = min(widthArr) # top left x
             x1 = max(widthArr) # bottom right x
 
+    
         # calculate x and y of centroid
         xC = ((x1 - x0) / 2) + x0
         yC = ((y1 - y0) / 2) + y0
