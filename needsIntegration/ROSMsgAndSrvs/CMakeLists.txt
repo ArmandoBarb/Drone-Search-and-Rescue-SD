@@ -61,6 +61,7 @@ add_message_files(
   requestWolfSearchBehavior.msg
   requestConsensusDecisionBehavior.msg
   wolfCommunication.msg
+  updateMap.msg
 )
 
 add_service_files(

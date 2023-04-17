@@ -10,12 +10,18 @@ from airsim_ros_pkgs.srv import requestGPU
 import rospy
 import Constants.ros as ros
 import Constants.configDrones as configDrones
+from airsim_ros_pkgs.msg import updateMap
+from airsim_ros_pkgs.msg import GPS
 import time
 
 # Environmental Variables
 GPU_SERVICE = ros.GPU_SERVICE
 
-def runYolov5(client, responses, dataDir_pass, dataDir_fail, cameraName, vehicleName, confidanceMin, gps):
+FINAL_TARGET_POSITION = ros.FINAL_TARGET_POSITION
+NEW_GPS_PREDICTION = ros.NEW_GPS_PREDICTION
+UPDATE_DRONE_POSITION =  ros.UPDATE_DRONE_POSITION
+
+def runYolov5(client, responses, dataDir_pass, dataDir_fail, cameraName, vehicleName, confidanceMin, gps, updateMapPublisher):
     global GPU_SERVICE
     global counter
 
@@ -94,8 +100,27 @@ def runYolov5(client, responses, dataDir_pass, dataDir_fail, cameraName, vehicle
             # use bb dimensions/location for GPS estimation
             alt, lat, lon = getInfoWolf.getWolfGPSEstimate(client, responses, vehicleName, cameraName, xmin, ymin, xmax, ymax, gps)
 
+            # Got a detection
             # wolf gps visualized
-            getInfo.getDetectionMap((gps[1], gps[2]), (lat, lon), j, vehicleName)
+            updateMapMessage = updateMap()
+            updateMapMessage.updateType = NEW_GPS_PREDICTION
+            updateMapMessage.wolfNumber = int(vehicleName)
+            updateMapMessage.imageNumber = j
+
+            # Gets the wolf position object
+            wolfPosition = GPS()
+            wolfPosition.longitude = gps[2]
+            wolfPosition.latitude = gps[1]
+            updateMapMessage.wolfPosition = wolfPosition
+
+            # Gets the target position object
+            targetPosition = GPS()
+            targetPosition.longitude = lon
+            targetPosition.latitude = lat
+            updateMapMessage.targetPosition = targetPosition
+
+            updateMapPublisher.publish(updateMapMessage)
+            # getInfo.getDetectionMap((gps[1], gps[2]), (lat, lon), j, vehicleName)
 
             #print("\tWOLF ESTIMATE: "+str(alt)+" alt, " + str(lat) + " lat, " + str(lon) + " lon")
             maxConfidenceGPS[1]=lat
@@ -135,4 +160,40 @@ def runYolov5(client, responses, dataDir_pass, dataDir_fail, cameraName, vehicle
                 f.write("\n\tMax Confidence Estimate:"+ str(lat) + " lat, " + str(lon) + " lon")
                 f.close()
 
+            # Did not get a detection but updating position of the wolf
+            # wolf gps visualized
+            updateMapMessage = updateMap()
+            updateMapMessage.updateType = UPDATE_DRONE_POSITION
+            updateMapMessage.wolfNumber = int(vehicleName)
+            updateMapMessage.imageNumber = j
+
+            # Gets the wolf position object
+            wolfPosition = GPS()
+            wolfPosition.longitude = gps[2]
+            wolfPosition.latitude = gps[1]
+            updateMapMessage.wolfPosition = wolfPosition
+
+            # Gets the target position object
+            targetPosition = GPS()
+            updateMapMessage.targetPosition = targetPosition
+
+            updateMapPublisher.publish(updateMapMessage)
+    else:
+        # Detection was not successful
+        updateMapMessage = updateMap()
+        updateMapMessage.updateType = UPDATE_DRONE_POSITION
+        updateMapMessage.wolfNumber = int(vehicleName)
+        updateMapMessage.imageNumber = j
+
+        # Gets the wolf position object
+        wolfPosition = GPS()
+        wolfPosition.longitude = gps[2]
+        wolfPosition.latitude = gps[1]
+        updateMapMessage.wolfPosition = wolfPosition
+
+        # Gets the target position object
+        targetPosition = GPS()
+        updateMapMessage.targetPosition = targetPosition
+
+        updateMapPublisher.publish(updateMapMessage)
     return maxConfidenceGPS, validDetection, passedConfidence

@@ -7,10 +7,15 @@ COMMAND_TOPIC = "Command" # TODO
 OVERSEER_COMMUNICATION_TOPIC = "OverseerCommunication"
 END_LOOP_TOPIC = "End"
 WOLF_COMMUNICATION_TOPIC = "WolfCommunication"
+MAP_HANDLER_TOPIC = "MapHandler"
 # ros: topics: SIGNAL
 IN_POSITION_SIGNAL = "In_Position"
 CONSENSUS_DECISION_SIGNAL = "CONSENSUS_DECISION"
 AT_SPIRAL_WAYPOINT_SIGNAL = "At_Spiral_Waypoint"
+# ros: topics: UPDATEMAP
+FINAL_TARGET_POSITION = "FinalTargetPosition"
+NEW_GPS_PREDICTION = "NewGPSPrediction"
+UPDATE_DRONE_POSITION = "UpdateDronePosition"
 # ros: services
 PROXIMITY_OVERSEER_SERVICE = "ProximityOverseerService"
 PROXIMITY_WOLF_SERVICE = "PromixityWolfService"

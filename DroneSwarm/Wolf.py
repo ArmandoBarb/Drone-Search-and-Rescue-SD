@@ -33,6 +33,7 @@ from airsim_ros_pkgs.msg import requestLineBehavior
 from airsim_ros_pkgs.msg import requestWolfSearchBehavior
 from airsim_ros_pkgs.msg import requestConsensusDecisionBehavior
 from airsim_ros_pkgs.msg import wolfCommunication
+from airsim_ros_pkgs.msg import updateMap
 from airsim_ros_pkgs.srv import getDroneData
 from airsim_ros_pkgs.srv import sendCommand
 from airsim_ros_pkgs.msg import GPS
@@ -68,6 +69,10 @@ WOLF_DATA_TOPIC = ros.WOLF_DATA_TOPIC
 COMMAND_RESULT_TOPIC = ros.COMMAND_RESULT_TOPIC # TODO
 COMMAND_TOPIC = ros.COMMAND_TOPIC # TODO
 WOLF_COMMUNICATION_TOPIC = ros.WOLF_COMMUNICATION_TOPIC
+MAP_HANDLER_TOPIC = ros.MAP_HANDLER_TOPIC
+FINAL_TARGET_POSITION = ros.FINAL_TARGET_POSITION
+NEW_GPS_PREDICTION = ros.NEW_GPS_PREDICTION
+UPDATE_DRONE_POSITION =  ros.UPDATE_DRONE_POSITION
 # ros: topics: SIGNAL
 IN_POSITION_SIGNAL = ros.IN_POSITION_SIGNAL
 CONSENSUS_DECISION_SIGNAL = ros.CONSENSUS_DECISION_SIGNAL
@@ -186,7 +191,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
 
     # Sets and connects to client and takes off drone
     client = takeOff(droneName)
-    client.moveToZAsync(z=-3, velocity=8, vehicle_name = droneName).join()
+    client.moveToZAsync(z=-5, velocity=8, vehicle_name = droneName).join()
 
     # start camera thread here
     t3 = threading.Thread(target = wolfCameraDetection, args=(droneName))
@@ -407,7 +412,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
         vector = calcHelper.turningCalculation(curDroneVelocity, vector, MAX_TURN_ANGLE)
 
         if (isChangeVelocity):
-            client.moveByVelocityZAsync(vector[0], vector[1], -3, duration = 10, yaw_mode=yaw_mode, vehicle_name=droneName)
+            client.moveByVelocityZAsync(vector[0], vector[1], -5, duration = 10, yaw_mode=yaw_mode, vehicle_name=droneName)
 
         # artifical loop delay (How fast the loop runs dictates the drones reaction speed)
         end = time.time();
@@ -432,6 +437,9 @@ def wolfRosListeners(droneName):
 
 # checks drone camera with yolo detection
 def wolfCameraDetection(droneName):
+    # Create topic publishers
+    wolfMapPublisher = rospy.Publisher(MAP_HANDLER_TOPIC, updateMap, latch=True, queue_size=100)
+
     threadClient = airsim.MultirotorClient(LOCAL_IP)
     debugPrint("Starting wolfCameraDetection loop")
     i = 0
@@ -491,14 +499,14 @@ def wolfCameraDetection(droneName):
         # run yolo and estimate gps estimation
         validDetection, passedConfidence, wolfEstimate= None, None, None
         if cameraName=="frontright":
-            wolfEstimate, validDetection, passedConfidence = yolov5.runYolov5(threadClient, responseF, dataDir_pass, dataDir_fail, cameraName="front", vehicleName=droneName, confidanceMin=YOLO_CONFIDENCE, gps=gps)
+            wolfEstimate, validDetection, passedConfidence = yolov5.runYolov5(threadClient, responseF, dataDir_pass, dataDir_fail, cameraName="front", vehicleName=droneName, confidanceMin=YOLO_CONFIDENCE, gps=gps, updateMapPublisher=wolfMapPublisher)
             # if front camera retrieves null detection, then run yolo on right camera
             if(wolfEstimate[0]==None and wolfEstimate[1]==None):
-                wolfEstimate, validDetection, passedConfidence = yolov5.runYolov5(threadClient, responseR, dataDir_pass, dataDir_fail, cameraName="right", vehicleName=droneName, confidanceMin=YOLO_CONFIDENCE, gps=gps)
+                wolfEstimate, validDetection, passedConfidence = yolov5.runYolov5(threadClient, responseR, dataDir_pass, dataDir_fail, cameraName="right", vehicleName=droneName, confidanceMin=YOLO_CONFIDENCE, gps=gps, updateMapPublisher=wolfMapPublisher)
         elif cameraName=="right":
-            wolfEstimate, validDetection, passedConfidence = yolov5.runYolov5(threadClient, response, dataDir_pass, dataDir_fail, cameraName="right", vehicleName=droneName, confidanceMin=YOLO_CONFIDENCE, gps=gps)
+            wolfEstimate, validDetection, passedConfidence = yolov5.runYolov5(threadClient, response, dataDir_pass, dataDir_fail, cameraName="right", vehicleName=droneName, confidanceMin=YOLO_CONFIDENCE, gps=gps, updateMapPublisher=wolfMapPublisher)
         elif cameraName=="front":
-            wolfEstimate, validDetection, passedConfidence = yolov5.runYolov5(threadClient, response, dataDir_pass, dataDir_fail, cameraName="front", vehicleName=droneName, confidanceMin=YOLO_CONFIDENCE, gps=gps)
+            wolfEstimate, validDetection, passedConfidence = yolov5.runYolov5(threadClient, response, dataDir_pass, dataDir_fail, cameraName="front", vehicleName=droneName, confidanceMin=YOLO_CONFIDENCE, gps=gps, updateMapPublisher=wolfMapPublisher)
 
         # handle image detection result
         if(passedConfidence):
@@ -932,6 +940,28 @@ def updateConsensusDecisionCenter(circleCenterGPS, currIterationNum, result):
                 debugPrint("======================================================================================== \n \
                             Another day in paradise \n \
                             ======================================================================================== \n ")
+
+                # Creates publisher
+                wolfMapPublisher = rospy.Publisher(MAP_HANDLER_TOPIC, updateMap, latch=True, queue_size=100)
+
+                # Detection was not successful
+                updateMapMessage = updateMap()
+                updateMapMessage.updateType = UPDATE_DRONE_POSITION
+                updateMapMessage.wolfNumber = int(vehicleName)
+                updateMapMessage.imageNumber = j
+
+                # Gets the wolf position object
+                wolfPosition = GPS()
+                wolfPosition.longitude = gps[2]
+                wolfPosition.latitude = gps[1]
+                updateMapMessage.wolfPosition = wolfPosition
+
+                # Gets the target position object
+                targetPosition = GPS()
+                updateMapMessage.targetPosition = targetPosition
+
+                wolfMapPublisher.publish(updateMapMessage)
+
                 endTaskPublish = rospy.Publisher(ros.END_LOOP_TOPIC, String, latch=True, queue_size=1)
                 endTaskPublish.publish("e")
                 with lock:

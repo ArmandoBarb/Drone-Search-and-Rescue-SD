@@ -1,3 +1,7 @@
+import Constants.configDrones as configDrones
+
+SPIRAL_LOCATION_1 = configDrones.SPIRAL_LOCATION_1
+
 def spiralSearchCoordinateMaker(groupName, waypointDistance, spawnLocation, startLocation, amountOfWaypoints):
     waypointsList = [None]*amountOfWaypoints        # List creation for waypoints
     currentWaypoint = startLocation                 # Sets current waypoint as our start location
@@ -54,7 +58,7 @@ def createWaypoints():
     # Creates waypoints for group 0 to move to
     waypointDistance = 0.0004
     spawnLocation = [0.0001, 0.0001]
-    centerStartLocation = [0, 0.0011228941075]
+    centerStartLocation = SPIRAL_LOCATION_1
     amountOfWaypoints = 5
     spiral0Filename = 'Constants/Group0Spiral.txt'
     spiralSearchCoordinateMaker(spiral0Filename, waypointDistance, spawnLocation, centerStartLocation, amountOfWaypoints)

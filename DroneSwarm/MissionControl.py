@@ -15,6 +15,7 @@ from Overseer import overseerDroneController
 from Wolf import wolfDroneController
 from ProximityWolf import startProximityWolf
 from ProximityOverseer import startProximityOverseer
+from MapHandler import startMapHandler
 from YoloGPU import startYoloGPU
 from ctypes import Structure, c_int
 from multiprocessing.sharedctypes import Array
@@ -47,7 +48,7 @@ if __name__ == '__main__': # Only runs if this is main processes
     mp.set_start_method('fork') # windows specific. Change based on OS.
 
     # clear detection map image
-    getInfo.clearImg()
+    #getInfo.clearImg()
 
     # Creates waypoints for each search group
     createWaypoints()
@@ -63,6 +64,8 @@ if __name__ == '__main__': # Only runs if this is main processes
 
 
     # TODO: start all procecess for ros Nodes here
+    mp.Process(target=startMapHandler, args=(wolfCount,)).start()
+    time.sleep(2)
 
     # Starts node for gpu yolo processing
     mp.Process(target=startYoloGPU, args=()).start()
