@@ -45,6 +45,8 @@ import HelperFunctions.airSimHelper as airSimHelper
 import ServiceRequestors.wolfGetWolfData as wolfGetWolfData
 import ServiceRequestors.instructWolf as instructWolf
 import ServiceRequestors.checkGPU as checkGPU
+# import rosHelper
+import RosPublishHelper.MapHandlerPublishHelper as mapHandlerPublishHelper
 
 # Environmental Variables
 LOOP_NUMBER = configDrones.LOOP_NUMBER
@@ -70,6 +72,7 @@ COMMAND_RESULT_TOPIC = ros.COMMAND_RESULT_TOPIC # TODO
 COMMAND_TOPIC = ros.COMMAND_TOPIC # TODO
 WOLF_COMMUNICATION_TOPIC = ros.WOLF_COMMUNICATION_TOPIC
 MAP_HANDLER_TOPIC = ros.MAP_HANDLER_TOPIC
+# ros: updateMapCommand types
 FINAL_TARGET_POSITION = ros.FINAL_TARGET_POSITION
 NEW_GPS_PREDICTION = ros.NEW_GPS_PREDICTION
 UPDATE_DRONE_POSITION =  ros.UPDATE_DRONE_POSITION
@@ -921,27 +924,10 @@ def updateConsensusDecisionCenter(circleCenterGPS, currIterationNum, result):
                             Another day in paradise \n \
                             ======================================================================================== \n ")
 
-                # Creates publisher
-                wolfMapPublisher = rospy.Publisher(MAP_HANDLER_TOPIC, updateMap, latch=True, queue_size=100)
+                # update map with target
+                mapHandlerPublishHelper.updateFinalTargetPosition( droneName=DM_Drone_Name, imageNumber=j, targetGPS=circleCenterGPS)
 
-                # Detection was not successful
-                updateMapMessage = updateMap()
-                updateMapMessage.updateType = UPDATE_DRONE_POSITION
-                updateMapMessage.wolfNumber = int(vehicleName)
-                updateMapMessage.imageNumber = j
-
-                # Gets the wolf position object
-                wolfPosition = GPS()
-                wolfPosition.longitude = gps[2]
-                wolfPosition.latitude = gps[1]
-                updateMapMessage.wolfPosition = wolfPosition
-
-                # Gets the target position object
-                targetPosition = GPS()
-                updateMapMessage.targetPosition = targetPosition
-
-                wolfMapPublisher.publish(updateMapMessage)
-
+                # end code executiom
                 endTaskPublish = rospy.Publisher(ros.END_LOOP_TOPIC, String, latch=True, queue_size=1)
                 endTaskPublish.publish("e")
                 with lock:

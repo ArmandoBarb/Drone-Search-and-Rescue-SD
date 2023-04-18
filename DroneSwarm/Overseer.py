@@ -29,11 +29,16 @@ from ServiceRequestors.overseerGetOverseerData import getOverseerState
 from ServiceRequestors.overseerGetWolfData import getOverseerGetWolfState
 from airsim_ros_pkgs.msg import droneData
 from airsim_ros_pkgs.msg import wolfCommunication
+from airsim_ros_pkgs.msg import updateMap
 from ServiceRequestors.wolfGetWolfData import getWolfState
 import ServiceRequestors.overseerGetWolfData as overseerGetWolfData 
 import ServiceRequestors.instructWolf as instructWolf
 import DroneBehaviors.lineBehaviorOverseer as lineBehaviorOverseer
 from airsim_ros_pkgs.msg import GPS
+# ros publish helfper
+import RosPublishHelper.MapHandlerPublishHelper as mapHandlerPublishHelper
+
+
 from ImageProcessing import getInfo
 from ImageProcessing import clustering
 from HelperFunctions import clusterHelper
@@ -62,6 +67,7 @@ OVERSEER_DATA_TOPIC = ros.OVERSEER_DATA_TOPIC
 OVERSEER_COMMUNICATION_TOPIC = ros.OVERSEER_COMMUNICATION_TOPIC
 COMMAND_TOPIC = ros.COMMAND_TOPIC
 COMMAND_RESULT_TOPIC = ros.COMMAND_RESULT_TOPIC
+MAP_HANDLER_TOPIC = ros.MAP_HANDLER_TOPIC
 
 # ros: services
 PROXIMITY_OVERSEER_SERVICE = ros.PROXIMITY_OVERSEER_SERVICE
@@ -269,6 +275,9 @@ def overseerInfraredDetection(droneName):
     debugPrint("Starting overseerCameraDetection loop")
     i = 0
     timeSpent = 0
+
+    wolfMapPublisher = rospy.Publisher(MAP_HANDLER_TOPIC, updateMap, latch=True, queue_size=100)
+
     runtime = time.time()
     # print("Our current drone name is: ", droneName)
     while (i < LOOP_NUMBER):
@@ -287,6 +296,8 @@ def overseerInfraredDetection(droneName):
         #---Waypoint Detection---
         # # get response object and retrieve segmentation
         responses = getInfo.getInfrared(threadClient, droneName)
+        currentGPS = threadClient.getGpsData(gps_name = "", vehicle_name = droneName)
+
         height, width, segRGB = getInfo.getSegInfo(responses)
 
         # cluster heat signatures from segmenation map
@@ -326,6 +337,8 @@ def overseerInfraredDetection(droneName):
                 waypoint = circleList[x].avgCenter
                 radius = circleList[x].radius
 
+                mapHandlerPublishHelper.updateOverseerDronePrediction(wolfMapPublisher=wolfMapPublisher, imageNumber=x, currentGPS=currentGPS.gnss.geo_point, targetLat=waypoint[1], targetLon=waypoint[0])
+
                 # see whose available
                 optimalDroneName = algoHelper.getOptimalWolf(waypoint, wolfDataList, droneName)
 
@@ -359,6 +372,8 @@ def overseerInfraredDetection(droneName):
                     # print("Overseerr to GPS Difference:", calcDistanceBetweenGPS)
                     requestStatus = instructWolf.sendWolfSearchBehaviorRequest(serviceName, circleCenterGPS, circleRadiusGPS, circleRadiusMeters, spreadTimeS, searchTimeS,  taskGroup)
                     print("Request bool:", requestStatus, "From Overseer:", droneName, "To:", optimalDroneName)
+        else:
+            mapHandlerPublishHelper.updateOverseerDronePosition(wolfMapPublisher=wolfMapPublisher, currentGPS=currentGPS.gnss.geo_point)
 
         time.sleep(0.5)
         end = time.time()

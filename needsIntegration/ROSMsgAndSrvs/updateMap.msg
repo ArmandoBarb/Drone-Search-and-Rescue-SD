@@ -4,3 +4,4 @@ int32 wolfNumber
 int32 imageNumber
 GPS wolfPosition
 GPS targetPosition
+bool isOverseer
