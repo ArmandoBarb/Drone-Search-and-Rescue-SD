@@ -103,7 +103,7 @@ def getCentroids(clusters, client, vehicleName, height, width):
             x0 = min(widthArr) # top left x
             x1 = max(widthArr) # bottom right x
 
-    
+
         # calculate x and y of centroid
         xC = ((x1 - x0) / 2) + x0
         yC = ((y1 - y0) / 2) + y0
@@ -112,6 +112,10 @@ def getCentroids(clusters, client, vehicleName, height, width):
         # get bbox dimensions
         bbw = x1 - x0 # width
         bbh = y1 - y0 # height
+
+        # prevents Overseer from using detections that are cutoff the image
+        if(x0 == 0 or x1 == 0 or x0 == width-1 or x1 >= width-1 or y0 == 0 or y1 == 0 or y0 >= height-1 or y1 == height-1):
+            continue
 
         # calculate target distance to center of image
         center_x, center_y = int(width/2), int(height/2)
