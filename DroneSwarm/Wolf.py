@@ -201,7 +201,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
     t3.start()
 
     # Used to set up collision detection
-    collisionDetectionBehavior.setUpLidar(client, droneName)
+    # collisionDetectionBehavior.setUpLidar(client, droneName)
 
     # Wolf Drone search loop Start
     i = 1
@@ -235,14 +235,15 @@ def wolfDroneController(droneName, droneCount, overseerCount):
         isChangeVelocity = True
         droneSpeed = airSimHelper.getDroneSpeed(client, droneName)
         threshold = droneSpeed * 2.5
+        tempTree = None
 
         # # Check if threshold is under min
         # if (threshold < 5):
         #     threshold = 5
             
-        doCollision, closestObjectDistance, closestTree = collisionDetectionBehavior.collisionAvoidanceCheck(client, droneName, threshold)
+        doCollision, closestObjectDistance, closestTree,closestTreeName= collisionDetectionBehavior.collisionAvoidanceCheck(client, droneName, threshold)
         timeDiff = time.time() - Collision_Mode_Time
-        if(doCollision):
+        if((doCollision) and (closestTreeName != tempTree)):
             # debugPrint("Doing collision")
             Previously_Had_Collision = True
             Collision_Mode_Time = time.time()
@@ -256,11 +257,6 @@ def wolfDroneController(droneName, droneCount, overseerCount):
             if(droneSpeed != 0):
                 totalTime = distanceForTimeCalc / droneSpeed
 
-                if (totalTime > MAX_COLLISION_TIME):
-                    totalTime = MAX_COLLISION_TIME
-                elif (totalTime < MIN_COLLISION_TIME):
-                    totalTime = MIN_COLLISION_TIME
-
                 Collision_Mode_Time_Length = totalTime
 
             yaw_mode = airsim.YawMode(is_rate=True, yaw_or_rate=(0))
@@ -268,6 +264,7 @@ def wolfDroneController(droneName, droneCount, overseerCount):
             vector = collisionDetectionBehavior.collisionAlgo(client,imgDir,droneName,closestObjectDistance,COLLISION_DIRECTION_FACTOR,closestTree)
             endTime = time.time() - colTime
             depthImageCount += 1
+            tempTree = closestTreeName
             # text = "Collision avoidance time: " + str(Collision_Mode_Time_Length) + " Depth image count: " + str(depthImageCount) + "Collision algo time: " + str(endTime)
             # debugPrint(text)
 

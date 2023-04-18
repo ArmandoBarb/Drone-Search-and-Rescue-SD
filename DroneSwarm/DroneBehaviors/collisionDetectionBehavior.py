@@ -23,7 +23,7 @@ def suppress_stdout():
 def setUpLidar(client,vehicle_name):
     image_type = airsim.ImageType.Scene
     tree = "new_tree*"
-    client.simSetDetectionFilterRadius("1", image_type, 1000) 
+    client.simSetDetectionFilterRadius("1", image_type, 1200) 
     client.simAddDetectionFilterMeshName("1", image_type, tree) 
 
 def parse_lidarData(data):
@@ -84,17 +84,25 @@ def collisionAlgo(client,imgDir,vehicle_name,closestObjectDistance,DIRECTION_FAC
     #     split_image('DepthImage.png',1,3,False,False)     
                
     # files = os.listdir(imgDir)
-    treeWidth = (556/100) + 2
+    treeWidth = (456/100) + 2
+    droneWidth = 2
     # treeWidth = 1.75
     # velX,velY = getVelo(treeWidth, closestObjectDistance,DIRECTION_FACTOR)
 
     velX,velY = getVelo(closestTree, velocity, DIRECTION_FACTOR)
-           
-    # print("Vely",velY)
-    # print("Velx",velX)
 
-    velX = velX * treeWidth
-    velY = velY * treeWidth
+    # velX = math.cos(velX) - math.sin(velY)
+    # velY = math.sin(velX) + math.cos(velY)
+            
+    # # print("Vely",velY)
+    # # print("Velx",velX)
+
+    # if(closestObjectDistance < 4):
+    #     velX = velX * (treeWidth+2)
+    #     velY = velY * (treeWidth+2)
+    # else:
+    velX = velX * droneWidth
+    velY = velY * droneWidth
 
     return [velY, velX]
 
@@ -112,21 +120,22 @@ def getDistance(client,vehicle_name,treeInfo,droneInfo):
 def collisionAvoidanceCheck(client, vehicle_name, threshhold):
     # tweakDronePath(client, vehicle_name)
     # repulsion(client, vehicle_name, DIRECTION_FACTOR)
+    setUpLidar(client,vehicle_name)
     image_type = airsim.ImageType.Scene
     shortestDistance = 1000
     closestTree = 0
     trees = client.simGetDetections("1", image_type)
     info = client.getGpsData(vehicle_name = vehicle_name)
-    
+
     if trees:
         for tree in trees:
-            # print(tree)
             distance = getDistance(client, vehicle_name,tree,info)
             # print("This is distance")
             # print(distance)
             # print("-------------")
             if(shortestDistance > distance):
                 closestTree = tree
+                closestTreeName = tree.name
                 shortestDistance = distance
                 # print("this is the shortest distance")
                 # print(vehicle_name)
@@ -135,10 +144,11 @@ def collisionAvoidanceCheck(client, vehicle_name, threshhold):
 
         # print("Slight :", tempSlightDeviation , "Closest Object:", closestObjectDistance)
     
-    if (shortestDistance < 7.5):
-        return True, shortestDistance, closestTree
+    if (shortestDistance < 8):
+        # trees = client.simClearDetectionMeshNames("1",image_type)
+        return True, shortestDistance, closestTree,closestTreeName 
     else:
-        return False, None , None
+        return False, None , None, None
 
 def setupCollisionDirectory(vehicle_name):
     # directory to store pictures

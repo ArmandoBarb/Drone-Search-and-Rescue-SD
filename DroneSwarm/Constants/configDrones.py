@@ -8,7 +8,7 @@ LOCAL_IP = "172.30.64.1"
 # collision start
 COLLISION_MODE_TIME_LENGTH = 1
 MAX_COLLISION_TIME = 3
-MIN_COLLISION_TIME = 0.5
+MIN_COLLISION_TIME = 0.25
 # collision end
 # vector control start
 MAX_TURN_ANGLE = 30
