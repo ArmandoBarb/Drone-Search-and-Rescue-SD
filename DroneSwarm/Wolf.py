@@ -131,6 +131,8 @@ Previously_Had_Collision = False
 Collision_Mode_Time_Length = 1
 Drone_Max_Wait_Time_Start = time.time()
 Consensus_Waypoint_History = []
+Final_Target = GPS()
+Final_Target_Found = False
 # TODO: add tunning variables for behaviors (would be cool if we can train them)
 
 # TODO: COMMENT AND REVIEW
@@ -213,6 +215,12 @@ def wolfDroneController(droneName, droneCount, overseerCount):
         # If we receive end command, end the loop
         if (End_Loop):
             debugPrint("Ending loop")
+
+            # Move to brian
+            global Final_Target, Final_Target_Found 
+            if (Final_Target_Found):
+                client.moveToGPSAsync(Final_Target.latitude, Final_Target.longitude, altitude = 0, velocity = 10, vehicle_name=droneName)
+
             exit()
             break;
         elif (WAYPOINT_INDEX == (len(WAYPOINT_COORDS) - 1)):         # Checks if made it through all waypoints
@@ -910,6 +918,7 @@ def updateConsensusDecisionCenter(circleCenterGPS, currIterationNum, result):
     global Task_Group
     global Success_Det_Count, Fail_Det_Count
     global End_Loop
+    global Final_Target, Final_Target_Found 
     if (result and currIterationNum < MAX_CONSENSUS_ITERATION_NUMBER):
         with lock:
             In_Position_CD = False
@@ -930,6 +939,10 @@ def updateConsensusDecisionCenter(circleCenterGPS, currIterationNum, result):
 
                 # update map with target
                 mapHandlerPublishHelper.updateFinalTargetPosition( droneName=DM_Drone_Name, targetGPS=circleCenterGPS)
+
+                # Updates globals
+                Final_Target = circleCenterGPS
+                Final_Target_Found = True
 
                 # end code executiom
                 endTaskPublish = rospy.Publisher(ros.END_LOOP_TOPIC, String, latch=True, queue_size=1)

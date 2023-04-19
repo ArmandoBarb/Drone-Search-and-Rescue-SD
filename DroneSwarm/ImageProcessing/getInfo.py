@@ -8,7 +8,6 @@ import cv2
 from Constants import configDrones
 
 DETECTION_OUTPUT_SERIES = configDrones.DETECTION_OUTPUT_SERIES
-GPS_GT = configDrones.GPS_GT
 ZOOM_FACTOR = configDrones.ZOOM_FACTOR
 MAX_PIX_COUNT = configDrones.MAX_PIX_COUNT
 
@@ -159,37 +158,3 @@ def getSearchCircles(intersectGroups, avgCentroids, r):
         searchRadii.append(rSearch)
 
     return searchRadii
-
-def clearImg():
-    path = calcPath()
-    if os.path.exists(path):
-        os.remove(path)
-    image = np.zeros((MAX_PIX_COUNT, MAX_PIX_COUNT, 3))
-    cv2.imwrite(path, image)
-
-def calcPath():
-    return '/home/testuser/AirSim/PythonClient/multirotor/Drone-Search-and-Rescue-SD/DroneSwarm/detectionMaps' + '/' + 'detections' + '_' + DETECTION_OUTPUT_SERIES + '_' + '.png' 
-
-def getDetectionMap(wolfPos, predPos, j, vehicleName):
-    path = calcPath()
-    positionGT = GPS_GT
-    pixCount = MAX_PIX_COUNT
-    FUDGE_FACTOR = ZOOM_FACTOR
-
-    # calculate lat and lon offset
-    LAT_OFFSET = (pixCount/2) - positionGT[0]*FUDGE_FACTOR
-    LON_OFFSET = (pixCount/2) - positionGT[1]*FUDGE_FACTOR  
-
-    if os.path.exists(path):
-        detectMap = cv2.imread(path)
-    else:
-        detectionMap = np.zeros((pixCount, pixCount, 3))
-        cv2.imwrite(path, detectionMap)
-        detectMap = cv2.imread(path)    
-
-    cv2.line(detectMap, (int(wolfPos[0]*FUDGE_FACTOR + LAT_OFFSET), abs(int(wolfPos[1]*FUDGE_FACTOR + LON_OFFSET))), (int(predPos[0]*FUDGE_FACTOR + LAT_OFFSET), abs(int(predPos[1]*FUDGE_FACTOR + LON_OFFSET))), (255, 255, 0), 2) # draw line between wolf and prediction
-    cv2.circle(detectMap, (int(wolfPos[0]*FUDGE_FACTOR + LAT_OFFSET), abs(int(wolfPos[1]*FUDGE_FACTOR + LON_OFFSET))), 2, (0, 0, 255), 2) # draw vehicle postion
-    cv2.circle(detectMap, (int(predPos[0]*FUDGE_FACTOR + LAT_OFFSET), abs(int(predPos[1]*FUDGE_FACTOR + LON_OFFSET))), 2, (255, 0, 0), 2) # draw predicted gps postion for wolf
-    cv2.circle(detectMap, (int(positionGT[0]*FUDGE_FACTOR + LAT_OFFSET), abs(int(positionGT[1]*FUDGE_FACTOR + LON_OFFSET))), 5, (0, 255, 0), 2) # draw ground truth postion
-    cv2.putText(detectMap, str(j) + '_v' + str(vehicleName), (int(wolfPos[0]*FUDGE_FACTOR + LAT_OFFSET) + 1, abs(int(wolfPos[1]*FUDGE_FACTOR + LON_OFFSET)) + 1), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 255), 1)
-    cv2.imwrite(path, detectMap)

@@ -87,7 +87,7 @@ def runYolov5(responses, dataDir_pass, dataDir_fail, vehicleName, confidanceMin,
         if(confidence >= confidanceMin):
             passedConfidence=True
             
-            print("High Confidence Detection!!!")
+            # print("High Confidence Detection!!!")
 
             start_point = (xmin, ymin)
             end_point = (xmax, ymax)
@@ -119,7 +119,7 @@ def runYolov5(responses, dataDir_pass, dataDir_fail, vehicleName, confidanceMin,
 
         else:
             passedConfidence=False
-            print("Low Confidence Detection!!!")
+            # print("Low Confidence Detection!!!")
 
             start_point = (xmin, ymin)
             end_point = (xmax, ymax)
