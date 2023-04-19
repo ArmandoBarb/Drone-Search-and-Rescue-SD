@@ -1,6 +1,7 @@
 import math
 from airsim_ros_pkgs.msg import GPS
 import numpy as np
+import RosPublishHelper.MapHandlerPublishHelper as mapHandlerPublishHelper
 
 def fixDegenerateCoordinate(wrongCordinate):
     longitude = float(wrongCordinate[0])
@@ -287,16 +288,16 @@ def calcRTriangleOpposite(hypothenus, angleD):
 def calcRTriangleAdjacent(hypothenus, angleD):
     return math.cos(math.radians(angleD)) * hypothenus;
 
-def calcNewConsenusGPS(wolfDataArray, gpsCenter, threshold, droneName):
+def calcNewConsenusGPS(wolfDataArray, gpsCenter, threshold, droneName, currIterationNum):
     newConsenuGPS = GPS()
-    newConsenuGPS.longitude = gpsCenter.longitude
-    newConsenuGPS.latitude = gpsCenter.latitude
-    gpsNumberAdded = 1
+    newConsenuGPS.longitude = 0 # gpsCenter.longitude
+    newConsenuGPS.latitude = 0 # gpsCenter.latitude
+    gpsNumberAdded = 0 # 1
 
     droneFail = 0
     droneSucc = 0
     droneNet = 0
-    print("wolf:" + str(droneName) + "----------------------------------------")
+    print("wolf:" + str(droneName) + " ------------Consenus: " + str(currIterationNum) + " ------------")
     for wolf in wolfDataArray:
         totalDet = wolf.successDetCount + wolf.failDetCount
         if(totalDet <= 0):
@@ -317,10 +318,11 @@ def calcNewConsenusGPS(wolfDataArray, gpsCenter, threshold, droneName):
             newConsenuGPS.latitude += wolf.avgConsensusDecionGPS.latitude * wolf.successDetCount
             gpsNumberAdded += wolf.successDetCount
 
+    if (gpsNumberAdded > 0):
         newConsenuGPS.longitude = newConsenuGPS.longitude / gpsNumberAdded
         newConsenuGPS.latitude = newConsenuGPS.latitude / gpsNumberAdded
-        
-
+    
+    mapHandlerPublishHelper.updateFinalTargetPosition(droneName, newConsenuGPS);
 
     if (droneFail > droneSucc or  0 == (droneFail + droneSucc)):
         print("droneFail: " + str(droneFail) + " droneSucc: " + str(droneSucc) + " droneNet: " + str(droneNet))

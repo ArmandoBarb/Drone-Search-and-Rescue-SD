@@ -9,3 +9,4 @@ string taskGroup
 int32 successDetCount
 int32 failDetCount
 GPS avgConsensusDecionGPS
+int32 iterationNumber

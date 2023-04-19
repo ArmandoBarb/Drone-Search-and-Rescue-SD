@@ -240,16 +240,21 @@ def handleGPSPrediction(wolfPos, predPos, imageNumber, vehicleName, detectMap, i
     #     detectMap = cv2.imread(path)   
     predictedColor = (15, 155, 228)
     lineWeight = 3
+    textPred = 'O_' + str(imageNumber)
+    textPredColor = (255, 255, 255)
     if not isOverseer:
         predictedColor = (255, 0, 0)
         lineWeight = 2
-
+        textPred = str(imageNumber) + 'w' + str(vehicleName)
+        textPredColor = (0, 0, 255)
+        if (imageNumber < 0): # fail prediction
+            predictedColor = (0,255,255)
 
     cv2.line(detectMap, (int(wolfPos[0]*FUDGE_FACTOR + LAT_OFFSET), abs(int(wolfPos[1]*FUDGE_FACTOR + LON_OFFSET))), (int(predPos[0]*FUDGE_FACTOR + LAT_OFFSET), abs(int(predPos[1]*FUDGE_FACTOR + LON_OFFSET))), (255, 255, 0), 2) # draw line between wolf and prediction
     cv2.circle(detectMap, (int(wolfPos[0]*FUDGE_FACTOR + LAT_OFFSET), abs(int(wolfPos[1]*FUDGE_FACTOR + LON_OFFSET))), 2, (0, 0, 255), 2) # draw vehicle postion
     cv2.circle(detectMap, (int(predPos[0]*FUDGE_FACTOR + LAT_OFFSET), abs(int(predPos[1]*FUDGE_FACTOR + LON_OFFSET))), lineWeight, predictedColor, lineWeight) # draw predicted gps postion for wolf
     cv2.circle(detectMap, (int(targetPosition[0]*FUDGE_FACTOR + LAT_OFFSET), abs(int(targetPosition[1]*FUDGE_FACTOR + LON_OFFSET))), 5, (0, 255, 0), 2) # draw ground truth postion
-    cv2.putText(detectMap, str(imageNumber) + '_v' + str(vehicleName), (int(wolfPos[0]*FUDGE_FACTOR + LAT_OFFSET) + 1, abs(int(wolfPos[1]*FUDGE_FACTOR + LON_OFFSET)) + 1), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 255), 1)
+    cv2.putText(detectMap, textPred, (int(wolfPos[0]*FUDGE_FACTOR + LAT_OFFSET) + 1, abs(int(wolfPos[1]*FUDGE_FACTOR + LON_OFFSET)) + 1), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 255), 1)
     # cv2.imwrite(path, detectMap)
 
 def handleDronePosition(lastWolfPos, wolfPos, detectMap, vehicleName, isOverseer):

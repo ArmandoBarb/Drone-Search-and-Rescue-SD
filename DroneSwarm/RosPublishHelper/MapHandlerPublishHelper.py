@@ -51,15 +51,38 @@ def updateWolfDronePrediction(wolfMapPublisher, droneName, imageNumber, currentG
 
     wolfMapPublisher.publish(updateMapMessage)
 
+def updateWolfDroneFailPrediction(wolfMapPublisher, droneName, imageNumber, currentGPS, targetLat, targetLon):
+    updateMapMessage = updateMap()
+    updateMapMessage.updateType = NEW_GPS_PREDICTION
 
-def updateFinalTargetPosition(droneName, imageNumber, targetGPS):
+    updateMapMessage.wolfNumber = int(droneName)
+    updateMapMessage.imageNumber = -imageNumber
+    updateMapMessage.isOverseer = False
+
+    # Gets the wolf position object
+    wolfPosition = GPS()
+    wolfPosition.longitude = currentGPS[2]
+    wolfPosition.latitude = currentGPS[1]
+    updateMapMessage.wolfPosition = wolfPosition
+
+    # Gets the target position object
+    targetPosition = GPS()
+    targetPosition.longitude = targetLon
+    targetPosition.latitude = targetLat
+    updateMapMessage.targetPosition = targetPosition
+
+    wolfMapPublisher.publish(updateMapMessage)
+
+
+
+def updateFinalTargetPosition(droneName, targetGPS):
     wolfMapPublisher = rospy.Publisher(MAP_HANDLER_TOPIC, updateMap, latch=True, queue_size=100)
     
     updateMapMessage = updateMap()
     updateMapMessage.updateType = FINAL_TARGET_POSITION
 
     updateMapMessage.wolfNumber = int(droneName)
-    updateMapMessage.imageNumber = imageNumber
+    updateMapMessage.imageNumber = 0
     updateMapMessage.isOverseer = False
 
     # Gets the wolf position object
@@ -68,8 +91,8 @@ def updateFinalTargetPosition(droneName, imageNumber, targetGPS):
 
     # Gets the target position object
     targetPosition = GPS()
-    targetPosition.longitude = targetGPS[2]
-    targetPosition.latitude = targetGPS[1]
+    targetPosition.longitude = targetGPS.longitude
+    targetPosition.latitude = targetGPS.latitude
     updateMapMessage.targetPosition = targetPosition
 
     wolfMapPublisher.publish(updateMapMessage)
@@ -98,7 +121,7 @@ def updateOverseerDronePrediction(wolfMapPublisher, imageNumber, currentGPS, tar
     updateMapMessage = updateMap()
     updateMapMessage.updateType = NEW_GPS_PREDICTION
 
-    updateMapMessage.wolfNumber = -1
+    updateMapMessage.wolfNumber = 0
     updateMapMessage.imageNumber = imageNumber
     updateMapMessage.isOverseer = True
 

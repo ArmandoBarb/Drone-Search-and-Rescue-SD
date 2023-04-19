@@ -97,6 +97,7 @@ GROUP_1_SEARCH = 'Constants/Group1Spiral.txt'
 # Current pattern is ussing Global variable to allow access across threads (open to change)
 # Global variables
 lock = threading.Lock()
+lockConsenus = threading.Lock()
 DM_Drone_Name = None
 DM_Wolfs_Cluster = [] # Drone will beassigned a group of drones to work with
 WAYPOINT_COORDS = []
@@ -290,34 +291,36 @@ def wolfDroneController(droneName, droneCount, overseerCount):
             currIterationNum = Cur_Consensus_Iteration_Number
             if (In_Position_CD):
                 timeDiff = time.time() - Start_Time;
+                # conisder locking this completly
                 if (timeDiff > Search_Time): # make cosenus decion
-                    threshold = CONSENSUS_THRESHOLD
-                    wolfDataArray = wolfGetWolfData.getWolfDataOfTaskGroup( Task_Group );
-                    # check stage of conensus
-                    if(currIterationNum < MAX_CONSENSUS_ITERATION_NUMBER):
-                        # make new cosensus dec
-                        passThreshold, newGPSCenter = calcHelper.calcNewConsenusGPS(wolfDataArray, gpsCenter, threshold, droneName)
-                        
-                        if(currIterationNum == Cur_Consensus_Iteration_Number):
-                            currIterationNum += 1
-                            wolfSignalPublisherGPS(wolfCommPublish, client, str(Cluster), str(Task_Group), CONSENSUS_DECISION_SIGNAL, \
-                                signalGPS=newGPSCenter, iterationNumber=currIterationNum, result=passThreshold)
+                    with lockConsenus:
+                        threshold = CONSENSUS_THRESHOLD
+                        wolfDataArray = wolfGetWolfData.getWolfDataOfTaskGroup( Task_Group );
+                        # check stage of conensus
+                        if(currIterationNum < MAX_CONSENSUS_ITERATION_NUMBER):
+                            # make new cosensus dec
+                            passThreshold, newGPSCenter = calcHelper.calcNewConsenusGPS(wolfDataArray, gpsCenter, threshold, droneName, currIterationNum)
+                            
+                            if(currIterationNum == Cur_Consensus_Iteration_Number):
+                                currIterationNum += 1
+                                wolfSignalPublisherGPS(wolfCommPublish, client, str(Cluster), str(Task_Group), CONSENSUS_DECISION_SIGNAL, \
+                                    signalGPS=newGPSCenter, iterationNumber=currIterationNum, result=passThreshold)
 
-                            # updateConsensusDecisionCenter may change taskGroup name
-                            # assign values locally
-                            if(Consensus_Decision_Behavior):
-                                updateConsensusDecisionCenter(newGPSCenter, currIterationNum, result=passThreshold);
+                                # updateConsensusDecisionCenter may change taskGroup name
+                                # assign values locally
+                                if(Consensus_Decision_Behavior):
+                                    updateConsensusDecisionCenter(newGPSCenter, currIterationNum, result=passThreshold);
+                            else:
+                                debugPrint("alreadu updated consnsus")
+                            
                         else:
-                            debugPrint("alreadu updated consnsus")
-                        
-                    else:
-                        # consenus decion target found
-                        passThreshold, newGPSCenter = calcHelper.calcNewConsenusGPS(wolfDataArray, gpsCenter, threshold, droneName)
-                        wolfSignalPublisherGPS(wolfCommPublish, client, str(Cluster), str(Task_Group), CONSENSUS_DECISION_SIGNAL, \
-                                signalGPS=newGPSCenter, iterationNumber=currIterationNum, result=passThreshold)
-                        
-                        if(Consensus_Decision_Behavior):
-                                updateConsensusDecisionCenter(newGPSCenter, currIterationNum, result=passThreshold);
+                            # consenus decion target found
+                            passThreshold, newGPSCenter = calcHelper.calcNewConsenusGPS(wolfDataArray, gpsCenter, threshold, droneName, currIterationNum)
+                            wolfSignalPublisherGPS(wolfCommPublish, client, str(Cluster), str(Task_Group), CONSENSUS_DECISION_SIGNAL, \
+                                    signalGPS=newGPSCenter, iterationNumber=currIterationNum, result=passThreshold)
+                            
+                            if(Consensus_Decision_Behavior):
+                                    updateConsensusDecisionCenter(newGPSCenter, currIterationNum, result=passThreshold);
             elif (not In_Position_CD):
                 wolfDataArray = wolfGetWolfData.getWolfDataOfTaskGroupExSelf(droneName, Task_Group)
 
@@ -326,7 +329,9 @@ def wolfDroneController(droneName, droneCount, overseerCount):
                 isInPositon = circleBehavior.IsInPosition(currentGPS=currentDroneData.gps_location, \
                             targetGPS=Circle_Center_GPS, radius=radius, wolfData=wolfDataArray,  \
                             minDiffrenceInRadius=MIN_DIFFRENCE_IN_RADIUS, requiredSeperationPercent=REQUIRED_SEPERATION_PERCENT)
-                if (isInPositon):
+                
+                isSameIteration = wolfGetWolfData.isTaskGroupSameIteration(Task_Group)
+                if (isInPositon and isSameIteration):
                     # ToDO droneComminication
                     wolfSignalPublisher(wolfCommPublish, client, str(Cluster), str(Task_Group), IN_POSITION_SIGNAL, IsWS=False)
                     with lock:
@@ -573,11 +578,11 @@ def handleWolfSignal(data):
                 #debugPrint("IN_Position set to true")
                 with lock:
                     In_Position_CD = True
-
-    if(command == CONSENSUS_DECISION_SIGNAL):
-        iterationNum = data.genericInt
-        if (Consensus_Decision_Behavior and iterationNum > Cur_Consensus_Iteration_Number ):
-            updateConsensusDecisionCenter(signalGPS, iterationNum, result);
+        if(command == CONSENSUS_DECISION_SIGNAL):
+            with lockConsenus:
+                iterationNum = data.genericInt
+                if (Consensus_Decision_Behavior and iterationNum > Cur_Consensus_Iteration_Number ):
+                    updateConsensusDecisionCenter(signalGPS, iterationNum, result);
 
 
 def handleEnd(data):
@@ -704,6 +709,7 @@ def wolfDataPublisher(pub, client, droneName):
     droneMsg.successDetCount = Success_Det_Count
     droneMsg.failDetCount = Fail_Det_Count
     droneMsg.avgConsensusDecionGPS = Avg_Consensus_Decion_GPS
+    droneMsg.iterationNumber = Cur_Consensus_Iteration_Number
 
     # Publishes to topic
     pub.publish(droneMsg)
@@ -906,11 +912,12 @@ def updateConsensusDecisionCenter(circleCenterGPS, currIterationNum, result):
     global End_Loop
     if (result and currIterationNum < MAX_CONSENSUS_ITERATION_NUMBER):
         with lock:
-            Start_Time = time.time();
+            In_Position_CD = False
+            Circle_Center_GPS = circleCenterGPS
+            Start_Time = time.time()
             Cur_Consensus_Iteration_Number = currIterationNum
             Success_Det_Count = 0
             Fail_Det_Count = 0
-            Circle_Center_GPS = circleCenterGPS
             In_Position_CD = False
     else:
         if(currIterationNum >= MAX_CONSENSUS_ITERATION_NUMBER):
@@ -922,7 +929,7 @@ def updateConsensusDecisionCenter(circleCenterGPS, currIterationNum, result):
                             ======================================================================================== \n ")
 
                 # update map with target
-                mapHandlerPublishHelper.updateFinalTargetPosition( droneName=DM_Drone_Name, imageNumber=j, targetGPS=circleCenterGPS)
+                mapHandlerPublishHelper.updateFinalTargetPosition( droneName=DM_Drone_Name, targetGPS=circleCenterGPS)
 
                 # end code executiom
                 endTaskPublish = rospy.Publisher(ros.END_LOOP_TOPIC, String, latch=True, queue_size=1)

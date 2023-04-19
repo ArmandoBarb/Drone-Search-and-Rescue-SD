@@ -23,8 +23,8 @@ def suppress_stdout():
 def setUpLidar(client,vehicle_name):
     image_type = airsim.ImageType.Scene
     tree = "new_tree*"
-    client.simSetDetectionFilterRadius("1", image_type, 1200) 
-    client.simAddDetectionFilterMeshName("1", image_type, tree) 
+    client.simSetDetectionFilterRadius("0", image_type, 1200) 
+    client.simAddDetectionFilterMeshName("0", image_type, tree) 
 
 def parse_lidarData(data):
 
@@ -124,7 +124,7 @@ def collisionAvoidanceCheck(client, vehicle_name, threshhold):
     image_type = airsim.ImageType.Scene
     shortestDistance = 1000
     closestTree = 0
-    trees = client.simGetDetections("1", image_type)
+    trees = client.simGetDetections("0", image_type)
     info = client.getGpsData(vehicle_name = vehicle_name)
 
     if trees:

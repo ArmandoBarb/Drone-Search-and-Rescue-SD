@@ -67,13 +67,13 @@ def runYolov5(responses, dataDir_pass, dataDir_fail, vehicleName, confidanceMin,
 
     #ToDo: just pass loop index adn drone name
     # or in final build just overwite
-    j=0
+    j=1
     while os.path.exists(dataDir_pass + "/" + ('%s' % j)+"w"+vehicleName+"camImg.jpg"):
         j+=1
 
     #ToDo: just pass loop index adn drone name
     # or in final build just overwite
-    k=0
+    k=1
     while os.path.exists(dataDir_fail + "/" + ('%s' % k)+"w"+vehicleName+"camImg.jpg"):
         k+=1
 
@@ -131,6 +131,10 @@ def runYolov5(responses, dataDir_pass, dataDir_fail, vehicleName, confidanceMin,
             #print("------------------------------------------------------------------------------------------------------------------")
             # use bb dimensions/location for GPS estimation
             alt, lat, lon = getInfoWolf.getWolfGPSEstimate(responses, xmin, ymin, xmax, ymax, gps)
+
+            # wolf gps visualized
+            mapHandlerPublishHelper.updateWolfDroneFailPrediction(wolfMapPublisher=updateMapPublisher, droneName=vehicleName, imageNumber=k, currentGPS=gps, targetLat=lat, targetLon=lon)
+           
             #print("\tWOLF ESTIMATE: "+str(alt)+" alt, " + str(lat) + " lat, " + str(lon) + " lon")
             maxConfidenceGPS[1]=lat
             maxConfidenceGPS[0]=lon
@@ -146,7 +150,6 @@ def runYolov5(responses, dataDir_pass, dataDir_fail, vehicleName, confidanceMin,
 
             # Did not get a detection but updating position of the wolf
             # wolf gps visualized
-            mapHandlerPublishHelper.updateWolfDronePosition(wolfMapPublisher=updateMapPublisher, droneName=vehicleName, currentGPS=gps)
 
     else:
         mapHandlerPublishHelper.updateWolfDronePosition(wolfMapPublisher=updateMapPublisher, droneName=vehicleName, currentGPS=gps)
