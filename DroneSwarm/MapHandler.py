@@ -22,7 +22,6 @@ import threading
 god = threading.Lock()
 
 DETECTION_OUTPUT_SERIES = configDrones.DETECTION_OUTPUT_SERIES
-GPS_GT = configDrones.GPS_GT
 ZOOM_FACTOR = configDrones.ZOOM_FACTOR
 MAX_PIX_COUNT = configDrones.MAX_PIX_COUNT
 SPIRAL_LOCATION_1 = [configDrones.SPIRAL_LOCATION_1[1], configDrones.SPIRAL_LOCATION_1[0]]
@@ -224,7 +223,6 @@ def handleGPSPrediction(wolfPos, predPos, imageNumber, vehicleName, detectMap, i
     positionMapCenter = SPIRAL_LOCATION_1
     pixCount = MAX_PIX_COUNT
     FUDGE_FACTOR = ZOOM_FACTOR
-    targetPosition = configDrones.GPS_GT
 
     # calculate lat and lon offset
     LAT_OFFSET = (pixCount/2) - positionMapCenter[0]*FUDGE_FACTOR
@@ -253,7 +251,6 @@ def handleGPSPrediction(wolfPos, predPos, imageNumber, vehicleName, detectMap, i
     cv2.line(detectMap, (int(wolfPos[0]*FUDGE_FACTOR + LAT_OFFSET), abs(int(wolfPos[1]*FUDGE_FACTOR + LON_OFFSET))), (int(predPos[0]*FUDGE_FACTOR + LAT_OFFSET), abs(int(predPos[1]*FUDGE_FACTOR + LON_OFFSET))), (255, 255, 0), 2) # draw line between wolf and prediction
     cv2.circle(detectMap, (int(wolfPos[0]*FUDGE_FACTOR + LAT_OFFSET), abs(int(wolfPos[1]*FUDGE_FACTOR + LON_OFFSET))), 2, (0, 0, 255), 2) # draw vehicle postion
     cv2.circle(detectMap, (int(predPos[0]*FUDGE_FACTOR + LAT_OFFSET), abs(int(predPos[1]*FUDGE_FACTOR + LON_OFFSET))), lineWeight, predictedColor, lineWeight) # draw predicted gps postion for wolf
-    cv2.circle(detectMap, (int(targetPosition[0]*FUDGE_FACTOR + LAT_OFFSET), abs(int(targetPosition[1]*FUDGE_FACTOR + LON_OFFSET))), 5, (0, 255, 0), 2) # draw ground truth postion
     cv2.putText(detectMap, textPred, (int(wolfPos[0]*FUDGE_FACTOR + LAT_OFFSET) + 1, abs(int(wolfPos[1]*FUDGE_FACTOR + LON_OFFSET)) + 1), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 255), 1)
     # cv2.imwrite(path, detectMap)
 
@@ -262,7 +259,6 @@ def handleDronePosition(lastWolfPos, wolfPos, detectMap, vehicleName, isOverseer
     positionMapCenter = SPIRAL_LOCATION_1
     pixCount = MAX_PIX_COUNT
     FUDGE_FACTOR = ZOOM_FACTOR
-    targetPosition = configDrones.GPS_GT
     global WOLF_COUNT
 
     # calculate lat and lon offset
@@ -289,7 +285,6 @@ def handleDronePosition(lastWolfPos, wolfPos, detectMap, vehicleName, isOverseer
     if (lastWolfPos != None): 
         detectMap = cv2.line(detectMap, (int(wolfPos[0]*FUDGE_FACTOR + LAT_OFFSET), abs(int(wolfPos[1]*FUDGE_FACTOR + LON_OFFSET))), (int(lastWolfPos[0]*FUDGE_FACTOR + LAT_OFFSET), abs(int(lastWolfPos[1]*FUDGE_FACTOR + LON_OFFSET))), droneColor, lineWeight) # draw line between wolf and prediction
     detectMap = cv2.circle(detectMap, (int(wolfPos[0]*FUDGE_FACTOR + LAT_OFFSET), abs(int(wolfPos[1]*FUDGE_FACTOR + LON_OFFSET))), lineWeight, droneColor, lineWeight) # draw vehicle postion
-    detectMap = cv2.circle(detectMap, (int(targetPosition[0]*FUDGE_FACTOR + LAT_OFFSET), abs(int(targetPosition[1]*FUDGE_FACTOR + LON_OFFSET))), 5, (0, 255, 0), 2) # draw ground truth postion
     # detectMap=cv2.imwrite(path, detectMap)
 
 def calcPath():
