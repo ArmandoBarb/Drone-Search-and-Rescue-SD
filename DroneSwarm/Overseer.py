@@ -39,6 +39,7 @@ from ImageProcessing import clustering
 from HelperFunctions import clusterHelper
 from HelperFunctions import algoHelper
 from HelperFunctions import calcHelper
+import DroneBehaviors.circleBehavior as circleBehavior
 import ServiceRequestors.checkGPU as checkGPU
 import warnings
 import os
@@ -209,6 +210,24 @@ def overseerDroneController(droneName, overseerCount, wolfCount):
         # debugPrint(outputForWaypoint)
         vector = lineBehaviorOverseer.overseerWaypoint(client, int(droneNum), waypoint, endWaypoint)
 
+        # calcSpeedVector function variables
+        averageAlignmentSpeed = 5
+        bonusAlignmentSpeed = 0
+        maxCohSepSpeed = 3
+        maxSpeed = 8
+
+        currentDroneData = client.getMultirotorState(vehicle_name = droneName)
+
+        gpsDataObject = GPS()
+        gpsDataObject.longitude = float(-2.6949458421474215e-05)
+        gpsDataObject.latitude = float(0.00031441032653474997)
+
+        vector = circleBehavior.calcSpeedVector(currentDroneData=currentDroneData, targetGPS=gpsDataObject, \
+                    radius=MIN_CIRCLE_RADIUS_GPS*2, radiusM=MIN_CIRCLE_RADIUS_METERS, wolfData=[], \
+                    averageAlignmentSpeed=averageAlignmentSpeed, bonusAlignmentSpeed=bonusAlignmentSpeed, \
+                    maxCohSepSpeed=maxCohSepSpeed, maxSpeed=maxSpeed)
+        vector = [vector[1], vector[0]]
+
         client.moveByVelocityZAsync(vector[1], vector[0], -40, duration = 1, vehicle_name=droneName)
 
         # client.moveByVelocityZAsync(vector[1], vector[0], -10, duration = 1, vehicle_name="TestOverseer")
@@ -287,11 +306,14 @@ def overseerInfraredDetection(droneName):
         #---Waypoint Detection---
         # # get response object and retrieve segmentation
         responses = getInfo.getInfrared(threadClient, droneName)
+        gps = getInfo.getDroneGPS(droneName, threadClient)
+
         height, width, segRGB = getInfo.getSegInfo(responses)
 
         folderName = "Overseer"
 
         getInfo.getSceneImages(responses, folderName)
+        getInfo.getInfraImages(responses, folderName)
 
         # cluster heat signatures from segmenation map
         clusters = clustering.pixelClustering(height, width, segRGB)
@@ -304,7 +326,7 @@ def overseerInfraredDetection(droneName):
             # debugPrint("Got a detection!")
             # get centroids of each pixel cluster
             # this info will be in longitude and latitude form
-            centroidsGPS = getInfo.getCentroids(clusters, threadClient, droneName, height, width)
+            centroidsGPS = getInfo.getCentroids(clusters, threadClient, droneName, height, width, gps, runtime, segRGB)
 
             # filter centroids against past waypoints
             filteredCentroidsGPS = []
@@ -312,15 +334,29 @@ def overseerInfraredDetection(droneName):
                 if isValidCentroid(centroid):
                     filteredCentroidsGPS.append(centroid)
 
+            getInfo.getInfraredGPSImages(responses, "OverseerGPS", centroidsGPS, clusters)
+
             # generate search circles
             # contains [radius, avg circle center, list of circle centers]
             radius = MIN_CIRCLE_RADIUS_GPS
             circleList = []
             centroidsGPS = filteredCentroidsGPS
 
-            getInfo.getInfraredGPSImages(responses, "OverseerGPS", filteredCentroidsGPS, clusters)
+            print("EXPECTED CENTROID: ("+str(float(0.00031441032653474997))+", "+str(float(-2.6949458421474215e-05))+")")
 
             for centroid in centroidsGPS:
+                print("ORIGINAL CENTROID: ("+str(centroid[0])+", "+str(centroid[1])+")")
+                centroidList = list(centroid)
+
+                # centroid0 = centroidList[0]
+                # centroid1 = centroidList[1]
+
+                # centroid = (centroid0, centroid1)
+
+                # print("NEW CENTROID: ("+str(centroid[0])+", "+str(centroid[1])+")")
+
+                print("MARGIN OF ERROR CENTROID: ("+str(float(0.00031441032653474997)-centroid[0])+", "+str(float(-2.6949458421474215e-05)-centroid[1])+")")
+
                 circle = clustering.circle(radius, centroid, [centroid])
                 circleList = clustering.addCircle(circle, circleList)
 

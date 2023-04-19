@@ -5,6 +5,9 @@ import math
 from HelperFunctions import clusterHelper
 import os
 import cv2
+import time
+import pandas as pd
+import matplotlib.pyplot as plt
 
 def getInfrared(client, vehicleName):
     # print(vehicleName)
@@ -66,7 +69,22 @@ def getDroneGPS(vehicleName, client):
     gps_lon = gps_data.gnss.geo_point.longitude
     return gps_al, gps_lat, gps_lon
 
-def getCentroids(clusters, client, vehicleName, height, width):
+def midpoint(p1, p2):
+    return (p1[0]+p2[0])/2, (p1[1]+p2[1])/2
+
+def gpsDistance(lon1, lat1, lon2, lat2):
+    lonR1 = degreeToRadians(lon1)
+    latR1 = degreeToRadians(lat1)
+    lonR2 = degreeToRadians(lon2)
+    latR2 = degreeToRadians(lat2)
+    nauticalMiles = 3440.1 * math.acos((math.sin(latR1)*math.sin(latR2)) + math.cos(latR1)*math.cos(latR2) * math.cos(lonR1-lonR2))
+    meters = nauticalMiles*1852
+    return meters
+
+def degreeToRadians(degree):
+    return 3.14*degree/180
+
+def getCentroids(clusters, client, vehicleName, height, width, gps, runtime, segRGB):
     heightArr = []
     widthArr = []
     centroids = []
@@ -82,12 +100,25 @@ def getCentroids(clusters, client, vehicleName, height, width):
     x1 = None
 
     # adjust expected width depending on target distance to center of image
-    target_width = 0.4
-    target_depth = 0.4
-    target_height = 1.3
+    # target_width = 0.4
+    # target_depth = 0.4
+    # target_height = 1.3
+
+    target_width = 0.5
 
     # get drone gps info for geospatial conversion
-    gps_al, gps_lat, gps_lon = getDroneGPS(vehicleName, client)
+    # gps_al, gps_lat, gps_lon = getDroneGPS(vehicleName, client)
+
+    print("DELAY: "+str(time.time()-runtime))
+
+    gps_al = gps[0]
+    gps_lat = gps[1]
+    gps_lon = gps[2]
+
+    ruh_m = np.zeros((500,500,3), np.uint8)
+    
+    BBox = (-.001, .001, -.001, .001)
+    fig, ax = plt.subplots(figsize = (8,7))
 
     for cluster in clusters:
         for coord in cluster:
@@ -115,6 +146,11 @@ def getCentroids(clusters, client, vehicleName, height, width):
         # get bbox dimensions
         bbw = x1 - x0 # width
         bbh = y1 - y0 # height
+
+        if(x0 == 0 or x1 == 0 or x0 == width-1 or x1 >= width-1 or y0 == 0 or y1 == 0 or y0 >= height-1 or y1 == height-1):
+            continue
+
+        print("WIDTH!!!"+str(bbw))
 
         # calculate target distance to center of image
         center_x, center_y = int(width/2), int(height/2)
@@ -147,6 +183,45 @@ def getCentroids(clusters, client, vehicleName, height, width):
         # add centroid to list
         centroids.append((lon, lat))
 
+        # ax.scatter(lon, lat, zorder=1, alpha= 1, c='#ff43a4', s=10)
+        x_values = [float(-2.6949458421474215e-05), float(gps_lon), lon]
+        y_values = [float(0.00031441032653474997), float(gps_lat), lat]
+        ax.plot(x_values, y_values, 'bo', linestyle="--")
+
+        ax.text(float(gps_lon), float(gps_lat), "droneGPS", color='red', fontsize = 9)
+        ax.text(float(-2.6949458421474215e-05), float(0.00031441032653474997), "Brian", color='red', fontsize = 9)
+        ax.text(lon, lat, "GPSestimate", color='red', fontsize = 9)
+
+        trueLoc = [float(-2.6949458421474215e-05), float(0.00031441032653474997)]
+        estimate = [lon, lat]
+
+        midLon, midLat = midpoint(trueLoc, estimate)
+
+        ax.text(midLon, midLat, str(round(gpsDistance(float(-2.6949458421474215e-05), float(0.00031441032653474997), lon, lat), 2))+"m", color='yellow', fontsize = 9)
+
+    # ax.scatter(float(gps_lon), float(gps_lat), zorder=1, alpha= 1, c='#ffffff', s=10)
+    # ax.scatter(float(-2.6949458421474215e-05), float(0.00031441032653474997), zorder=1, alpha= 1, c='#0048ba', s=10)
+
+        ax.set_title('Plotting Spatial Data on Map')
+        ax.set_xlim(BBox[0],BBox[1])
+        ax.set_ylim(BBox[2],BBox[3])
+        ax.imshow(ruh_m, zorder=0, extent = BBox, aspect= 'equal')
+
+        k=0
+
+        cwd = os.getcwd()
+        cwd = os.path.join(cwd[:cwd.index("DroneSwarm")],'DroneSwarm')
+        plotPath=os.path.join(str(cwd),str(k)+'estimateGraph.png')
+
+        while os.path.exists(os.path.join(str(cwd),str(k)+'esimatePic.png')):
+            k+=1
+
+        plotPicPath=os.path.join(str(cwd),str(k)+'esimatePic.png')
+
+
+        fig.savefig(os.path.join(str(cwd),str(k)+'estimateGraph.png'))
+        airsim.write_png(plotPicPath, segRGB)
+
     return centroids
 
 def getSearchCircles(intersectGroups, avgCentroids, r):
@@ -172,10 +247,28 @@ def getSceneImages(responses, folderName):
         os.makedirs(savePath)
 
     k=0
-    while os.path.exists(savePath + "/" + ('%s' % k)+folderName+".jpg"):
+    while os.path.exists(savePath + "/" + ('%s' % k)+folderName+"Scene.jpg"):
         k+=1
 
-    airsim.write_png(savePath + "/" + ('%s' % k)+folderName+".jpg", sceneRGB)
+    airsim.write_png(savePath + "/" + ('%s' % k)+folderName+"Scene.jpg", sceneRGB)
+
+def getInfraImages(responses, folderName):
+    height, width, segRGB = getSegInfo(responses)
+
+    cwd = os.getcwd()
+    cwd = os.path.join(cwd[:cwd.index("DroneSwarm")],'DroneSwarm')
+    savePath=os.path.join(str(cwd),folderName)
+
+    isExist=os.path.exists(savePath)
+
+    if not isExist:
+        os.makedirs(savePath)
+
+    k=0
+    while os.path.exists(savePath + "/" + ('%s' % k)+folderName+"Infra.jpg"):
+        k+=1
+
+    airsim.write_png(savePath + "/" + ('%s' % k)+folderName+"Infra.jpg", segRGB)
 
 def getInfraredGPSImages(responses, folderName, filteredCentroidsGPS, clusters):
     height, width, segRGB = getSegInfo(responses)
@@ -196,14 +289,19 @@ def getInfraredGPSImages(responses, folderName, filteredCentroidsGPS, clusters):
 
     airsim.write_png(savePath + "/" + ('%s' % k)+folderName+"infra.jpg", segRGB)
     airsim.write_png(savePath + "/" + ('%s' % k)+folderName+"scene.jpg", sceneRGB)
-    drawBB(height, width, sceneRGB, savePath + "/" + ('%s' % k)+folderName+"scene.jpg", clusters)
 
+    clusters1 = [clusters[0]] # hilight first cluster green
+
+    drawBB(height, width, sceneRGB, savePath + "/" + ('%s' % k)+folderName+"scene.jpg", clusters, (255, 0, 0))
+
+    drawBB(height, width, sceneRGB, savePath + "/" + ('%s' % k)+folderName+"scene.jpg", clusters1, (0, 255, 0))
+
+    f = open(savePath + "/" + ('%s' % k)+folderName+".txt", "w")
     for centroid in filteredCentroidsGPS:
-        with open(savePath + "/" + ('%s' % k)+folderName+".txt", 'w') as f:
-            f.write("\n\tOverseer Estimate:"+ str(centroid[0]) + " lat, " + str(centroid[1]) + " lon")
-            f.close()
+        f.write("\n\tOverseer Estimate:"+ str(centroid[0]) + " lat, " + str(centroid[1]) + " lon")
+    f.close()
 
-def drawBB(height, width, sceneRGB, path, clusters):
+def drawBB(height, width, sceneRGB, path, clusters, color):
     heightArr = []
     widthArr= []
 
@@ -234,7 +332,7 @@ def drawBB(height, width, sceneRGB, path, clusters):
         bbw = x1 - x0 # width
         start_point = (x0-math.floor(bbw*.10), y1) # top left corner (corrected offset)
         end_point = (x1, y0)                       # bottom right corner (corrected offset)
-        sceneRGB = cv2.rectangle(sceneRGB, start_point, end_point, (255, 0, 0), 1)
+        sceneRGB = cv2.rectangle(sceneRGB, start_point, end_point, color, 1)
 
         hArr=heightArr
         wArr=widthArr
